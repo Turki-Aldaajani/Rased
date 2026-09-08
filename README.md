@@ -241,36 +241,37 @@ on the next request.
 
 ## Visual identity
 
-Neutral first. Background, text and borders carry the whole interface; the
-green appears only where the eye should land — the primary button, an active
-state, a progress bar. State colours (success, warning, error) are used only
+**Dark only.** There is no light theme, no toggle and no theme provider — one
+palette, defined once at `:root` in `src/app/globals.css`. The built CSS
+contains zero `prefers-color-scheme` blocks and zero `data-theme` rules.
+
+Neutral first: background, text and borders carry the whole interface. The
+green appears only where the eye should land — the primary button, focus
+rings, progress fills, the light on the 3D panel. State colours are used only
 when something is actually in that state, and never larger than a 6px dot.
 
-| Role | Light | Dark |
-|---|---|---|
-| Background | `#FAFAFA` | `#131C18` |
-| Surface (card) | `#FFFFFF` | `#18231E` |
-| Text | `#2B2B2B` | `#F1EFE6` |
-| Muted text | `#9A968A` | `#9A968A` |
-| Borders | `#E7E3D6` | `#26332C` |
-| Secondary surface | `#E3D8B3` | — |
-| Primary | `#155043` | `#2E7D69` |
-| Interactive (hover / focus ring) | `#125D64` | `#4F9AA1` |
-| Accent (rare) | `#869200` | `#A4B02C` |
+| Role | Value |
+|---|---|
+| Background | `#131C18` |
+| Deep surface (3D panel) | `#0B100D` |
+| Surface (card) | `#18231E` |
+| Text | `#F1EFE6` |
+| Muted text | `#9A968A` |
+| Borders | `#26332C` |
+| Primary | `#2E7D69` (identity green `#155043` kept as `--brand-deep` for lighting) |
+| Interactive / focus ring | `#125D64`, brightened to `#4F9AA1` for text on dark |
+| Accent (rare) | `#A4B02C` |
 
-States: success `#3CA45D` · warning `#F3C43C` · error `#FB4C3C` · info
-`#3CA6EB` · highlight `#EB3C87`. Dark mode lightens the same roles rather than
-reassigning them — green never stops meaning "this is the focus".
+States: success `#4FB972` · warning `#F3C43C` · error `#FF6B5C` · info
+`#5CB6F0` · highlight `#F25C9C`.
 
 Rules the interface holds to:
 
-- **No gradients, no glows, no shadows beyond a 1px lift.** Hierarchy comes
-  from whitespace, weight and border contrast. There are zero `linear-gradient`
-  declarations in the built CSS.
+- **No CSS gradients, no glows, no shadows.** Hierarchy comes from whitespace,
+  weight and border contrast. The single radial gradient in the app is the
+  spotlight on the 3D card, and it is painted in the identity green.
 - **No emoji.** Every icon is a [lucide](https://lucide.dev) line icon at one
   neutral colour (`text-muted-foreground`), sized 14–16px.
-- **One accent per screen.** The home page renders four colours plus the green
-  on a single button.
 - 4–8px radii (`--radius: 6px`), 200ms transitions, all of it collapsing under
   `prefers-reduced-motion`.
 
@@ -278,6 +279,24 @@ Components are [shadcn/ui](https://ui.shadcn.com) primitives in
 `src/components/ui/` (Button, Card, Input, Textarea, Badge, Label, Separator),
 styled from the CSS variables in `src/app/globals.css` — re-theming is that one
 file, and `npx shadcn@latest add <component>` works against `components.json`.
+
+### The 3D panel
+
+One interactive [Spline](https://spline.design) scene sits below the composer
+on the home page, and nowhere else in the app.
+
+- `ui/splite.tsx` — `React.lazy` + `Suspense`, so the ~1.3 MB runtime is its
+  own chunk and never blocks the composer.
+- `HeroScene.tsx` — mounts that chunk only once the card scrolls within 200px
+  of the viewport, so the home page loads without touching it at all.
+- `ui/spotlight.tsx` — a `framer-motion` light that follows the cursor inside
+  the card, painted with `--interactive` / `--brand-deep` instead of the usual
+  white so it reads as part of this interface.
+
+The scene URL is a prop on `HeroScene`; swap it for your own Spline scene
+without touching anything else. `next.config.ts` marks the Spline runtime's
+Draco decoder paths as webpack externals — that package references CDN assets
+it does not ship, which otherwise fails the build.
 
 The type stack is `"Thmanyah", "IBM Plex Sans Arabic", …` — if the Thmanyah
 brand font is installed locally it is used automatically, otherwise IBM Plex
