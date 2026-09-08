@@ -1,0 +1,245 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+   Brand identity
+   Primary #155043 · Interactive #125D64 · Accent #869200
+   Neutrals: #FAFAFA / #131C18 / #E3D8B3 / #2B2B2B / #E7E3D6 / #9A968A
+   Secondary colours are for states only — they never lead the page.
+   --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  --bg: #fafafa;
+  --card: #ffffff;
+  --sand: #e3d8b3;
+  --sand-soft: #f4efdf;
+  --line: #e7e3d6;
+  --line-strong: #d8d2c0;
+  --ink: #2b2b2b;
+  --muted: #9a968a;
+
+  --brand: #155043;
+  --brand-ink: #155043;
+  --brand-soft: #e8efec;
+  --interactive: #125d64;
+  --interactive-ink: #125d64;
+  --accent: #869200;
+  --accent-ink: #6d7800;
+  --accent-soft: #f2f4e0;
+  --on-brand: #fafafa;
+
+  --success: #3ca45d;
+  --warning: #f3c43c;
+  --error: #fb4c3c;
+  --info: #3ca6eb;
+  --highlight: #eb3c87;
+
+  --shadow: 0 1px 2px rgb(19 28 24 / 0.04), 0 8px 24px -12px rgb(19 28 24 / 0.12);
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg: #131c18;
+  --card: #1a2721;
+  --sand: #33402f;
+  --sand-soft: #232f27;
+  --line: #2a3a32;
+  --line-strong: #35473d;
+  --ink: #f1efe6;
+  --muted: #9a968a;
+
+  --brand: #2f7d68;
+  --brand-ink: #7fc9b1;
+  --brand-soft: #1c2f28;
+  --interactive: #2a8f96;
+  --interactive-ink: #6fc9cf;
+  --accent: #a8b524;
+  --accent-ink: #c3d048;
+  --accent-soft: #262d16;
+  --on-brand: #f6fbf9;
+
+  --success: #4fb972;
+  --warning: #f3c43c;
+  --error: #ff6b5c;
+  --info: #5cb6f0;
+  --highlight: #f25c9c;
+
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -14px rgb(0 0 0 / 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+
+    --bg: #131c18;
+    --card: #1a2721;
+    --sand: #33402f;
+    --sand-soft: #232f27;
+    --line: #2a3a32;
+    --line-strong: #35473d;
+    --ink: #f1efe6;
+    --muted: #9a968a;
+
+    --brand: #2f7d68;
+    --brand-ink: #7fc9b1;
+    --brand-soft: #1c2f28;
+    --interactive: #2a8f96;
+    --interactive-ink: #6fc9cf;
+    --accent: #a8b524;
+    --accent-ink: #c3d048;
+    --accent-soft: #262d16;
+    --on-brand: #f6fbf9;
+
+    --success: #4fb972;
+    --warning: #f3c43c;
+    --error: #ff6b5c;
+    --info: #5cb6f0;
+    --highlight: #f25c9c;
+
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 10px 30px -14px rgb(0 0 0 / 0.6);
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-card: var(--card);
+  --color-sand: var(--sand);
+  --color-sand-soft: var(--sand-soft);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+
+  --color-brand: var(--brand);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-interactive: var(--interactive);
+  --color-interactive-ink: var(--interactive-ink);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-on-brand: var(--on-brand);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+  --color-info: var(--info);
+  --color-highlight: var(--highlight);
+
+  --font-sans:
+    "Thmanyah", "IBM Plex Sans Arabic", ui-sans-serif, system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Cascadia Code", monospace;
+}
+
+* {
+  border-color: var(--line);
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--brand-soft);
+  color: var(--brand-ink);
+}
+
+/* A utility (not a component class) so the variants below can @apply it. */
+@utility btn {
+  @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2.5
+         text-sm font-semibold transition-colors
+         disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+@layer components {
+  .card {
+    @apply rounded-xl border border-line bg-card;
+    box-shadow: var(--shadow);
+  }
+
+  .card-flat {
+    @apply rounded-xl border border-line bg-card;
+  }
+
+  .btn-primary {
+    @apply btn text-[var(--on-brand)];
+    background: var(--brand);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--interactive);
+  }
+
+  .btn-secondary {
+    @apply btn border border-line bg-card text-ink;
+  }
+  .btn-secondary:hover:not(:disabled) {
+    border-color: var(--line-strong);
+    background: var(--brand-soft);
+  }
+
+  .btn-ghost {
+    @apply btn text-muted;
+  }
+  .btn-ghost:hover:not(:disabled) {
+    color: var(--ink);
+    background: var(--brand-soft);
+  }
+
+  .btn-sm {
+    @apply px-3 py-1.5 text-xs;
+  }
+
+  .field {
+    @apply w-full rounded-lg border border-line bg-card px-3.5 py-2.5 text-sm
+           text-ink outline-none transition-colors placeholder:text-muted;
+  }
+  .field:focus {
+    border-color: var(--interactive);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive) 18%, transparent);
+  }
+
+  .label {
+    @apply mb-1.5 block text-sm font-semibold text-ink;
+  }
+
+  .hint {
+    @apply mt-1.5 text-xs leading-relaxed text-muted;
+  }
+
+  .pill {
+    @apply inline-flex items-center gap-1.5 rounded-full px-2.5 py-1
+           text-xs font-semibold;
+  }
+
+  .section-title {
+    @apply text-xs font-bold uppercase tracking-[0.14em] text-muted;
+  }
+
+  .link {
+    @apply underline decoration-1 underline-offset-2;
+    color: var(--interactive-ink);
+  }
+  .link:hover {
+    text-decoration-thickness: 2px;
+  }
+}
+
+/* Progress bars used in the score breakdown. */
+.meter {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 22%, transparent);
+  overflow: hidden;
+}
+.meter > span {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  background: var(--brand);
+}
