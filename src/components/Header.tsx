@@ -6,7 +6,8 @@ import { useEffect, useRef, useState } from "react";
 import { useCurrentUser } from "./CurrentUser";
 
 const NAV = [
-  { href: "/", label: "Dashboard" },
+  { href: "/", label: "New find" },
+  { href: "/dashboard", label: "Dashboard" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/feed", label: "All finds" },
   { href: "/admin", label: "Admin" },
@@ -168,19 +169,27 @@ function MemberPicker() {
 
 export default function Header() {
   const pathname = usePathname();
+  // On the home page the composer is the interface. The header shrinks to the
+  // logo and "who am I", so nothing competes with the one action.
+  const bare = pathname === "/";
 
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-[color-mix(in_srgb,var(--bg)_88%,transparent)] backdrop-blur">
+    <header
+      className={`sticky top-0 z-20 ${
+        bare
+          ? ""
+          : "border-b border-line bg-[color-mix(in_srgb,var(--bg)_86%,transparent)] backdrop-blur"
+      }`}
+    >
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
-        <Link href="/" className="flex items-center gap-2.5">
+        <Link href="/" className="group flex items-center gap-2.5">
           <span
-            className="grid h-9 w-9 place-items-center rounded-lg text-base"
-            style={{ background: "var(--brand)" }}
+            className="icon-tile h-9 w-9 text-base transition-transform duration-200 group-hover:scale-105"
             aria-hidden
           >
             🎯
           </span>
-          <span className="hidden sm:block">
+          <span className={bare ? "hidden" : "hidden sm:block"}>
             <span className="block text-sm font-bold leading-tight text-ink">
               AI Hunt
             </span>
@@ -190,7 +199,45 @@ export default function Header() {
           </span>
         </Link>
 
-        <nav className="ml-2 hidden items-center gap-0.5 md:flex">
+        {!bare && (
+          <nav className="ml-2 hidden items-center gap-0.5 md:flex">
+            {NAV.map((item) => {
+              const active =
+                item.href === "/"
+                  ? pathname === "/"
+                  : pathname.startsWith(item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                    active
+                      ? "bg-brand-soft text-brand-ink"
+                      : "text-muted hover:text-ink"
+                  }`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
+        )}
+
+        <div className="ml-auto flex items-center gap-2">
+          <ThemeToggle />
+          <MemberPicker />
+          {!bare && (
+            <Link href="/" className="btn-primary btn-sm">
+              <span aria-hidden>+</span>
+              <span className="hidden sm:inline">Add contribution</span>
+              <span className="sm:hidden">Add</span>
+            </Link>
+          )}
+        </div>
+      </div>
+
+      {!bare && (
+        <nav className="flex items-center gap-1 overflow-x-auto border-t border-line px-4 py-2 md:hidden">
           {NAV.map((item) => {
             const active =
               item.href === "/"
@@ -200,10 +247,8 @@ export default function Header() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
-                  active
-                    ? "bg-brand-soft text-brand-ink"
-                    : "text-muted hover:text-ink"
+                className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium ${
+                  active ? "bg-brand-soft text-brand-ink" : "text-muted"
                 }`}
               >
                 {item.label}
@@ -211,35 +256,7 @@ export default function Header() {
             );
           })}
         </nav>
-
-        <div className="ml-auto flex items-center gap-2">
-          <ThemeToggle />
-          <MemberPicker />
-          <Link href="/submit" className="btn-primary btn-sm">
-            <span aria-hidden>+</span>
-            <span className="hidden sm:inline">Add contribution</span>
-            <span className="sm:hidden">Add</span>
-          </Link>
-        </div>
-      </div>
-
-      <nav className="flex items-center gap-1 overflow-x-auto border-t border-line px-4 py-2 md:hidden">
-        {NAV.map((item) => {
-          const active =
-            item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium ${
-                active ? "bg-brand-soft text-brand-ink" : "text-muted"
-              }`}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
-      </nav>
+      )}
     </header>
   );
 }
