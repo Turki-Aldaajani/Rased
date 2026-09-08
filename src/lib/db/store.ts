@@ -1,14 +1,20 @@
-import { promises as fs } from "fs";
-import path from "path";
+import { getStore, getDeployStore, type Store } from "@netlify/blobs";
 import { randomUUID } from "crypto";
 import type { Contribution, Database, Member } from "./schema";
 
 /**
- * Tiny JSON-file store. Everything the rest of the app needs goes through
- * these functions, so swapping in Supabase/Postgres later is a single-file job.
+ * Netlify Blobs–backed store. Everything the rest of the app needs goes
+ * through these functions, so swapping in Supabase/Postgres later is a
+ * single-file job.
+ *
+ * Netlify's serverless/edge functions run on a read-only filesystem, so a
+ * local JSON file (the previous implementation) throws on every write in
+ * production. Blobs give us the same "one JSON blob = the whole db" model
+ * without touching disk.
  */
 
-const DB_PATH = path.join(process.cwd(), "data", "db.json");
+const STORE_NAME = "ai-hunt-db";
+const DB_KEY = "db.json";
 
 const DEFAULT_MEMBERS = ["Nawal", "Abdullah", "Reem", "Abdulaziz", "Mukhtar", "Yara"];
 
@@ -25,48 +31,50 @@ function seedDatabase(): Database {
   };
 }
 
+/**
+ * Global store in production (persists across deploys), deploy-scoped store
+ * everywhere else (previews/branches don't pollute production data).
+ */
+function getDbStore(): Store {
+  const isProd = process.env.CONTEXT === "production";
+  return isProd ? getStore({ name: STORE_NAME, consistency: "strong" }) : getDeployStore({ name: STORE_NAME, consistency: "strong" });
+}
+
 /** Serialise writes so two concurrent submissions can't clobber each other. */
 let writeChain: Promise<unknown> = Promise.resolve();
 
 /**
- * In-flight seed, shared by every caller that hits a missing file at once.
+ * In-flight seed, shared by every caller that hits a missing blob at once.
  * Without this, two concurrent reads both try to create the database.
  */
 let seeding: Promise<Database> | null = null;
 
 async function readRaw(): Promise<Database> {
-  try {
-    const text = await fs.readFile(DB_PATH, "utf8");
-    const parsed = JSON.parse(text) as Database;
+  const store = getDbStore();
+  const parsed = await store.get(DB_KEY, { type: "json" });
+  if (parsed) {
     return {
       members: parsed.members ?? [],
       contributions: parsed.contributions ?? [],
     };
-  } catch (err: unknown) {
-    if ((err as NodeJS.ErrnoException)?.code !== "ENOENT") throw err;
-    if (!seeding) {
-      seeding = (async () => {
-        const seeded = seedDatabase();
-        await writeRaw(seeded);
-        return seeded;
-      })();
-      // Clear once settled, so deleting the file later re-seeds properly.
-      void seeding.finally(() => {
-        seeding = null;
-      });
-    }
-    return seeding;
   }
+  if (!seeding) {
+    seeding = (async () => {
+      const seeded = seedDatabase();
+      await writeRaw(seeded);
+      return seeded;
+    })();
+    // Clear once settled, so deleting the blob later re-seeds properly.
+    void seeding.finally(() => {
+      seeding = null;
+    });
+  }
+  return seeding;
 }
 
-let tmpCounter = 0;
-
 async function writeRaw(db: Database): Promise<void> {
-  await fs.mkdir(path.dirname(DB_PATH), { recursive: true });
-  // Unique per write — two writers sharing a temp path race on rename.
-  const tmp = `${DB_PATH}.${process.pid}.${++tmpCounter}.tmp`;
-  await fs.writeFile(tmp, JSON.stringify(db, null, 2), "utf8");
-  await fs.rename(tmp, DB_PATH);
+  const store = getDbStore();
+  await store.setJSON(DB_KEY, db);
 }
 
 export async function readDb(): Promise<Database> {
