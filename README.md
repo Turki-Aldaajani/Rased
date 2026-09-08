@@ -35,13 +35,14 @@ Old `/submit` links redirect to the composer — there is one way in.
 ```bash
 npm install
 cp .env.example .env.local     # already done if you're picking this up as-is
-npm run dev
+npx netlify dev                # http://localhost:8888
 ```
 
-Open <http://localhost:3000>.
+The database is Netlify Blobs, so run it through the Netlify CLI — `npm run
+dev` starts Next.js but has no blobs store to talk to.
 
 The team (Nawal, Abdullah, Reem, Abdulaziz, Mukhtar, Yara) is seeded
-automatically on first run. Pick your name in the top-right and start hunting.
+automatically on first run. Pick your name and start hunting.
 
 ### Turning on real AI evaluation
 
@@ -226,33 +227,57 @@ similarity) so the app is always usable.
 
 ## Reset the data
 
+The store is Netlify Blobs (`src/lib/db/store.ts`), so local development runs
+through the Netlify CLI, which provides a blobs sandbox:
+
 ```bash
-rm data/db.json
+npx netlify dev        # http://localhost:8888
 ```
 
-The members are re-seeded on the next request.
+Deleting `.netlify/blobs/` resets the local database; the members are re-seeded
+on the next request.
 
 ---
 
 ## Visual identity
 
-Calm surface, vivid accents. The page stays quiet — off-white, generous
-whitespace, two blurred colour fields behind everything — and the violet → blue
-gradient is spent only on what you should touch: the submit button, the ring
-around the focused composer, icon tiles, score meters.
+Neutral first. Background, text and borders carry the whole interface; the
+green appears only where the eye should land — the primary button, an active
+state, a progress bar. State colours (success, warning, error) are used only
+when something is actually in that state, and never larger than a 6px dot.
 
-- Violet `#6D5EF8` → blue `#4F7DFB` → sky `#38BDF8` (`--grad-brand`), with
-  `--grad-violet` / `--grad-blue` / `--grad-mint` / `--grad-amber` /
-  `--grad-pink` for per-type icon tiles.
-- Rounded corners throughout (`rounded-2xl`), one soft shadow that deepens on
-  hover, and a 2px lift on anything clickable.
-- Motion is small and quick: a 380ms rise for content that appears, a shimmer
-  while the title is being written, a gradient sweep on the primary button.
-  Everything collapses under `prefers-reduced-motion`.
+| Role | Light | Dark |
+|---|---|---|
+| Background | `#FAFAFA` | `#131C18` |
+| Surface (card) | `#FFFFFF` | `#18231E` |
+| Text | `#2B2B2B` | `#F1EFE6` |
+| Muted text | `#9A968A` | `#9A968A` |
+| Borders | `#E7E3D6` | `#26332C` |
+| Secondary surface | `#E3D8B3` | — |
+| Primary | `#155043` | `#2E7D69` |
+| Interactive (hover / focus ring) | `#125D64` | `#4F9AA1` |
+| Accent (rare) | `#869200` | `#A4B02C` |
 
-All of it is CSS variables in `src/app/globals.css` — light and dark are the
-same tokens with different values, so re-theming is that one file. Dark mode
-follows the OS and can be toggled in the header.
+States: success `#3CA45D` · warning `#F3C43C` · error `#FB4C3C` · info
+`#3CA6EB` · highlight `#EB3C87`. Dark mode lightens the same roles rather than
+reassigning them — green never stops meaning "this is the focus".
+
+Rules the interface holds to:
+
+- **No gradients, no glows, no shadows beyond a 1px lift.** Hierarchy comes
+  from whitespace, weight and border contrast. There are zero `linear-gradient`
+  declarations in the built CSS.
+- **No emoji.** Every icon is a [lucide](https://lucide.dev) line icon at one
+  neutral colour (`text-muted-foreground`), sized 14–16px.
+- **One accent per screen.** The home page renders four colours plus the green
+  on a single button.
+- 4–8px radii (`--radius: 6px`), 200ms transitions, all of it collapsing under
+  `prefers-reduced-motion`.
+
+Components are [shadcn/ui](https://ui.shadcn.com) primitives in
+`src/components/ui/` (Button, Card, Input, Textarea, Badge, Label, Separator),
+styled from the CSS variables in `src/app/globals.css` — re-theming is that one
+file, and `npx shadcn@latest add <component>` works against `components.json`.
 
 The type stack is `"Thmanyah", "IBM Plex Sans Arabic", …` — if the Thmanyah
 brand font is installed locally it is used automatically, otherwise IBM Plex

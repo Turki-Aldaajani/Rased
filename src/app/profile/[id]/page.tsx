@@ -1,6 +1,9 @@
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ContributionRow, ScoreRing, rankBadge } from "@/components/ui";
+import { ContributionRow, ScoreRing } from "@/components/contribution";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { SCORING } from "@/lib/config/scoring";
 import { effectiveScore } from "@/lib/db/schema";
 import { getMember, listContributions, listMembers } from "@/lib/db/store";
@@ -37,7 +40,7 @@ export default async function ProfilePage({ params }: Props) {
     },
     {
       label: "Weekly rank",
-      value: stats.weeklyPoints > 0 ? rankBadge(stats.weeklyRank ?? 0) : "—",
+      value: stats.weeklyPoints > 0 ? (stats.weeklyRank ?? "—") : "—",
       sub: `of ${members.length} members`,
     },
     {
@@ -48,71 +51,71 @@ export default async function ProfilePage({ params }: Props) {
   ];
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      <Link href="/leaderboard" className="btn-ghost btn-sm">
-        ← Leaderboard
-      </Link>
+    <div className="mx-auto max-w-3xl space-y-6">
+      <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Link href="/leaderboard">
+          <ArrowLeft />
+          Leaderboard
+        </Link>
+      </Button>
 
-      <section className="card flex flex-wrap items-center gap-4 p-6">
-        <span
-          className="grid h-14 w-14 place-items-center rounded-full text-xl font-bold text-[var(--on-brand)]"
-          style={{ background: "var(--brand)" }}
-          aria-hidden
-        >
-          {member.name.charAt(0)}
-        </span>
+      <Card className="flex flex-wrap items-center gap-4 p-5">
         <div className="min-w-0 flex-1">
-          <h1 className="text-xl font-bold text-ink">{member.name}</h1>
-          <p className="text-sm text-muted">
+          <h1 className="text-lg font-semibold text-foreground">
+            {member.name}
+          </h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">
             {stats.contributionCount} contribution
-            {stats.contributionCount === 1 ? "" : "s"} ·{" "}
-            {stats.totalPoints} points all time
+            {stats.contributionCount === 1 ? "" : "s"} · {stats.totalPoints}{" "}
+            points all time
           </p>
         </div>
         {stats.bestContribution && (
-          <ScoreRing score={effectiveScore(stats.bestContribution)} size={64} />
+          <ScoreRing score={effectiveScore(stats.bestContribution)} size={56} />
         )}
-      </section>
+      </Card>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
         {tiles.map((t) => (
-          <div key={t.label} className="card px-4 py-3">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-muted">
-              {t.label}
+          <Card key={t.label} className="px-4 py-3">
+            <p className="text-xs text-muted-foreground">{t.label}</p>
+            <p className="mt-1 text-xl font-semibold tabular-nums text-foreground">
+              {t.value}
             </p>
-            <p className="mt-1 text-xl font-bold text-ink">{t.value}</p>
-            <p className="text-[11px] text-muted">{t.sub}</p>
-          </div>
+            <p className="text-xs text-muted-foreground">{t.sub}</p>
+          </Card>
         ))}
       </div>
 
       {stats.bestContribution && (
-        <section className="card p-6">
-          <h2 className="section-title">Best contribution</h2>
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold text-foreground">
+            Best contribution
+          </h2>
           <Link
             href={`/result/${stats.bestContribution.id}`}
             className="mt-3 flex items-start gap-3"
           >
-            <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-brand-soft text-base font-bold text-brand-ink">
+            <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
               {effectiveScore(stats.bestContribution)}
             </span>
             <span className="min-w-0">
-              <span className="block font-semibold text-ink">
+              <span className="block text-sm text-foreground">
                 {stats.bestContribution.title}
               </span>
-              <span className="mt-0.5 block text-sm text-muted">
+              <span className="mt-0.5 block text-xs text-muted-foreground">
                 {stats.bestContribution.type} ·{" "}
                 {stats.bestContribution.evaluation.reason}
               </span>
             </span>
           </Link>
-        </section>
+        </Card>
       )}
 
-      <section className="card overflow-hidden">
-        <div className="border-b border-line px-5 py-4">
-          <h2 className="text-sm font-bold text-ink">Contribution history</h2>
-          <p className="text-xs text-muted">
+      <Card className="overflow-hidden">
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="text-sm font-semibold text-foreground">History</h2>
+          <p className="text-xs text-muted-foreground">
             Everything counts toward the record; only the best{" "}
             {SCORING.bestContributionsPerWeek} of each week count toward the
             ranking.
@@ -120,7 +123,7 @@ export default async function ProfilePage({ params }: Props) {
         </div>
         <div className="p-2">
           {stats.history.length === 0 ? (
-            <p className="px-3 py-6 text-sm text-muted">
+            <p className="px-3 py-6 text-sm text-muted-foreground">
               No contributions yet.
             </p>
           ) : (
@@ -128,7 +131,7 @@ export default async function ProfilePage({ params }: Props) {
               <div key={c.id} className="relative">
                 <ContributionRow contribution={c} showMember={false} />
                 {c.weekKey === thisWeek && (
-                  <span className="pointer-events-none absolute right-3 top-3 text-[10px] font-bold uppercase tracking-wider text-accent-ink">
+                  <span className="pointer-events-none absolute right-3 top-3.5 text-xs text-muted-foreground">
                     this week
                   </span>
                 )}
@@ -136,7 +139,7 @@ export default async function ProfilePage({ params }: Props) {
             ))
           )}
         </div>
-      </section>
+      </Card>
     </div>
   );
 }

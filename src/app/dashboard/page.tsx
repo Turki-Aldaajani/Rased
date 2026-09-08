@@ -1,6 +1,8 @@
 import Link from "next/link";
 import YourStats from "@/components/YourStats";
-import { ContributionRow, rankBadge } from "@/components/ui";
+import { ContributionRow } from "@/components/contribution";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { effectiveScore, type Contribution } from "@/lib/db/schema";
 import { listContributions, listMembers } from "@/lib/db/store";
 import { teamSummary, type LeaderboardRow } from "@/lib/services/leaderboard";
@@ -8,72 +10,52 @@ import { monthLabel, weekLabel } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
 
-function ChampionCard({
-  eyebrow,
+function LeaderCard({
+  label,
   period,
   row,
   emptyText,
-  tone,
 }: {
-  eyebrow: string;
+  label: string;
   period: string;
   row: LeaderboardRow | null;
   emptyText: string;
-  tone: "brand" | "accent";
 }) {
-  const bg =
-    tone === "brand" ? "var(--grad-brand)" : "var(--grad-violet)";
-
-  if (!row) {
-    return (
-      <div className="card flex flex-col justify-center p-6">
-        <p className="section-title">{eyebrow}</p>
-        <p className="mt-2 text-sm text-muted">{emptyText}</p>
-      </div>
-    );
-  }
-
   return (
-    <div
-      className="card-hover relative overflow-hidden rounded-2xl p-6 text-[var(--on-brand)]"
-      style={{ background: bg }}
-    >
-      <span
-        className="pointer-events-none absolute -right-6 -top-8 text-[7rem] opacity-15"
-        aria-hidden
-      >
-        🏆
-      </span>
-      <p className="text-xs font-bold uppercase tracking-[0.14em] opacity-75">
-        {eyebrow}
-      </p>
-      <p className="mt-3 flex items-center gap-2 text-2xl font-bold">
-        <span aria-hidden>🥇</span>
-        {row.memberName}
-      </p>
-      <p className="mt-1 text-sm opacity-80">
-        {row.points} points · {row.contributions} contribution
-        {row.contributions === 1 ? "" : "s"} · {period}
-      </p>
-      {row.bestContribution && (
-        <Link
-          href={`/result/${row.bestContribution.id}`}
-          className="mt-4 flex items-start gap-3 rounded-lg bg-white/12 p-3 transition-colors hover:bg-white/20"
-        >
-          <span className="rounded-md bg-white/20 px-2 py-1 text-xs font-bold">
-            {effectiveScore(row.bestContribution)}
-          </span>
-          <span className="min-w-0">
-            <span className="block text-xs uppercase tracking-wider opacity-70">
-              Best find
-            </span>
-            <span className="block truncate text-sm font-semibold">
-              {row.bestContribution.title}
-            </span>
-          </span>
-        </Link>
+    <Card className="p-5">
+      <p className="text-xs text-muted-foreground">{label}</p>
+      {row ? (
+        <>
+          <p className="mt-2 text-lg font-semibold text-foreground">
+            {row.memberName}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {row.points} points · {row.contributions} find
+            {row.contributions === 1 ? "" : "s"} · {period}
+          </p>
+          {row.bestContribution && (
+            <Link
+              href={`/result/${row.bestContribution.id}`}
+              className="mt-4 flex items-start gap-3 border-t border-border pt-3 transition-colors duration-200 hover:text-foreground"
+            >
+              <span className="text-sm font-semibold tabular-nums text-foreground">
+                {effectiveScore(row.bestContribution)}
+              </span>
+              <span className="min-w-0">
+                <span className="block text-xs text-muted-foreground">
+                  Best find
+                </span>
+                <span className="block truncate text-sm text-foreground">
+                  {row.bestContribution.title}
+                </span>
+              </span>
+            </Link>
+          )}
+        </>
+      ) : (
+        <p className="mt-2 text-sm text-muted-foreground">{emptyText}</p>
       )}
-    </div>
+    </Card>
   );
 }
 
@@ -81,32 +63,31 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
   const scored = rows.filter((r) => r.points > 0);
   if (scored.length === 0) {
     return (
-      <p className="px-5 py-6 text-sm text-muted">
-        No points yet this week. The board is wide open.
+      <p className="px-5 py-6 text-sm text-muted-foreground">
+        No points yet this week.
       </p>
     );
   }
   return (
-    <ol className="divide-y divide-line">
+    <ol className="divide-y divide-border">
       {scored.map((row) => (
         <li key={row.memberId}>
           <Link
             href={`/profile/${row.memberId}`}
-            className="flex items-center gap-3 px-5 py-3 transition-colors hover:bg-brand-soft"
+            className="flex items-center gap-3 px-5 py-3 transition-colors duration-200 hover:bg-muted"
           >
-            <span className="w-7 shrink-0 text-center text-sm font-bold text-muted">
-              {rankBadge(row.rank)}
+            <span className="w-4 shrink-0 text-xs tabular-nums text-muted-foreground">
+              {row.rank}
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-semibold text-ink">
+              <span className="block truncate text-sm text-foreground">
                 {row.memberName}
               </span>
-              <span className="block text-xs text-muted">
-                {row.counted} of {row.contributions} find
-                {row.contributions === 1 ? "" : "s"} counted
+              <span className="block text-xs text-muted-foreground">
+                {row.counted} of {row.contributions} counted
               </span>
             </span>
-            <span className="text-base font-bold text-brand-ink">
+            <span className="text-sm font-semibold tabular-nums text-foreground">
               {row.points}
             </span>
           </Link>
@@ -138,29 +119,29 @@ export default async function DashboardPage() {
   const top = summary.weekly.filter((r) => r.points > 0)[0] ?? null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-ink">This week in AI Hunt</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Dashboard
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           {weekLabel(summary.week)} · {summary.totals.thisWeek} find
-          {summary.totals.thisWeek === 1 ? "" : "s"} submitted so far
+          {summary.totals.thisWeek === 1 ? "" : "s"} so far
         </p>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <ChampionCard
-          eyebrow="Contributor of the week"
+      <div className="grid gap-4 sm:grid-cols-2">
+        <LeaderCard
+          label="Contributor of the week"
           period={weekLabel(summary.week)}
           row={top}
-          emptyText="Nobody has scored yet this week — be the first."
-          tone="brand"
+          emptyText="Nobody has scored yet this week."
         />
-        <ChampionCard
-          eyebrow="Monthly champion"
+        <LeaderCard
+          label="Monthly champion"
           period={monthLabel(summary.month)}
           row={summary.monthlyChampion}
           emptyText="The monthly race starts with the first scored find."
-          tone="accent"
         />
       </div>
 
@@ -172,45 +153,49 @@ export default async function DashboardPage() {
       />
 
       <div className="grid gap-4 lg:grid-cols-5">
-        <section className="card overflow-hidden lg:col-span-2">
-          <div className="flex items-center justify-between border-b border-line px-5 py-4">
+        <Card className="overflow-hidden lg:col-span-2">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
-              <h2 className="text-sm font-bold text-ink">Weekly leaderboard</h2>
-              <p className="text-xs text-muted">Best 3 finds per person count</p>
+              <h2 className="text-sm font-semibold text-foreground">
+                Weekly leaderboard
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                Best 3 finds per person
+              </p>
             </div>
-            <Link href="/leaderboard" className="btn-ghost btn-sm">
-              All →
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/leaderboard">All</Link>
+            </Button>
           </div>
           <LeaderboardList rows={summary.weekly} />
-        </section>
+        </Card>
 
-        <section className="card overflow-hidden lg:col-span-3">
-          <div className="flex items-center justify-between border-b border-line px-5 py-4">
+        <Card className="overflow-hidden lg:col-span-3">
+          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
-              <h2 className="text-sm font-bold text-ink">Recent finds</h2>
-              <p className="text-xs text-muted">
+              <h2 className="text-sm font-semibold text-foreground">
+                Recent finds
+              </h2>
+              <p className="text-xs text-muted-foreground">
                 {summary.totals.contributions} total ·{" "}
                 {summary.totals.originals} original ·{" "}
                 {summary.totals.duplicates} duplicate
               </p>
             </div>
-            <Link href="/feed" className="btn-ghost btn-sm">
-              All →
-            </Link>
+            <Button asChild variant="ghost" size="sm">
+              <Link href="/feed">All</Link>
+            </Button>
           </div>
           <div className="p-2">
             {summary.recent.length === 0 ? (
-              <div className="px-3 py-8 text-center">
-                <p className="text-sm font-semibold text-ink">
-                  No contributions yet
-                </p>
-                <p className="mt-1 text-sm text-muted">
+              <div className="px-3 py-10 text-center">
+                <p className="text-sm text-foreground">No contributions yet</p>
+                <p className="mt-1 text-sm text-muted-foreground">
                   Found something interesting in AI this week?
                 </p>
-                <Link href="/" className="btn-primary btn-sm mt-4">
-                  Add the first one
-                </Link>
+                <Button asChild size="sm" className="mt-4">
+                  <Link href="/">Add the first one</Link>
+                </Button>
               </div>
             ) : (
               summary.recent.map((c) => (
@@ -218,7 +203,7 @@ export default async function DashboardPage() {
               ))
             )}
           </div>
-        </section>
+        </Card>
       </div>
     </div>
   );

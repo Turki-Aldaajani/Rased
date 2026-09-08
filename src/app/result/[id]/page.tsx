@@ -1,3 +1,4 @@
+import { ArrowLeft, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -5,8 +6,9 @@ import {
   ScoreRing,
   TypePill,
   VerificationBadge,
-  scoreColor,
-} from "@/components/ui";
+} from "@/components/contribution";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { DIMENSION_LABELS, SCORING } from "@/lib/config/scoring";
 import { effectiveDuplicate, effectiveScore } from "@/lib/db/schema";
 import { getContribution } from "@/lib/db/store";
@@ -40,99 +42,96 @@ export default async function ResultPage({ params }: Props) {
   }));
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
+    <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/dashboard" className="btn-ghost btn-sm">
-          ← Dashboard
-        </Link>
-        <Link href="/" className="btn-primary btn-sm">
-          Add another find
-        </Link>
+        <Button asChild variant="ghost" size="sm" className="-ml-3">
+          <Link href="/dashboard">
+            <ArrowLeft />
+            Dashboard
+          </Link>
+        </Button>
+        <Button asChild size="sm">
+          <Link href="/">Add another find</Link>
+        </Button>
       </div>
 
       {/* Headline result */}
-      <section className="card overflow-hidden">
-        <div className="flex flex-wrap items-start gap-5 p-6">
-          <ScoreRing score={score} size={92} />
+      <Card className="overflow-hidden">
+        <div className="flex flex-wrap items-start gap-5 p-5">
+          <ScoreRing score={score} size={80} />
           <div className="min-w-0 flex-1">
-            <div className="mb-2 flex flex-wrap items-center gap-2">
+            <div className="mb-2 flex flex-wrap items-center gap-3">
               <TypePill type={c.type} />
               <VerificationBadge status={e.verified} />
-              <DuplicateBadge status={duplicate} />
+              <DuplicateBadge status={duplicate} always />
             </div>
-            <h1 className="text-xl font-bold leading-snug text-ink">
+            <h1 className="text-lg font-semibold leading-snug text-foreground">
               {c.title}
             </h1>
-            <p className="mt-1.5 text-sm text-muted">
+            <p className="mt-1.5 text-sm text-muted-foreground">
               Submitted by{" "}
-              <Link href={`/profile/${c.memberId}`} className="link">
+              <Link
+                href={`/profile/${c.memberId}`}
+                className="text-foreground underline-offset-4 hover:underline"
+              >
                 {c.memberName}
               </Link>{" "}
               · {formatDate(c.createdAt)}
             </p>
-            <p className="mt-3 text-2xl font-bold" style={{ color: scoreColor(score) }}>
-              {score}
-              <span className="text-base font-semibold text-muted"> / 100</span>
-            </p>
           </div>
         </div>
 
-        <div className="border-t border-line bg-brand-soft px-6 py-4">
-          <p className="text-sm leading-relaxed text-ink">{e.reason}</p>
-        </div>
-      </section>
+        <p className="border-t border-border bg-muted px-5 py-4 text-sm leading-relaxed text-foreground">
+          {e.reason}
+        </p>
+      </Card>
 
       {overridden && (
-        <section
-          className="rounded-xl border px-5 py-4"
-          style={{
-            borderColor: "color-mix(in srgb, var(--accent) 40%, transparent)",
-            background: "var(--accent-soft)",
-          }}
-        >
-          <p className="text-sm font-bold text-accent-ink">
+        <Card className="p-5">
+          <p className="text-sm font-semibold text-foreground">
             Adjusted by the host
           </p>
-          <p className="mt-1 text-sm text-ink">
+          <p className="mt-1 text-sm text-muted-foreground">
             The automatic score was {e.finalScore}. It was changed to {score}.
             {c.adminOverride?.note ? ` “${c.adminOverride.note}”` : ""}
           </p>
-        </section>
+        </Card>
       )}
 
       {/* Verification facts */}
-      <section className="card p-6">
-        <h2 className="section-title">Verification</h2>
+      <Card className="p-5">
+        <h2 className="text-sm font-semibold text-foreground">Verification</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-xs font-semibold text-muted">Status</dt>
+            <dt className="text-xs text-muted-foreground">Status</dt>
             <dd className="mt-1.5">
               <VerificationBadge status={e.verified} />
             </dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold text-muted">
+            <dt className="text-xs text-muted-foreground">
               Original publication date
             </dt>
-            <dd className="mt-1.5 text-sm font-semibold text-ink">
+            <dd className="mt-1.5 text-sm text-foreground">
               {formatDate(e.originalDate)}
             </dd>
           </div>
           <div className="min-w-0">
-            <dt className="text-xs font-semibold text-muted">Submitted source</dt>
+            <dt className="text-xs text-muted-foreground">Submitted source</dt>
             <dd className="mt-1.5 truncate text-sm">
               <a
                 href={c.url}
                 target="_blank"
                 rel="noreferrer noopener"
-                className="link"
+                className="inline-flex items-center gap-1.5 text-foreground underline-offset-4 hover:underline"
               >
                 {hostname(c.url) || c.url}
+                <ExternalLink className="size-3 text-muted-foreground" />
               </a>
             </dd>
           </div>
           <div className="min-w-0">
-            <dt className="text-xs font-semibold text-muted">
+            <dt className="text-xs text-muted-foreground">
               Original / official source
             </dt>
             <dd className="mt-1.5 truncate text-sm">
@@ -141,71 +140,76 @@ export default async function ResultPage({ params }: Props) {
                   href={e.resolvedSource}
                   target="_blank"
                   rel="noreferrer noopener"
-                  className="link"
+                  className="inline-flex items-center gap-1.5 text-foreground underline-offset-4 hover:underline"
                 >
                   {hostname(e.resolvedSource) || e.resolvedSource}
+                  <ExternalLink className="size-3 text-muted-foreground" />
                 </a>
               ) : (
-                <span className="text-muted">Not identified</span>
+                <span className="text-muted-foreground">Not identified</span>
               )}
             </dd>
           </div>
         </dl>
 
         {e.evidence.length > 0 && (
-          <ul className="mt-5 space-y-2 border-t border-line pt-4">
+          <ul className="mt-5 space-y-2 border-t border-border pt-4">
             {e.evidence.map((line, i) => (
-              <li key={i} className="flex gap-2 text-sm text-muted">
-                <span aria-hidden className="text-brand-ink">
-                  ·
-                </span>
+              <li
+                key={i}
+                className="flex gap-2 text-sm text-muted-foreground before:content-['—']"
+              >
                 <span>{line}</span>
               </li>
             ))}
           </ul>
         )}
-      </section>
+      </Card>
 
       {/* Duplicate check */}
-      <section className="card p-6">
+      <Card className="p-5">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="section-title">Duplicate check</h2>
-          <DuplicateBadge status={duplicate} />
+          <h2 className="text-sm font-semibold text-foreground">
+            Duplicate check
+          </h2>
+          <DuplicateBadge status={duplicate} always />
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-ink">
+        <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
           {e.duplicateReason ?? "No duplicate information recorded."}
         </p>
         {original && (
           <Link
             href={`/result/${original.id}`}
-            className="mt-4 flex items-center gap-3 rounded-lg border border-line p-3 transition-colors hover:bg-brand-soft"
+            className="mt-4 flex items-center gap-3 rounded-md border border-border p-3 transition-colors duration-200 hover:bg-muted"
           >
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-brand-soft text-sm font-bold text-brand-ink">
+            <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
               {effectiveScore(original)}
             </span>
             <span className="min-w-0">
-              <span className="block text-xs text-muted">
+              <span className="block text-xs text-muted-foreground">
                 First submitted by {original.memberName} on{" "}
                 {formatDate(original.createdAt)}
               </span>
-              <span className="block truncate text-sm font-semibold text-ink">
+              <span className="block truncate text-sm text-foreground">
                 {original.title}
               </span>
             </span>
           </Link>
         )}
-      </section>
+      </Card>
 
       {/* Score breakdown */}
-      <section className="card p-6">
-        <h2 className="section-title">Score breakdown</h2>
+      <Card className="p-5">
+        <h2 className="text-sm font-semibold text-foreground">
+          Score breakdown
+        </h2>
         <ul className="mt-4 space-y-3.5">
           {dimensions.map((d) => (
             <li key={d.key}>
               <div className="flex items-baseline justify-between gap-3 text-sm">
-                <span className="font-medium text-ink">{d.label}</span>
-                <span className="font-mono text-xs text-muted">
-                  <span className="text-sm font-bold text-ink">{d.value}</span>/
+                <span className="text-foreground">{d.label}</span>
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  <span className="text-sm text-foreground">{d.value}</span>/
                   {d.max}
                 </span>
               </div>
@@ -216,48 +220,48 @@ export default async function ResultPage({ params }: Props) {
           ))}
         </ul>
 
-        <div className="mt-5 space-y-1.5 border-t border-line pt-4 text-sm">
-          <div className="flex justify-between text-muted">
+        <div className="mt-5 space-y-1.5 border-t border-border pt-4 text-sm">
+          <div className="flex justify-between text-muted-foreground">
             <span>Subtotal</span>
-            <span className="font-mono">{e.rawScore} / 100</span>
+            <span className="tabular-nums">{e.rawScore} / 100</span>
           </div>
           {e.rawScore !== e.finalScore && (
-            <div className="flex justify-between text-muted">
+            <div className="flex justify-between text-muted-foreground">
               <span>After verification &amp; duplicate adjustment</span>
-              <span className="font-mono">{e.finalScore} / 100</span>
+              <span className="tabular-nums">{e.finalScore} / 100</span>
             </div>
           )}
-          <div className="flex justify-between pt-1 text-base font-bold text-ink">
+          <div className="flex justify-between pt-1 font-semibold text-foreground">
             <span>Final score</span>
-            <span style={{ color: scoreColor(score) }}>{score} / 100</span>
+            <span className="tabular-nums">{score} / 100</span>
           </div>
         </div>
-      </section>
+      </Card>
 
       {/* What the member wrote */}
-      <section className="card p-6">
-        <h2 className="section-title">What {c.memberName} submitted</h2>
+      <Card className="p-5">
+        <h2 className="text-sm font-semibold text-foreground">
+          What {c.memberName} submitted
+        </h2>
         <dl className="mt-4 space-y-4 text-sm">
           <div>
-            <dt className="text-xs font-semibold text-muted">
-              What did you find?
-            </dt>
-            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-ink">
+            <dt className="text-xs text-muted-foreground">What is it?</dt>
+            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
               {c.description || "—"}
             </dd>
           </div>
           <div>
-            <dt className="text-xs font-semibold text-muted">
+            <dt className="text-xs text-muted-foreground">
               Why is this useful?
             </dt>
-            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-ink">
+            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
               {c.whyUseful || "—"}
             </dd>
           </div>
         </dl>
-      </section>
+      </Card>
 
-      <p className="pb-2 text-center text-xs text-muted">
+      <p className="pb-2 text-center text-xs text-muted-foreground">
         {e.engine === "ai"
           ? `Evaluated by ${e.model} with live web verification.`
           : "Evaluated by the offline heuristic — set ANTHROPIC_API_KEY for AI-verified scoring."}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { rankBadge } from "@/components/ui";
+import { Card } from "@/components/ui/card";
 import { SCORING } from "@/lib/config/scoring";
 import { effectiveScore } from "@/lib/db/schema";
 import { listContributions, listMembers } from "@/lib/db/store";
@@ -27,45 +27,41 @@ function Board({
   const unscored = rows.filter((r) => r.points === 0);
 
   return (
-    <section className="card overflow-hidden">
-      <div className="border-b border-line px-5 py-4">
-        <h2 className="text-base font-bold text-ink">{title}</h2>
-        <p className="text-xs text-muted">{subtitle}</p>
+    <Card className="overflow-hidden">
+      <div className="border-b border-border px-5 py-4">
+        <h2 className="text-sm font-semibold text-foreground">{title}</h2>
+        <p className="text-xs text-muted-foreground">{subtitle}</p>
       </div>
 
       {scored.length === 0 ? (
-        <p className="px-5 py-8 text-sm text-muted">{emptyText}</p>
+        <p className="px-5 py-8 text-sm text-muted-foreground">{emptyText}</p>
       ) : (
-        <ol className="divide-y divide-line">
+        <ol className="divide-y divide-border">
           {scored.map((row) => (
             <li key={row.memberId}>
               <Link
                 href={`/profile/${row.memberId}`}
-                className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-brand-soft"
+                className="flex items-center gap-4 px-5 py-4 transition-colors duration-200 hover:bg-muted"
               >
-                <span
-                  className={`w-8 shrink-0 text-center font-bold ${
-                    row.rank <= 3 ? "text-xl" : "text-sm text-muted"
-                  }`}
-                >
-                  {rankBadge(row.rank)}
+                <span className="w-4 shrink-0 text-sm tabular-nums text-muted-foreground">
+                  {row.rank}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-sm font-semibold text-ink">
+                  <span className="block text-sm font-medium text-foreground">
                     {row.memberName}
                   </span>
                   {row.bestContribution && (
-                    <span className="mt-0.5 block truncate text-xs text-muted">
+                    <span className="mt-0.5 block truncate text-xs text-muted-foreground">
                       Best: {row.bestContribution.title} (
                       {effectiveScore(row.bestContribution)} pts)
                     </span>
                   )}
                 </span>
                 <span className="shrink-0 text-right">
-                  <span className="block text-lg font-bold text-brand-ink">
+                  <span className="block text-base font-semibold tabular-nums text-foreground">
                     {row.points}
                   </span>
-                  <span className="block text-[11px] text-muted">
+                  <span className="block text-xs text-muted-foreground">
                     {row.counted}/{row.contributions} counted
                   </span>
                 </span>
@@ -76,11 +72,11 @@ function Board({
       )}
 
       {unscored.length > 0 && (
-        <p className="border-t border-line px-5 py-3 text-xs text-muted">
+        <p className="border-t border-border px-5 py-3 text-xs text-muted-foreground">
           No points yet: {unscored.map((r) => r.memberName).join(", ")}
         </p>
       )}
-    </section>
+    </Card>
   );
 }
 
@@ -97,64 +93,67 @@ export default async function LeaderboardPage() {
   const monthly = monthlyLeaderboard(members, contributions, month);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-ink">Leaderboard</h1>
-        <p className="mt-1 text-sm text-muted">
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          Leaderboard
+        </h1>
+        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
           Only your best {SCORING.bestContributionsPerWeek} finds count each
           week, and your best {SCORING.bestWeeksPerMonth} weeks count each month.
           Quality beats volume.
         </p>
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         <Board
-          title="Weekly leaderboard"
+          title="Weekly"
           subtitle={`${weekLabel(week)} · best ${SCORING.bestContributionsPerWeek} finds per person`}
           rows={weekly}
           emptyText="Nobody has scored this week yet."
         />
         <Board
-          title="AI Hunt — Monthly champion"
+          title="Monthly"
           subtitle={`${monthLabel(month)} · best ${SCORING.bestWeeksPerMonth} weeks per person`}
           rows={monthly}
           emptyText="No points recorded this month yet."
         />
       </div>
 
-      <section className="card p-6">
-        <h2 className="section-title">How points work</h2>
-        <ul className="mt-3 grid gap-2 text-sm text-muted sm:grid-cols-2">
+      <Card className="p-5">
+        <h2 className="text-sm font-semibold text-foreground">
+          How points work
+        </h2>
+        <ul className="mt-4 grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
           <li>
-            <span className="font-semibold text-ink">Importance</span> — how much
-            it matters to an AI team (max {SCORING.maxPoints.importance}).
+            <span className="text-foreground">Importance</span> — how much it
+            matters to an AI team (max {SCORING.maxPoints.importance}).
           </li>
           <li>
-            <span className="font-semibold text-ink">Recency</span> — from the
-            original publication date, not your discovery date (max{" "}
+            <span className="text-foreground">Recency</span> — from the original
+            publication date, not your discovery date (max{" "}
             {SCORING.maxPoints.recency}).
           </li>
           <li>
-            <span className="font-semibold text-ink">Usefulness</span> —
-            practical value for projects and study (max{" "}
-            {SCORING.maxPoints.usefulness}).
+            <span className="text-foreground">Usefulness</span> — practical
+            value for projects and study (max {SCORING.maxPoints.usefulness}).
           </li>
           <li>
-            <span className="font-semibold text-ink">Relevance</span> — fit with
-            the category and our AI focus (max {SCORING.maxPoints.relevance}).
+            <span className="text-foreground">Relevance</span> — fit with the
+            category and our AI focus (max {SCORING.maxPoints.relevance}).
           </li>
           <li>
-            <span className="font-semibold text-ink">Source reliability</span> —
+            <span className="text-foreground">Source reliability</span> —
             official sources score highest (max{" "}
             {SCORING.maxPoints.sourceReliability}).
           </li>
           <li>
-            <span className="font-semibold text-ink">Personal contribution</span>{" "}
-            — your own insight in “Why is this useful?” (max{" "}
+            <span className="text-foreground">Personal contribution</span> —
+            your own insight in “Why is this useful?” (max{" "}
             {SCORING.maxPoints.personalContribution}).
           </li>
         </ul>
-        <p className="mt-4 border-t border-line pt-3 text-xs text-muted">
+        <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
           A duplicate keeps{" "}
           {Math.round(SCORING.duplicateMultiplier.duplicate * 100)}% of its
           points, a partial duplicate{" "}
@@ -162,7 +161,7 @@ export default async function LeaderboardPage() {
           unverifiable source keeps{" "}
           {Math.round(SCORING.verificationMultiplier.unverified * 100)}%.
         </p>
-      </section>
+      </Card>
     </div>
   );
 }

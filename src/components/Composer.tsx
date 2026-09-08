@@ -1,5 +1,6 @@
 "use client";
 
+import { Link2, Loader2, Pencil, Plus } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -8,34 +9,27 @@ import {
   useState,
   type FormEvent,
 } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { CONTRIBUTION_TYPES, type Contribution } from "@/lib/db/schema";
 import type { AutoLabel } from "@/lib/services/title";
+import { cn } from "@/lib/utils";
 import { useCurrentUser } from "./CurrentUser";
 
 const STEPS = [
-  "Reading your source",
-  "Searching the web to verify it",
+  "Reading the source",
+  "Verifying it on the web",
   "Checking the publication date",
   "Comparing with earlier finds",
   "Scoring the contribution",
 ];
 
-/** Each type gets its own gradient tile, so the card reads at a glance. */
-const TYPE_LOOK: Record<string, { icon: string; grad: string }> = {
-  "AI News": { icon: "📰", grad: "var(--grad-brand)" },
-  "AI Tool": { icon: "🛠️", grad: "var(--grad-blue)" },
-  "Research / Paper": { icon: "📄", grad: "var(--grad-violet)" },
-  Project: { icon: "🧪", grad: "var(--grad-mint)" },
-  "AI Use Case": { icon: "💡", grad: "var(--grad-amber)" },
-  "Learning Resource": { icon: "📚", grad: "var(--grad-pink)" },
-  Other: { icon: "✨", grad: "var(--grad-brand)" },
-};
-
 function looksLikeUrl(value: string): boolean {
   const v = value.trim();
   if (!/^https?:\/\//i.test(v)) return false;
   try {
-    return Boolean(new URL(v).hostname.includes("."));
+    return new URL(v).hostname.includes(".");
   } catch {
     return false;
   }
@@ -53,13 +47,12 @@ export default function Composer() {
   const [title, setTitle] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
   const [type, setType] = useState<string>("");
-  const [focused, setFocused] = useState(false);
   const [pickingMember, setPickingMember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
-  // Only the newest label request is allowed to write to state.
+  // Only the newest naming request is allowed to write to state.
   const labelRun = useRef(0);
   const noteRef = useRef<HTMLTextAreaElement>(null);
 
@@ -72,7 +65,7 @@ export default function Composer() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ url: link, note: context }),
       });
-      const data = (await res.json()) as { label?: AutoLabel; error?: string };
+      const data = (await res.json()) as { label?: AutoLabel };
       if (run !== labelRun.current) return;
       if (data.label) {
         setLabel(data.label);
@@ -161,261 +154,197 @@ export default function Composer() {
     }
   }
 
-  const look = TYPE_LOOK[type] ?? TYPE_LOOK.Other;
-  const showCard = Boolean(label) || labeling;
-
   return (
-    <section className="mx-auto w-full max-w-2xl">
-      <div className="mb-8 flex flex-col items-center text-center">
-        <span className="icon-tile mb-5 h-14 w-14 text-2xl" aria-hidden>
-          🎯
-        </span>
-        <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-          What did you find <span className="grad-text">today</span>?
+    <section className="mx-auto w-full max-w-xl">
+      <div className="mb-10 text-center">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          What did you find?
         </h1>
-        <p className="mt-3 max-w-md text-sm leading-relaxed text-muted">
-          Paste one link. We read it, verify it on the web, check who found it
-          first, and score it out of 100.
+        <p className="mt-2.5 text-sm text-muted-foreground">
+          Paste a link. It gets read, verified and scored — no form to fill in.
         </p>
       </div>
 
       <form onSubmit={onSubmit}>
-        <div className="composer-ring" data-focused={focused || busy}>
-          <div className="card rounded-3xl p-2.5">
-            <div className="flex items-center gap-2">
-              <span
-                className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl text-lg transition-colors"
-                style={{
-                  background: "var(--brand-soft)",
-                  color: "var(--brand-ink)",
-                }}
-                aria-hidden
-              >
-                🔗
-              </span>
-              <input
-                value={url}
-                onChange={(e) => {
-                  setUrl(e.target.value);
-                  setError(null);
-                }}
-                onFocus={() => setFocused(true)}
-                onBlur={() => setFocused(false)}
-                disabled={busy}
-                inputMode="url"
-                autoComplete="off"
-                aria-label="Link to the thing you found"
-                placeholder="Paste a link — an announcement, repo, paper…"
-                className="min-w-0 flex-1 bg-transparent px-1 text-base text-ink outline-none placeholder:text-muted"
-              />
-              <button
-                type="submit"
-                disabled={busy || !url.trim()}
-                className="btn-primary h-11 w-11 shrink-0 rounded-2xl p-0 text-lg"
-                aria-label="Evaluate this find"
-                title="Evaluate this find"
-              >
-                {busy ? (
-                  <span className="block h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                ) : (
-                  <span aria-hidden>↑</span>
-                )}
-              </button>
-            </div>
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-2 transition-colors duration-200 focus-within:border-ring">
+          <Link2
+            className="ml-1.5 size-4 shrink-0 text-muted-foreground"
+            aria-hidden
+          />
+          <Input
+            value={url}
+            onChange={(e) => {
+              setUrl(e.target.value);
+              setError(null);
+            }}
+            disabled={busy}
+            inputMode="url"
+            autoComplete="off"
+            aria-label="Link to the thing you found"
+            placeholder="https://"
+            className="h-9 border-0 bg-transparent px-1 text-base focus-visible:border-0 sm:text-sm"
+          />
+          <Button
+            type="submit"
+            disabled={busy || !url.trim()}
+            className="shrink-0"
+          >
+            {busy ? <Loader2 className="animate-spin" /> : null}
+            {busy ? "Evaluating" : "Evaluate"}
+          </Button>
+        </div>
 
-            {showCard && (
-              <div className="rise mt-2.5 rounded-2xl border border-line bg-[var(--sand-soft)] p-3">
-                {labeling && !label ? (
-                  <div className="flex items-center gap-3">
-                    <span className="h-10 w-10 shrink-0 rounded-xl shimmer" />
-                    <span className="min-w-0 flex-1 space-y-2">
-                      <span className="block h-3.5 w-3/4 rounded-full shimmer" />
-                      <span className="block h-3 w-2/5 rounded-full shimmer" />
-                    </span>
-                  </div>
-                ) : (
-                  label && (
-                    <div className="flex items-start gap-3">
-                      <span
-                        className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-base text-[var(--on-brand)]"
-                        style={{ background: look.grad }}
-                        aria-hidden
-                      >
-                        {look.icon}
-                      </span>
-
-                      <div className="min-w-0 flex-1">
-                        {editingTitle ? (
-                          <input
-                            value={title}
-                            onChange={(e) => setTitle(e.target.value)}
-                            onBlur={() => setEditingTitle(false)}
-                            onKeyDown={(e) => {
-                              if (e.key === "Enter" || e.key === "Escape") {
-                                e.preventDefault();
-                                setEditingTitle(false);
-                              }
-                            }}
-                            autoFocus
-                            maxLength={200}
-                            aria-label="Title"
-                            className="field py-1.5 text-sm font-semibold"
-                          />
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setEditingTitle(true)}
-                            disabled={busy}
-                            title="Click to edit the title"
-                            className="group flex w-full items-start gap-1.5 text-left"
-                          >
-                            <span className="text-sm font-semibold leading-snug text-ink">
-                              {title || "Untitled find"}
-                            </span>
-                            <span
-                              className="mt-0.5 shrink-0 text-xs text-muted opacity-0 transition-opacity group-hover:opacity-100"
-                              aria-hidden
-                            >
-                              ✎
-                            </span>
-                          </button>
-                        )}
-
-                        <div className="mt-2 flex flex-wrap items-center gap-2">
-                          <div className="relative">
-                            <select
-                              value={type}
-                              onChange={(e) => setType(e.target.value)}
-                              disabled={busy}
-                              aria-label="Contribution type"
-                              className="cursor-pointer appearance-none rounded-full bg-brand-soft py-1 pl-2.5 pr-6 text-xs font-semibold text-brand-ink outline-none"
-                            >
-                              {CONTRIBUTION_TYPES.map((t) => (
-                                <option key={t} value={t}>
-                                  {t}
-                                </option>
-                              ))}
-                            </select>
-                            <span
-                              className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-brand-ink"
-                              aria-hidden
-                            >
-                              ▾
-                            </span>
-                          </div>
-                          <span className="text-xs text-muted">
-                            {label.domain}
-                          </span>
-                          <span className="text-xs text-muted">
-                            ·{" "}
-                            {label.engine === "ai"
-                              ? "named by AI"
-                              : "named from the page"}
-                          </span>
-                        </div>
-
-                        {label.summary && (
-                          <p className="mt-2 text-xs leading-relaxed text-muted">
-                            {label.summary}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  )
-                )}
-              </div>
-            )}
-
-            {noteOpen ? (
-              <div className="rise mt-2.5">
-                <textarea
-                  ref={noteRef}
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  disabled={busy}
-                  maxLength={2000}
-                  placeholder="Why is this useful? Your own take — what would you use it for?"
-                  className="field min-h-20 resize-y rounded-2xl border-transparent bg-[var(--sand-soft)] text-sm"
-                />
-                <p className="hint px-1">
-                  Optional, but this is where your personal points come from.
-                  Something you tested beats something you skimmed.
-                </p>
+        {(label || labeling) && (
+          <div className="fade-in mt-4 px-1">
+            {labeling && !label ? (
+              <div className="space-y-2">
+                <span className="block h-4 w-2/3 rounded bg-muted" />
+                <span className="block h-3 w-1/3 rounded bg-muted" />
               </div>
             ) : (
-              !busy && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setNoteOpen(true);
-                    setTimeout(() => noteRef.current?.focus(), 40);
-                  }}
-                  className="btn-ghost btn-sm mt-1.5 w-full justify-start rounded-2xl"
-                >
-                  <span aria-hidden>＋</span> Add your take
-                  <span className="text-[11px] opacity-70">
-                    (worth up to 10 points)
-                  </span>
-                </button>
+              label && (
+                <div>
+                  {editingTitle ? (
+                    <Input
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      onBlur={() => setEditingTitle(false)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === "Escape") {
+                          e.preventDefault();
+                          setEditingTitle(false);
+                        }
+                      }}
+                      autoFocus
+                      maxLength={200}
+                      aria-label="Title"
+                      className="text-sm font-medium"
+                    />
+                  ) : (
+                    <div className="flex items-start gap-2">
+                      <p className="text-sm font-medium leading-snug text-foreground">
+                        {title || "Untitled find"}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => setEditingTitle(true)}
+                        disabled={busy}
+                        aria-label="Edit the title"
+                        title="Edit the title"
+                        className="mt-0.5 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                      >
+                        <Pencil className="size-3.5" />
+                      </button>
+                    </div>
+                  )}
+
+                  <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
+                    <select
+                      value={type}
+                      onChange={(e) => setType(e.target.value)}
+                      disabled={busy}
+                      aria-label="Contribution type"
+                      className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-4 outline-none transition-colors duration-200 hover:text-foreground"
+                    >
+                      {CONTRIBUTION_TYPES.map((t) => (
+                        <option key={t} value={t}>
+                          {t}
+                        </option>
+                      ))}
+                    </select>
+                    <span aria-hidden>·</span>
+                    <span>{label.domain}</span>
+                    <span aria-hidden>·</span>
+                    <span>named automatically</span>
+                  </div>
+
+                  {label.summary && (
+                    <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                      {label.summary}
+                    </p>
+                  )}
+                </div>
               )
             )}
-
-            {busy && (
-              <div className="rise mt-2.5 rounded-2xl border border-line bg-brand-soft p-4">
-                <p className="text-sm font-semibold text-brand-ink">
-                  {STEPS[step]}…
-                </p>
-                <p className="mt-1 text-xs text-muted">
-                  Verification can take up to a minute. Keep this tab open.
-                </p>
-                <div className="meter mt-3">
-                  <span
-                    style={{
-                      width: `${((step + 1) / STEPS.length) * 100}%`,
-                      transition: "width 600ms ease",
-                    }}
-                  />
-                </div>
-              </div>
-            )}
           </div>
-        </div>
+        )}
+
+        {noteOpen ? (
+          <div className="fade-in mt-4">
+            <Textarea
+              ref={noteRef}
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              disabled={busy}
+              maxLength={2000}
+              placeholder="Why is this useful? What would you use it for?"
+              className="text-sm"
+            />
+            <p className="mt-1.5 px-1 text-xs text-muted-foreground">
+              Optional — this is where your personal points come from.
+            </p>
+          </div>
+        ) : (
+          !busy && (
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setNoteOpen(true);
+                setTimeout(() => noteRef.current?.focus(), 40);
+              }}
+              className="mt-3"
+            >
+              <Plus />
+              Add your take
+            </Button>
+          )
+        )}
+
+        {busy && (
+          <div className="fade-in mt-5 px-1">
+            <p className="text-xs text-muted-foreground">{STEPS[step]}…</p>
+            <div className="meter mt-2">
+              <span style={{ width: `${((step + 1) / STEPS.length) * 100}%` }} />
+            </div>
+          </div>
+        )}
       </form>
 
       {error && (
         <p
-          className="rise mx-auto mt-3 w-fit rounded-xl px-3 py-2 text-sm"
-          style={{
-            color: "var(--error)",
-            background: "color-mix(in srgb, var(--error) 10%, transparent)",
-          }}
+          className="fade-in mt-4 px-1 text-xs"
+          style={{ color: "var(--destructive)" }}
           role="alert"
         >
           {error}
         </p>
       )}
 
-      <div className="mt-4 flex min-h-9 items-center justify-center text-xs text-muted">
+      <div className="mt-8 flex min-h-8 items-center justify-center text-xs text-muted-foreground">
         {!ready ? (
-          <span className="h-4 w-32 rounded-full shimmer" />
+          <span className="h-3 w-28 rounded bg-muted" />
         ) : pickingMember || !member ? (
-          <div className="flex flex-wrap items-center justify-center gap-1.5">
+          <div className="flex flex-wrap items-center justify-center gap-1">
             <span className="mr-1">You are</span>
             {members.map((m) => (
-              <button
+              <Button
                 key={m.id}
                 type="button"
+                variant="ghost"
+                size="sm"
                 onClick={() => {
                   setMemberId(m.id);
                   setPickingMember(false);
                   setError(null);
                 }}
-                className={`btn-secondary btn-sm rounded-full ${
-                  m.id === member?.id ? "border-brand text-brand-ink" : ""
-                }`}
+                className={cn(
+                  m.id === member?.id && "text-foreground",
+                )}
               >
                 {m.name}
-              </button>
+              </Button>
             ))}
             {members.length === 0 && (
               <span>No team members yet — add them in Admin.</span>
@@ -425,11 +354,9 @@ export default function Composer() {
           <button
             type="button"
             onClick={() => setPickingMember(true)}
-            className="btn-ghost btn-sm rounded-full"
+            className="transition-colors duration-200 hover:text-foreground"
           >
-            Submitting as
-            <span className="font-semibold text-ink">{member.name}</span>
-            <span className="opacity-60">· switch</span>
+            Submitting as <span className="text-foreground">{member.name}</span>
           </button>
         )}
       </div>
