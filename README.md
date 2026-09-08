@@ -3,11 +3,30 @@
 An internal, gamified knowledge-sharing game for an AI team.
 
 A team member finds something useful in AI — a model release, a tool, a paper, a
-technique — and submits it. The system opens the source, verifies the claim on
-the web, works out when it was *actually* published, checks whether someone
-already submitted it, scores it out of 100, and updates the leaderboard.
+technique — and pastes the link. The system names it, opens the source, verifies
+the claim on the web, works out when it was *actually* published, checks whether
+someone already submitted it, scores it out of 100, and updates the leaderboard.
 
 This is an **MVP prototype**, not a production system.
+
+---
+
+## The home page is one box
+
+Opening the app shows a single composer: paste a link, press Enter. Nothing
+else competes for attention on first sight.
+
+- **No title to write.** The pasted link is read server-side and named by an LLM
+  call (`/api/title`) — headline, contribution type and a one-line summary — and
+  the result appears as an editable card under the input. Click the title to
+  change it, or the type pill to re-classify it.
+- **Your take is optional and folded away.** "Add your take" opens the one field
+  that earns personal points; skipping it costs those points, not the submission.
+- **Everything else is a click away, not in the way.** The dashboard, leaderboard,
+  feed, profiles and host area live on their own pages, reachable from the quiet
+  row below the composer and from the header on every page except the home page.
+
+Old `/submit` links redirect to the composer — there is one way in.
 
 ---
 
@@ -43,19 +62,19 @@ engine scored it.
 
 ## Test the main flow in 2 minutes
 
-1. Pick **Nawal** in the header.
-2. **Add contribution** → paste a genuinely new AI model release (official
-   announcement page), fill in "Why is this useful?" with something specific,
-   pick **AI News**, hit **Evaluate**.
-3. You land on the result page: verification status, original publication date,
+1. Pick **Nawal** under the composer.
+2. Paste a genuinely new AI model release (the official announcement page). The
+   title, type and summary fill themselves in a moment later.
+3. Open **Add your take** and write something specific, then press the ↑ button.
+4. You land on the result page: verification status, original publication date,
    duplicate status, the six-part score breakdown, and a plain-language
    explanation.
-4. Switch to **Abdullah** and submit the same news. It comes back marked
+5. Switch to **Abdullah** and submit the same news. It comes back marked
    **Duplicate** with a fraction of the points and a link to Nawal's original.
-5. Submit it a third time as **Reem** but add real extra value ("I tested it on
+6. Submit it a third time as **Reem** but add real extra value ("I tested it on
    X and it did Y") — that scores **Partially duplicate** instead, with partial
    credit.
-6. Check the **Leaderboard**: weekly board, monthly champion, contributor of the
+7. Check the **Leaderboard**: weekly board, monthly champion, contributor of the
    week.
 
 ---
@@ -116,6 +135,7 @@ Automatic scoring is the default; the host has the final word.
 |---|---|---|
 | `ANTHROPIC_API_KEY` | *(empty)* | Turns on AI evaluation. Empty = offline heuristic mode. |
 | `AI_HUNT_MODEL` | `claude-opus-5` | Model used for verification + evaluation |
+| `AI_HUNT_TITLE_MODEL` | `claude-opus-5` | Model that names a pasted link (short, `effort: low` call) |
 | `AI_HUNT_EFFORT` | `medium` | `low` … `max` — how hard the model works |
 | `WEB_SEARCH_PROVIDER` | `anthropic` | `anthropic` \| `tavily` \| `brave` \| `serper` \| `none` |
 | `TAVILY_API_KEY` / `BRAVE_API_KEY` / `SERPER_API_KEY` | *(empty)* | Only for the matching provider |
@@ -135,14 +155,18 @@ whose results are handed to the model.
 ```
 src/
   app/
-    page.tsx                 Dashboard
-    submit/                  Submission form
+    page.tsx                 The composer — the whole home page
+    dashboard/               Champions, your stats, recent finds
+    submit/                  Redirects to the composer (legacy links)
     result/[id]/             Evaluation result page
     leaderboard/             Weekly + monthly boards
     feed/                    All finds, grouped by week
     profile/[id]/            Member profile + history
     admin/                   Host area
-    api/                     Server routes (members, contributions, summary, auth)
+    api/
+      title/                 ← names a pasted link (auto title, type, summary)
+      contributions/         Submit + list (title/type optional, named server-side)
+      members/ summary/ admin/auth/
   lib/
     config/scoring.ts        ← all tunable scoring rules
     db/
@@ -150,6 +174,7 @@ src/
       store.ts               ← swap this file to move off JSON to Supabase/Postgres
     services/
       fetch-source.ts        Opens the URL, extracts title/description/date
+      title.ts               ← auto-naming: LLM call + metadata fallback
       web-search.ts          Pluggable search providers
       duplicates.ts          Local similarity pass over earlier submissions
       prompt.ts              System prompt + structured-output tool schema
@@ -157,13 +182,28 @@ src/
       scoring.ts             Deterministic final-score maths
       leaderboard.ts         Weekly/monthly aggregation, best-N rules
       admin.ts               Passcode gate
-  components/                UI kit, header, current-user context
+  components/
+    Composer.tsx             ← the one input the app is built around
+    QuietNav.tsx             The secondary links under the composer
+    Header.tsx               Full nav everywhere except the home page
+    ui.tsx  CurrentUser.tsx  YourStats.tsx
 data/db.json                 The database (created on first run)
 ```
 
 The layers are deliberately separate: swapping the database means rewriting
 `db/store.ts` only; changing scoring means editing `config/scoring.ts` only;
 changing the evaluator means touching `services/evaluate.ts` only.
+
+### How a link gets named
+
+`POST /api/title` → `services/title.ts`: the page is fetched server-side, and its
+metadata (title, description, date, text excerpt) goes to Claude with
+`output_config: { effort: "low", format: { type: "json_schema", … } }`, which
+returns `{ title, type, summary }` as validated JSON. With no key — or on any
+error, bad JSON, or refusal — it falls back to the page's own `og:title`, then to
+the URL slug, and guesses the type from the domain and keywords. The composer
+never blocks on it: whatever the member does not have when they submit,
+`/api/contributions` names for them.
 
 ### How an evaluation actually runs
 
@@ -196,10 +236,23 @@ The members are re-seeded on the next request.
 
 ## Visual identity
 
-Primary `#155043` · Interactive `#125D64` · Accent `#869200`, with the
-secondary colours reserved for states only. Neutrals `#FAFAFA` / `#131C18` /
-`#E3D8B3` / `#2B2B2B` / `#E7E3D6` / `#9A968A`. Light and dark mode both
-supported (toggle in the header; follows the OS by default).
+Calm surface, vivid accents. The page stays quiet — off-white, generous
+whitespace, two blurred colour fields behind everything — and the violet → blue
+gradient is spent only on what you should touch: the submit button, the ring
+around the focused composer, icon tiles, score meters.
+
+- Violet `#6D5EF8` → blue `#4F7DFB` → sky `#38BDF8` (`--grad-brand`), with
+  `--grad-violet` / `--grad-blue` / `--grad-mint` / `--grad-amber` /
+  `--grad-pink` for per-type icon tiles.
+- Rounded corners throughout (`rounded-2xl`), one soft shadow that deepens on
+  hover, and a 2px lift on anything clickable.
+- Motion is small and quick: a 380ms rise for content that appears, a shimmer
+  while the title is being written, a gradient sweep on the primary button.
+  Everything collapses under `prefers-reduced-motion`.
+
+All of it is CSS variables in `src/app/globals.css` — light and dark are the
+same tokens with different values, so re-theming is that one file. Dark mode
+follows the OS and can be toggled in the header.
 
 The type stack is `"Thmanyah", "IBM Plex Sans Arabic", …` — if the Thmanyah
 brand font is installed locally it is used automatically, otherwise IBM Plex

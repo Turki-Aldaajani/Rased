@@ -32,7 +32,7 @@ export default async function FeedPage() {
           <p className="mt-1 text-sm text-muted">
             The hunt starts with the first submission.
           </p>
-          <Link href="/submit" className="btn-primary btn-sm mt-4">
+          <Link href="/" className="btn-primary btn-sm mt-4">
             Add a contribution
           </Link>
         </div>

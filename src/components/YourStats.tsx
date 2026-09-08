@@ -109,7 +109,7 @@ export default function YourStats({
         {mine.length === 0 ? (
           <p className="px-3 py-4 text-sm text-muted">
             Nothing submitted yet.{" "}
-            <Link href="/submit" className="link">
+            <Link href="/" className="link">
               Add your first find
             </Link>
             .

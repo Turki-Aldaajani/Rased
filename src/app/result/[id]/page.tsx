@@ -42,10 +42,10 @@ export default async function ResultPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       <div className="flex items-center justify-between gap-3">
-        <Link href="/" className="btn-ghost btn-sm">
+        <Link href="/dashboard" className="btn-ghost btn-sm">
           ← Dashboard
         </Link>
-        <Link href="/submit" className="btn-secondary btn-sm">
+        <Link href="/" className="btn-primary btn-sm">
           Add another find
         </Link>
       </div>

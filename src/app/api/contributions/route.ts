@@ -13,6 +13,7 @@ import {
 } from "@/lib/db/store";
 import { applyLateDuplicate } from "@/lib/services/duplicates";
 import { evaluateContribution } from "@/lib/services/evaluate";
+import { autoLabel } from "@/lib/services/title";
 import { monthKey, weekKey } from "@/lib/util/date";
 import { sameResource } from "@/lib/util/text";
 
@@ -46,20 +47,15 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as SubmitBody;
 
   const memberId = (body.memberId ?? "").trim();
-  const title = (body.title ?? "").trim();
   const url = (body.url ?? "").trim();
   const description = (body.description ?? "").trim();
   const whyUseful = (body.whyUseful ?? "").trim();
-  const type = (body.type ?? "") as ContributionType;
 
   if (!memberId) {
     return NextResponse.json(
       { error: "Pick who you are before submitting." },
       { status: 400 },
     );
-  }
-  if (!title) {
-    return NextResponse.json({ error: "A title is required." }, { status: 400 });
   }
   if (!url) {
     return NextResponse.json(
@@ -76,19 +72,22 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
-  if (!CONTRIBUTION_TYPES.includes(type)) {
-    return NextResponse.json(
-      { error: "Pick a contribution type." },
-      { status: 400 },
-    );
-  }
-
   const member = await getMember(memberId);
   if (!member) {
     return NextResponse.json(
       { error: "That team member no longer exists." },
       { status: 404 },
     );
+  }
+
+  // Title and type are optional: the composer normally has them already from
+  // /api/title, and anything else gets named here instead of asking the member.
+  let title = (body.title ?? "").trim();
+  let type = (body.type ?? "") as ContributionType;
+  if (!title || !CONTRIBUTION_TYPES.includes(type)) {
+    const label = await autoLabel(url, whyUseful || description);
+    if (!title) title = label.title;
+    if (!CONTRIBUTION_TYPES.includes(type)) type = label.type;
   }
 
   const existing = await listContributions();
