@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "AI Hunt",
   description:
-    "An internal gamified knowledge-sharing game: find useful AI news, tools and research, get it verified and scored, climb the leaderboard.",
+    "Find something useful in AI, paste the link, and get it verified and scored.",
 };
 
 /**
@@ -44,13 +44,13 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-screen">
-        <div className="aurora" aria-hidden />
         <CurrentUserProvider>
           <Header />
-          <main className="mx-auto max-w-6xl px-4 py-8 sm:px-6">{children}</main>
-          <footer className="mx-auto max-w-6xl px-4 pb-10 pt-4 text-center text-xs text-muted sm:px-6">
-            AI Hunt · internal prototype · scores are AI-assisted and can be
-            corrected by the host
+          <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
+            {children}
+          </main>
+          <footer className="mx-auto max-w-5xl px-4 pb-10 text-center text-xs text-muted-foreground sm:px-6">
+            Scores are AI-assisted and can be corrected by the host.
           </footer>
         </CurrentUserProvider>
       </body>

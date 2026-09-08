@@ -6,3 +6,9 @@ out
 data/db.json
 *.tsbuildinfo
 next-env.d.ts
+
+# Local Netlify folder
+.netlify
+
+# Netlify CLI local artifact
+deno.lock

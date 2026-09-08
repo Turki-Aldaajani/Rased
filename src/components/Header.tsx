@@ -1,12 +1,14 @@
 "use client";
 
+import { Check, ChevronDown, Moon, Sun } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { useCurrentUser } from "./CurrentUser";
 
 const NAV = [
-  { href: "/", label: "New find" },
   { href: "/dashboard", label: "Dashboard" },
   { href: "/leaderboard", label: "Leaderboard" },
   { href: "/feed", label: "All finds" },
@@ -47,15 +49,15 @@ function ThemeToggle() {
   };
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="ghost"
+      size="icon"
       onClick={toggle}
-      className="btn-ghost btn-sm"
       aria-label="Toggle light and dark mode"
       title="Toggle light / dark"
     >
-      <span aria-hidden>{theme === "dark" ? "☀" : "☾"}</span>
-    </button>
+      {theme === "dark" ? <Sun /> : <Moon />}
+    </Button>
   );
 }
 
@@ -74,44 +76,30 @@ function MemberPicker() {
   }, [open]);
 
   if (!ready) {
-    return <span className="h-9 w-28 animate-pulse rounded-lg bg-line" />;
+    return <span className="h-8 w-24 rounded-md bg-muted" />;
   }
 
   return (
     <div className="relative" ref={ref}>
-      <button
-        type="button"
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => setOpen((v) => !v)}
-        className="btn-secondary btn-sm"
         aria-haspopup="listbox"
         aria-expanded={open}
+        className="text-foreground"
       >
-        {member ? (
-          <>
-            <span
-              className="grid h-5 w-5 place-items-center rounded-full text-[10px] font-bold text-[var(--on-brand)]"
-              style={{ background: "var(--brand)" }}
-              aria-hidden
-            >
-              {member.name.charAt(0)}
-            </span>
-            {member.name}
-          </>
-        ) : (
-          "Who are you?"
-        )}
-        <span aria-hidden className="text-muted">
-          ▾
-        </span>
-      </button>
+        {member ? member.name : "Who are you?"}
+        <ChevronDown className="text-muted-foreground" />
+      </Button>
 
       {open && (
         <div
-          className="card absolute right-0 z-30 mt-2 w-56 overflow-hidden p-1"
+          className="fade-in absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-lg border border-border bg-card p-1 shadow-[var(--shadow-card)]"
           role="listbox"
         >
           {members.length === 0 && (
-            <p className="px-3 py-3 text-xs text-muted">
+            <p className="px-3 py-3 text-xs text-muted-foreground">
               No team members yet. Add them in Admin.
             </p>
           )}
@@ -125,27 +113,14 @@ function MemberPicker() {
                 setMemberId(m.id);
                 setOpen(false);
               }}
-              className={`flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors hover:bg-brand-soft ${
-                m.id === member?.id
-                  ? "font-semibold text-brand-ink"
-                  : "text-ink"
-              }`}
+              className={cn(
+                "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors duration-200 hover:bg-muted",
+                m.id === member?.id ? "text-foreground" : "text-muted-foreground",
+              )}
             >
-              <span
-                className="grid h-6 w-6 place-items-center rounded-full text-[11px] font-bold"
-                style={{
-                  background: "var(--brand-soft)",
-                  color: "var(--brand-ink)",
-                }}
-                aria-hidden
-              >
-                {m.name.charAt(0)}
-              </span>
               {m.name}
               {m.id === member?.id && (
-                <span className="ml-auto text-xs" aria-hidden>
-                  ✓
-                </span>
+                <Check className="ml-auto size-3.5 text-primary" />
               )}
             </button>
           ))}
@@ -156,7 +131,7 @@ function MemberPicker() {
                 setMemberId(null);
                 setOpen(false);
               }}
-              className="mt-1 w-full border-t border-line px-3 py-2 text-left text-xs text-muted hover:text-ink"
+              className="mt-1 w-full border-t border-border px-3 py-2 text-left text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
             >
               Switch off
             </button>
@@ -169,52 +144,39 @@ function MemberPicker() {
 
 export default function Header() {
   const pathname = usePathname();
-  // On the home page the composer is the interface. The header shrinks to the
-  // logo and "who am I", so nothing competes with the one action.
+  // On the home page the composer is the interface — the header carries the
+  // name and nothing else that could compete with it.
   const bare = pathname === "/";
 
   return (
     <header
-      className={`sticky top-0 z-20 ${
-        bare
-          ? ""
-          : "border-b border-line bg-[color-mix(in_srgb,var(--bg)_86%,transparent)] backdrop-blur"
-      }`}
+      className={cn(
+        "sticky top-0 z-20 bg-background",
+        !bare && "border-b border-border",
+      )}
     >
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-3 px-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-2.5">
-          <span
-            className="icon-tile h-9 w-9 text-base transition-transform duration-200 group-hover:scale-105"
-            aria-hidden
-          >
-            🎯
-          </span>
-          <span className={bare ? "hidden" : "hidden sm:block"}>
-            <span className="block text-sm font-bold leading-tight text-ink">
-              AI Hunt
-            </span>
-            <span className="block text-[11px] leading-tight text-muted">
-              Team knowledge game
-            </span>
-          </span>
+      <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4 sm:px-6">
+        <Link
+          href="/"
+          className="text-sm font-semibold tracking-tight text-foreground"
+        >
+          AI Hunt
         </Link>
 
         {!bare && (
-          <nav className="ml-2 hidden items-center gap-0.5 md:flex">
+          <nav className="hidden items-center gap-5 md:flex">
             {NAV.map((item) => {
-              const active =
-                item.href === "/"
-                  ? pathname === "/"
-                  : pathname.startsWith(item.href);
+              const active = pathname.startsWith(item.href);
               return (
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  className={cn(
+                    "text-sm transition-colors duration-200",
                     active
-                      ? "bg-brand-soft text-brand-ink"
-                      : "text-muted hover:text-ink"
-                  }`}
+                      ? "text-foreground"
+                      : "text-muted-foreground hover:text-foreground",
+                  )}
                 >
                   {item.label}
                 </Link>
@@ -223,33 +185,29 @@ export default function Header() {
           </nav>
         )}
 
-        <div className="ml-auto flex items-center gap-2">
+        <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
           <MemberPicker />
           {!bare && (
-            <Link href="/" className="btn-primary btn-sm">
-              <span aria-hidden>+</span>
-              <span className="hidden sm:inline">Add contribution</span>
-              <span className="sm:hidden">Add</span>
-            </Link>
+            <Button asChild size="sm" className="ml-1">
+              <Link href="/">New find</Link>
+            </Button>
           )}
         </div>
       </div>
 
       {!bare && (
-        <nav className="flex items-center gap-1 overflow-x-auto border-t border-line px-4 py-2 md:hidden">
+        <nav className="flex items-center gap-4 overflow-x-auto border-t border-border px-4 py-2 md:hidden">
           {NAV.map((item) => {
-            const active =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+            const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium ${
-                  active ? "bg-brand-soft text-brand-ink" : "text-muted"
-                }`}
+                className={cn(
+                  "shrink-0 text-xs transition-colors duration-200",
+                  active ? "text-foreground" : "text-muted-foreground",
+                )}
               >
                 {item.label}
               </Link>

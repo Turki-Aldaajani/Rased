@@ -1,5 +1,7 @@
 import Link from "next/link";
-import { ContributionRow } from "@/components/ui";
+import { ContributionRow, EmptyState } from "@/components/contribution";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { listContributions } from "@/lib/db/store";
 import { weekLabel } from "@/lib/util/date";
 
@@ -17,31 +19,34 @@ export default async function FeedPage() {
   }
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="mx-auto max-w-3xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-ink">All finds</h1>
-        <p className="mt-1 text-sm text-muted">
-          Everything the team has submitted, newest first. The best of these
-          become the AI newsletter.
+        <h1 className="text-xl font-semibold tracking-tight text-foreground">
+          All finds
+        </h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Everything the team has submitted, newest first.
         </p>
       </div>
 
       {contributions.length === 0 ? (
-        <div className="card px-6 py-12 text-center">
-          <p className="text-sm font-semibold text-ink">Nothing here yet</p>
-          <p className="mt-1 text-sm text-muted">
-            The hunt starts with the first submission.
-          </p>
-          <Link href="/" className="btn-primary btn-sm mt-4">
-            Add a contribution
-          </Link>
-        </div>
+        <EmptyState
+          title="Nothing here yet"
+          body="The hunt starts with the first submission."
+          action={
+            <Button asChild size="sm" className="mt-4">
+              <Link href="/">Add a find</Link>
+            </Button>
+          }
+        />
       ) : (
         [...byWeek.entries()].map(([week, items]) => (
-          <section key={week} className="card overflow-hidden">
-            <div className="border-b border-line px-5 py-3">
-              <h2 className="text-sm font-bold text-ink">{weekLabel(week)}</h2>
-              <p className="text-xs text-muted">
+          <Card key={week} className="overflow-hidden">
+            <div className="border-b border-border px-5 py-3">
+              <h2 className="text-sm font-semibold text-foreground">
+                {weekLabel(week)}
+              </h2>
+              <p className="text-xs text-muted-foreground">
                 {items.length} find{items.length === 1 ? "" : "s"}
               </p>
             </div>
@@ -50,7 +55,7 @@ export default async function FeedPage() {
                 <ContributionRow key={c.id} contribution={c} />
               ))}
             </div>
-          </section>
+          </Card>
         ))
       )}
     </div>

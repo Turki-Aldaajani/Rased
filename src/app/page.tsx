@@ -6,9 +6,8 @@ import { weekKey } from "@/lib/util/date";
 export const dynamic = "force-dynamic";
 
 /**
- * The home page is one action: paste a link.
- * Leaderboards, history, stats and the host area all live a click away — a
- * member should be able to hunt without reading anything first.
+ * The home page is one action: paste a link. Leaderboards, history, stats and
+ * the host area are all a click away, and none of them are on this screen.
  */
 export default async function HomePage() {
   const contributions = await listContributions();
@@ -16,7 +15,7 @@ export default async function HomePage() {
   const thisWeek = contributions.filter((c) => c.weekKey === week).length;
 
   return (
-    <div className="flex flex-col justify-center py-6 sm:py-12">
+    <div className="py-16 sm:py-24">
       <Composer />
       <QuietNav thisWeek={thisWeek} />
     </div>

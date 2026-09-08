@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useCurrentUser } from "@/components/CurrentUser";
-import { DuplicateBadge, VerificationBadge, scoreColor } from "@/components/ui";
+import { DuplicateBadge, VerificationBadge } from "@/components/contribution";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   effectiveDuplicate,
   effectiveScore,
@@ -12,8 +16,12 @@ import {
   type Member,
 } from "@/lib/db/schema";
 import { formatDate } from "@/lib/util/date";
+import { cn } from "@/lib/utils";
 
 const PASS_KEY = "ai-hunt:admin";
+
+const SELECT_CLASS =
+  "h-9 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground transition-colors duration-200 focus-visible:border-ring focus-visible:outline-none";
 
 export default function AdminPage() {
   const { refresh: refreshMembers } = useCurrentUser();
@@ -112,36 +120,38 @@ export default function AdminPage() {
 
   if (!authed) {
     return (
-      <div className="mx-auto max-w-sm">
-        <form onSubmit={signIn} className="card space-y-4 p-6">
-          <div>
-            <h1 className="text-lg font-bold text-ink">Host area</h1>
-            <p className="mt-1 text-sm text-muted">
-              Enter the shared passcode to manage the team and correct scores.
+      <div className="mx-auto max-w-sm py-10">
+        <Card className="p-5">
+          <form onSubmit={signIn} className="space-y-4">
+            <div>
+              <h1 className="text-base font-semibold text-foreground">
+                Host area
+              </h1>
+              <p className="mt-1 text-sm text-muted-foreground">
+                Enter the shared passcode to manage the team and correct scores.
+              </p>
+            </div>
+            <Input
+              type="password"
+              value={passcode}
+              onChange={(e) => setPasscode(e.target.value)}
+              placeholder="Passcode"
+              autoFocus
+            />
+            {authError && (
+              <p className="text-sm" style={{ color: "var(--destructive)" }}>
+                {authError}
+              </p>
+            )}
+            <Button type="submit" className="w-full">
+              Unlock
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Set it with <code className="font-mono">ADMIN_PASSCODE</code> in{" "}
+              <code className="font-mono">.env.local</code>.
             </p>
-          </div>
-          <input
-            className="field"
-            type="password"
-            value={passcode}
-            onChange={(e) => setPasscode(e.target.value)}
-            placeholder="Passcode"
-            autoFocus
-          />
-          {authError && (
-            <p className="text-sm" style={{ color: "var(--error)" }}>
-              {authError}
-            </p>
-          )}
-          <button type="submit" className="btn-primary w-full">
-            Unlock
-          </button>
-          <p className="hint">
-            Set it with <code className="font-mono">ADMIN_PASSCODE</code> in
-            <code className="font-mono"> .env.local</code> (default:{" "}
-            <code className="font-mono">aihunt</code>).
-          </p>
-        </form>
+          </form>
+        </Card>
       </div>
     );
   }
@@ -150,34 +160,30 @@ export default function AdminPage() {
   const inactive = members.filter((m) => !m.active);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-ink">Host area</h1>
-          <p className="mt-1 text-sm text-muted">
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            Host area
+          </h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Automatic scoring is the default — you have the final word.
           </p>
         </div>
-        <Link href="/leaderboard" className="btn-secondary btn-sm ml-auto">
-          View rankings
-        </Link>
+        <Button asChild variant="outline" size="sm" className="ml-auto">
+          <Link href="/leaderboard">View rankings</Link>
+        </Button>
       </div>
 
       {message && (
-        <p
-          className="rounded-lg px-3 py-2.5 text-sm"
-          style={{
-            color: "var(--error)",
-            background: "color-mix(in srgb, var(--error) 10%, transparent)",
-          }}
-        >
+        <p className="text-sm" style={{ color: "var(--destructive)" }}>
           {message}
         </p>
       )}
 
       {/* Team members */}
-      <section className="card p-6">
-        <h2 className="text-base font-bold text-ink">Team members</h2>
+      <Card className="p-5">
+        <h2 className="text-sm font-semibold text-foreground">Team members</h2>
         <form
           className="mt-4 flex gap-2"
           onSubmit={async (e) => {
@@ -187,70 +193,77 @@ export default function AdminPage() {
             if (ok) setNewName("");
           }}
         >
-          <input
-            className="field"
+          <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="Add a name…"
             maxLength={40}
           />
-          <button className="btn-primary shrink-0" disabled={busy}>
+          <Button type="submit" disabled={busy} className="shrink-0">
             Add
-          </button>
+          </Button>
         </form>
 
-        <ul className="mt-4 divide-y divide-line">
+        <ul className="mt-4 divide-y divide-border">
           {active.map((m) => (
             <MemberRow
               key={m.id}
               member={m}
               busy={busy}
               count={contributions.filter((c) => c.memberId === m.id).length}
-              onRename={(name) => send(`/api/members/${m.id}`, "PATCH", { name })}
+              onRename={(name) =>
+                send(`/api/members/${m.id}`, "PATCH", { name })
+              }
               onRemove={() => send(`/api/members/${m.id}`, "DELETE")}
             />
           ))}
         </ul>
 
         {inactive.length > 0 && (
-          <div className="mt-4 border-t border-line pt-4">
-            <p className="section-title">Removed</p>
+          <div className="mt-4 border-t border-border pt-4">
+            <p className="text-xs text-muted-foreground">Removed</p>
             <ul className="mt-2 space-y-1">
               {inactive.map((m) => (
                 <li
                   key={m.id}
-                  className="flex items-center gap-2 text-sm text-muted"
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
                 >
                   {m.name}
-                  <button
-                    className="btn-ghost btn-sm ml-auto"
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="ml-auto"
                     disabled={busy}
                     onClick={() =>
                       send(`/api/members/${m.id}`, "PATCH", { active: true })
                     }
                   >
                     Restore
-                  </button>
+                  </Button>
                 </li>
               ))}
             </ul>
           </div>
         )}
-      </section>
+      </Card>
 
       {/* Submissions */}
-      <section className="card overflow-hidden">
-        <div className="border-b border-line px-6 py-4">
-          <h2 className="text-base font-bold text-ink">All submissions</h2>
-          <p className="text-xs text-muted">
+      <Card className="overflow-hidden">
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="text-sm font-semibold text-foreground">
+            All submissions
+          </h2>
+          <p className="text-xs text-muted-foreground">
             {contributions.length} total · override a score when the evaluator
             gets it wrong
           </p>
         </div>
         {contributions.length === 0 ? (
-          <p className="px-6 py-8 text-sm text-muted">Nothing submitted yet.</p>
+          <p className="px-5 py-8 text-sm text-muted-foreground">
+            Nothing submitted yet.
+          </p>
         ) : (
-          <ul className="divide-y divide-line">
+          <ul className="divide-y divide-border">
             {contributions.map((c) => (
               <AdminContributionRow
                 key={c.id}
@@ -261,7 +274,7 @@ export default function AdminPage() {
             ))}
           </ul>
         )}
-      </section>
+      </Card>
     </div>
   );
 }
@@ -286,14 +299,14 @@ function MemberRow({
     <li className="flex flex-wrap items-center gap-2 py-2.5">
       {editing ? (
         <>
-          <input
-            className="field max-w-48"
+          <Input
+            className="max-w-48"
             value={name}
             onChange={(e) => setName(e.target.value)}
             maxLength={40}
           />
-          <button
-            className="btn-primary btn-sm"
+          <Button
+            size="sm"
             disabled={busy}
             onClick={() => {
               onRename(name);
@@ -301,47 +314,40 @@ function MemberRow({
             }}
           >
             Save
-          </button>
-          <button
-            className="btn-ghost btn-sm"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => {
               setName(member.name);
               setEditing(false);
             }}
           >
             Cancel
-          </button>
+          </Button>
         </>
       ) : (
         <>
-          <span
-            className="grid h-7 w-7 place-items-center rounded-full bg-brand-soft text-xs font-bold text-brand-ink"
-            aria-hidden
-          >
-            {member.name.charAt(0)}
-          </span>
-          <span className="text-sm font-semibold text-ink">{member.name}</span>
-          <span className="text-xs text-muted">
+          <span className="text-sm text-foreground">{member.name}</span>
+          <span className="text-xs text-muted-foreground">
             {count} contribution{count === 1 ? "" : "s"}
           </span>
           <span className="ml-auto flex gap-1">
-            <Link href={`/profile/${member.id}`} className="btn-ghost btn-sm">
-              Profile
-            </Link>
-            <button
-              className="btn-ghost btn-sm"
-              onClick={() => setEditing(true)}
-            >
+            <Button asChild variant="ghost" size="sm">
+              <Link href={`/profile/${member.id}`}>Profile</Link>
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
               Rename
-            </button>
-            <button
-              className="btn-ghost btn-sm"
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
               disabled={busy}
               onClick={onRemove}
-              style={{ color: "var(--error)" }}
+              style={{ color: "var(--destructive)" }}
             >
               Remove
-            </button>
+            </Button>
           </span>
         </>
       )}
@@ -369,61 +375,48 @@ function AdminContributionRow({
   const overridden = c.adminOverride?.score != null;
 
   return (
-    <li className={c.removed ? "opacity-50" : ""}>
-      <div className="flex flex-wrap items-center gap-3 px-6 py-3">
-        <span
-          className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-sm font-bold"
-          style={{
-            color: scoreColor(current),
-            background: `color-mix(in srgb, ${scoreColor(current)} 12%, transparent)`,
-          }}
-        >
+    <li className={cn(c.removed && "opacity-50")}>
+      <div className="flex flex-wrap items-center gap-3 px-5 py-3">
+        <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
           {current}
         </span>
         <div className="min-w-0 flex-1">
           <Link
             href={`/result/${c.id}`}
-            className="block truncate text-sm font-semibold text-ink hover:underline"
+            className="block truncate text-sm text-foreground hover:underline"
           >
             {c.title}
           </Link>
-          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted">
-            <span className="font-semibold text-interactive-ink">
-              {c.memberName}
-            </span>
+          <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
+            <span className="text-foreground">{c.memberName}</span>
             <span>{c.type}</span>
             <span>{formatDate(c.createdAt)}</span>
-            {c.removed && (
-              <span className="font-semibold" style={{ color: "var(--error)" }}>
-                removed
-              </span>
-            )}
+            {c.removed && <span>removed</span>}
             {overridden && (
-              <span className="font-semibold text-accent-ink">
-                overridden from {c.evaluation.finalScore}
-              </span>
+              <span>overridden from {c.evaluation.finalScore}</span>
             )}
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-1.5">
+        <div className="flex shrink-0 items-center gap-3">
           <VerificationBadge status={c.evaluation.verified} compact />
           <DuplicateBadge status={effectiveDuplicate(c)} />
-          <button
-            className="btn-secondary btn-sm"
+          <Button
+            variant="outline"
+            size="sm"
             onClick={() => setOpen((v) => !v)}
           >
             {open ? "Close" : "Edit"}
-          </button>
+          </Button>
         </div>
       </div>
 
       {open && (
-        <div className="border-t border-line bg-brand-soft px-6 py-4">
+        <div className="border-t border-border bg-muted px-5 py-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <label className="label text-xs">Score (0–100)</label>
-              <input
-                className="field"
+              <Label htmlFor={`score-${c.id}`}>Score (0–100)</Label>
+              <Input
+                id={`score-${c.id}`}
                 type="number"
                 min={0}
                 max={100}
@@ -432,9 +425,10 @@ function AdminContributionRow({
               />
             </div>
             <div>
-              <label className="label text-xs">Duplicate status</label>
+              <Label htmlFor={`dup-${c.id}`}>Duplicate status</Label>
               <select
-                className="field"
+                id={`dup-${c.id}`}
+                className={SELECT_CLASS}
                 value={duplicate}
                 onChange={(e) =>
                   setDuplicate(e.target.value as DuplicateStatus)
@@ -446,9 +440,9 @@ function AdminContributionRow({
               </select>
             </div>
             <div>
-              <label className="label text-xs">Note (shown publicly)</label>
-              <input
-                className="field"
+              <Label htmlFor={`note-${c.id}`}>Note (shown publicly)</Label>
+              <Input
+                id={`note-${c.id}`}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="Why you changed it"
@@ -458,8 +452,8 @@ function AdminContributionRow({
           </div>
 
           <div className="mt-3 flex flex-wrap gap-2">
-            <button
-              className="btn-primary btn-sm"
+            <Button
+              size="sm"
               disabled={busy}
               onClick={async () => {
                 const ok = await send(`/api/contributions/${c.id}`, "PATCH", {
@@ -471,33 +465,38 @@ function AdminContributionRow({
               }}
             >
               Save override
-            </button>
+            </Button>
             {overridden && (
-              <button
-                className="btn-secondary btn-sm"
+              <Button
+                variant="outline"
+                size="sm"
                 disabled={busy}
                 onClick={() =>
                   send(`/api/contributions/${c.id}`, "PATCH", { clear: true })
                 }
               >
                 Reset to AI score ({c.evaluation.finalScore})
-              </button>
+              </Button>
             )}
-            <button
-              className="btn-secondary btn-sm ml-auto"
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto"
               disabled={busy}
               onClick={() =>
                 send(`/api/contributions/${c.id}`, "PATCH", {
                   removed: !c.removed,
                 })
               }
-              style={{ color: c.removed ? "var(--success)" : "var(--error)" }}
+              style={{
+                color: c.removed ? "var(--success)" : "var(--destructive)",
+              }}
             >
               {c.removed ? "Restore submission" : "Remove submission"}
-            </button>
+            </Button>
           </div>
 
-          <p className="mt-3 text-xs text-muted">
+          <p className="mt-3 text-xs text-muted-foreground">
             AI reasoning: {c.evaluation.reason}
           </p>
         </div>
