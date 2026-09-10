@@ -27,8 +27,8 @@ export interface EvaluationResult {
   notices: string[];
 }
 
-const MODEL = process.env.AI_HUNT_MODEL || "claude-opus-5";
-const EFFORT = (process.env.AI_HUNT_EFFORT || "medium") as
+const MODEL = process.env.RASED_MODEL || "claude-opus-5";
+const EFFORT = (process.env.RASED_EFFORT || "medium") as
   | "low"
   | "medium"
   | "high"

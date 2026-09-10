@@ -14,7 +14,7 @@ export interface EvaluationInput {
   memberName: string;
 }
 
-export const SYSTEM_PROMPT = `You evaluate submissions for "AI Hunt", an internal gamified knowledge-sharing game for a small AI team of students and practitioners.
+export const SYSTEM_PROMPT = `You evaluate submissions for "Rased", an internal gamified knowledge-sharing game for a small AI team of students and practitioners.
 
 Team members hunt for genuinely useful AI news, tools, research, projects and techniques and submit them. Your job is to check whether a submission is real, work out how important and useful it is for this specific team, detect duplicates of earlier submissions, and award sub-scores.
 
@@ -161,7 +161,7 @@ export function buildUserPrompt(
 export const EVALUATION_TOOL = {
   name: "submit_evaluation",
   description:
-    "Submit the final structured evaluation of this AI Hunt contribution. Call exactly once, after researching.",
+    "Submit the final structured evaluation of this Rased contribution. Call exactly once, after researching.",
   strict: true as const,
   input_schema: {
     type: "object" as const,

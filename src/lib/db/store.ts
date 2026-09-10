@@ -13,7 +13,7 @@ import type { Contribution, Database, Member } from "./schema";
  * without touching disk.
  */
 
-const STORE_NAME = "ai-hunt-db";
+const STORE_NAME = "rased-db";
 const DB_KEY = "db.json";
 
 const DEFAULT_MEMBERS = ["Nawal", "Abdullah", "Reem", "Abdulaziz", "Mukhtar", "Yara"];

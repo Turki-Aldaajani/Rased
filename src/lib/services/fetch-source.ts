@@ -16,7 +16,7 @@ export interface SourceSnapshot {
 }
 
 const UA =
-  "Mozilla/5.0 (compatible; AIHuntBot/0.1; +internal knowledge-sharing MVP)";
+  "Mozilla/5.0 (compatible; RasedBot/0.1; +internal knowledge-sharing MVP)";
 
 function pick(html: string, patterns: RegExp[]): string | null {
   for (const re of patterns) {

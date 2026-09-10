@@ -114,7 +114,7 @@ export default function Header() {
           href="/"
           className="text-sm font-semibold tracking-tight text-foreground"
         >
-          AI Hunt
+          Rased
         </Link>
 
         {!bare && (

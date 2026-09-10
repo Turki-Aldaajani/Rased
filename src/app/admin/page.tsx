@@ -24,7 +24,7 @@ import { contributionsCount } from "@/lib/util/ar";
 import { formatDate } from "@/lib/util/date";
 import { cn } from "@/lib/utils";
 
-const PASS_KEY = "ai-hunt:admin";
+const PASS_KEY = "rased:admin";
 
 const SELECT_CLASS =
   "h-9 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground transition-colors duration-200 focus-visible:border-ring focus-visible:outline-none";

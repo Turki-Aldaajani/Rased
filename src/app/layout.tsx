@@ -4,7 +4,7 @@ import { CurrentUserProvider } from "@/components/CurrentUser";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI Hunt",
+  title: "Rased",
   description:
     "الصق رابطًا لشيء مفيد في الذكاء الاصطناعي، ويُتحقق منه ويُقيّم تلقائيًا.",
 };
