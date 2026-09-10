@@ -16,9 +16,9 @@ export interface AutoLabel {
   engine: "ai" | "heuristic";
 }
 
-const MODEL = process.env.AI_HUNT_TITLE_MODEL || "claude-opus-5";
+const MODEL = process.env.RASED_TITLE_MODEL || "claude-opus-5";
 
-const SYSTEM_PROMPT = `You label submissions for "AI Hunt", an internal knowledge-sharing game for a small AI team.
+const SYSTEM_PROMPT = `You label submissions for "Rased", an internal knowledge-sharing game for a small AI team.
 
 A member pasted a link. Read the page metadata you are given and produce:
 1. title — the headline of the thing itself, in English, 4 to 12 words. Say what happened or what the thing is ("Anthropic releases Claude Opus 5", "Cursor adds background agents"). Strip site names, taglines, "| TechCrunch" suffixes, clickbait framing and marketing adjectives. Never invent facts that are not in the metadata; if the page is thin, describe it plainly from what is there.

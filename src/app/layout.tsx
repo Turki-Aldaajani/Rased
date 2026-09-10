@@ -4,7 +4,7 @@ import { CurrentUserProvider } from "@/components/CurrentUser";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "AI Hunt",
+  title: "Rased",
   description:
     "Find something useful in AI, paste the link, and get it verified and scored.",
 };

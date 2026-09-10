@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 export const ADMIN_HEADER = "x-admin-passcode";
 
 export function adminPasscode(): string {
-  return process.env.ADMIN_PASSCODE || "aihunt";
+  return process.env.ADMIN_PASSCODE || "rased";
 }
 
 export function isAdmin(req: Request): boolean {

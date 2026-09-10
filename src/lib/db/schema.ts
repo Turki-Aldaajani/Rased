@@ -1,5 +1,5 @@
 /**
- * Data model for AI Hunt.
+ * Data model for Rased.
  * Deliberately flat and JSON-friendly so the store can be swapped for
  * Supabase/Postgres later without touching the services above it.
  */

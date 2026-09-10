@@ -1,4 +1,4 @@
-# 🎯 AI Hunt
+# 🎯 Rased
 
 An internal, gamified knowledge-sharing game for an AI team.
 
@@ -118,7 +118,7 @@ reputable domain lists, and the best-N limits. Edit, restart, done.
 
 ## Admin / host area
 
-`/admin`, unlocked with `ADMIN_PASSCODE` from `.env.local` (default `aihunt`).
+`/admin`, unlocked with `ADMIN_PASSCODE` from `.env.local` (default `rased`).
 
 - Add, rename and remove team members
 - See every submission, including removed ones
@@ -135,12 +135,12 @@ Automatic scoring is the default; the host has the final word.
 | Variable | Default | Purpose |
 |---|---|---|
 | `ANTHROPIC_API_KEY` | *(empty)* | Turns on AI evaluation. Empty = offline heuristic mode. |
-| `AI_HUNT_MODEL` | `claude-opus-5` | Model used for verification + evaluation |
-| `AI_HUNT_TITLE_MODEL` | `claude-opus-5` | Model that names a pasted link (short, `effort: low` call) |
-| `AI_HUNT_EFFORT` | `medium` | `low` … `max` — how hard the model works |
+| `RASED_MODEL` | `claude-opus-5` | Model used for verification + evaluation |
+| `RASED_TITLE_MODEL` | `claude-opus-5` | Model that names a pasted link (short, `effort: low` call) |
+| `RASED_EFFORT` | `medium` | `low` … `max` — how hard the model works |
 | `WEB_SEARCH_PROVIDER` | `anthropic` | `anthropic` \| `tavily` \| `brave` \| `serper` \| `none` |
 | `TAVILY_API_KEY` / `BRAVE_API_KEY` / `SERPER_API_KEY` | *(empty)* | Only for the matching provider |
-| `ADMIN_PASSCODE` | `aihunt` | Unlocks `/admin` |
+| `ADMIN_PASSCODE` | `rased` | Unlocks `/admin` |
 
 `anthropic` is the recommended search provider: search runs inside the model
 call via Claude's server-side `web_search` / `web_fetch` tools, so there is no

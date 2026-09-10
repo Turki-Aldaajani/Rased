@@ -11,7 +11,7 @@ import {
 } from "react";
 import type { Member } from "@/lib/db/schema";
 
-const STORAGE_KEY = "ai-hunt:member";
+const STORAGE_KEY = "rased:member";
 
 interface CurrentUserValue {
   members: Member[];
