@@ -3,7 +3,12 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useCurrentUser } from "@/components/CurrentUser";
-import { DuplicateBadge, VerificationBadge } from "@/components/contribution";
+import {
+  DUPLICATE_META,
+  DuplicateBadge,
+  typeLabel,
+  VerificationBadge,
+} from "@/components/contribution";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -15,6 +20,7 @@ import {
   type DuplicateStatus,
   type Member,
 } from "@/lib/db/schema";
+import { contributionsCount } from "@/lib/util/ar";
 import { formatDate } from "@/lib/util/date";
 import { cn } from "@/lib/utils";
 
@@ -77,7 +83,7 @@ export default function AdminPage() {
       body: JSON.stringify({ passcode }),
     });
     if (!res.ok) {
-      setAuthError("Wrong passcode.");
+      setAuthError("رمز الدخول غير صحيح.");
       return;
     }
     try {
@@ -105,7 +111,7 @@ export default function AdminPage() {
         });
         const data = (await res.json().catch(() => ({}))) as { error?: string };
         if (!res.ok) {
-          setMessage(data.error ?? "That did not work.");
+          setMessage(data.error ?? "لم ينجح ذلك.");
           return false;
         }
         await load();
@@ -125,17 +131,17 @@ export default function AdminPage() {
           <form onSubmit={signIn} className="space-y-4">
             <div>
               <h1 className="text-base font-semibold text-foreground">
-                Host area
+                منطقة المضيف
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                Enter the shared passcode to manage the team and correct scores.
+                أدخل رمز الدخول المشترك لإدارة الفريق وتصحيح التقييمات.
               </p>
             </div>
             <Input
               type="password"
               value={passcode}
               onChange={(e) => setPasscode(e.target.value)}
-              placeholder="Passcode"
+              placeholder="رمز الدخول"
               autoFocus
             />
             {authError && (
@@ -144,10 +150,10 @@ export default function AdminPage() {
               </p>
             )}
             <Button type="submit" className="w-full">
-              Unlock
+              فتح
             </Button>
             <p className="text-xs text-muted-foreground">
-              Set it with <code className="font-mono">ADMIN_PASSCODE</code> in{" "}
+              اضبطه عبر <code className="font-mono">ADMIN_PASSCODE</code> في{" "}
               <code className="font-mono">.env.local</code>.
             </p>
           </form>
@@ -163,15 +169,15 @@ export default function AdminPage() {
     <div className="space-y-8">
       <div className="flex flex-wrap items-center gap-3">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
-            Host area
+          <h1 className="font-serif-display text-xl font-semibold tracking-tight text-foreground">
+            منطقة المضيف
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Automatic scoring is the default — you have the final word.
+            التقييم التلقائي هو الافتراضي — ولك الكلمة الأخيرة.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm" className="ml-auto">
-          <Link href="/leaderboard">View rankings</Link>
+        <Button asChild variant="outline" size="sm" className="ms-auto">
+          <Link href="/leaderboard">عرض الترتيب</Link>
         </Button>
       </div>
 
@@ -183,7 +189,7 @@ export default function AdminPage() {
 
       {/* Team members */}
       <Card className="p-5">
-        <h2 className="text-sm font-semibold text-foreground">Team members</h2>
+        <h2 className="text-sm font-semibold text-foreground">أعضاء الفريق</h2>
         <form
           className="mt-4 flex gap-2"
           onSubmit={async (e) => {
@@ -196,11 +202,11 @@ export default function AdminPage() {
           <Input
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
-            placeholder="Add a name…"
+            placeholder="أضف اسمًا…"
             maxLength={40}
           />
           <Button type="submit" disabled={busy} className="shrink-0">
-            Add
+            إضافة
           </Button>
         </form>
 
@@ -221,7 +227,7 @@ export default function AdminPage() {
 
         {inactive.length > 0 && (
           <div className="mt-4 border-t border-border pt-4">
-            <p className="text-xs text-muted-foreground">Removed</p>
+            <p className="text-xs text-muted-foreground">مُزالون</p>
             <ul className="mt-2 space-y-1">
               {inactive.map((m) => (
                 <li
@@ -232,13 +238,13 @@ export default function AdminPage() {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="ml-auto"
+                    className="ms-auto"
                     disabled={busy}
                     onClick={() =>
                       send(`/api/members/${m.id}`, "PATCH", { active: true })
                     }
                   >
-                    Restore
+                    استعادة
                   </Button>
                 </li>
               ))}
@@ -251,16 +257,16 @@ export default function AdminPage() {
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">
           <h2 className="text-sm font-semibold text-foreground">
-            All submissions
+            كل المساهمات
           </h2>
           <p className="text-xs text-muted-foreground">
-            {contributions.length} total · override a score when the evaluator
-            gets it wrong
+            {contributions.length} إجمالًا · عدّل التقييم إذا أخطأ التقييم
+            التلقائي
           </p>
         </div>
         {contributions.length === 0 ? (
           <p className="px-5 py-8 text-sm text-muted-foreground">
-            Nothing submitted yet.
+            لا توجد مساهمات بعد.
           </p>
         ) : (
           <ul className="divide-y divide-border">
@@ -313,7 +319,7 @@ function MemberRow({
               setEditing(false);
             }}
           >
-            Save
+            حفظ
           </Button>
           <Button
             variant="ghost"
@@ -323,21 +329,21 @@ function MemberRow({
               setEditing(false);
             }}
           >
-            Cancel
+            إلغاء
           </Button>
         </>
       ) : (
         <>
           <span className="text-sm text-foreground">{member.name}</span>
           <span className="text-xs text-muted-foreground">
-            {count} contribution{count === 1 ? "" : "s"}
+            {contributionsCount(count)}
           </span>
-          <span className="ml-auto flex gap-1">
+          <span className="ms-auto flex gap-1">
             <Button asChild variant="ghost" size="sm">
-              <Link href={`/profile/${member.id}`}>Profile</Link>
+              <Link href={`/profile/${member.id}`}>الملف</Link>
             </Button>
             <Button variant="ghost" size="sm" onClick={() => setEditing(true)}>
-              Rename
+              إعادة تسمية
             </Button>
             <Button
               variant="ghost"
@@ -346,7 +352,7 @@ function MemberRow({
               onClick={onRemove}
               style={{ color: "var(--destructive)" }}
             >
-              Remove
+              إزالة
             </Button>
           </span>
         </>
@@ -377,7 +383,7 @@ function AdminContributionRow({
   return (
     <li className={cn(c.removed && "opacity-50")}>
       <div className="flex flex-wrap items-center gap-3 px-5 py-3">
-        <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+        <span className="w-8 shrink-0 text-end text-sm font-semibold tabular-nums text-foreground">
           {current}
         </span>
         <div className="min-w-0 flex-1">
@@ -389,11 +395,11 @@ function AdminContributionRow({
           </Link>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
             <span className="text-foreground">{c.memberName}</span>
-            <span>{c.type}</span>
+            <span>{typeLabel(c.type)}</span>
             <span>{formatDate(c.createdAt)}</span>
-            {c.removed && <span>removed</span>}
+            {c.removed && <span>مُزال</span>}
             {overridden && (
-              <span>overridden from {c.evaluation.finalScore}</span>
+              <span>عُدِّل من {c.evaluation.finalScore}</span>
             )}
           </p>
         </div>
@@ -405,7 +411,7 @@ function AdminContributionRow({
             size="sm"
             onClick={() => setOpen((v) => !v)}
           >
-            {open ? "Close" : "Edit"}
+            {open ? "إغلاق" : "تعديل"}
           </Button>
         </div>
       </div>
@@ -414,7 +420,7 @@ function AdminContributionRow({
         <div className="border-t border-border bg-muted px-5 py-4">
           <div className="grid gap-3 sm:grid-cols-3">
             <div>
-              <Label htmlFor={`score-${c.id}`}>Score (0–100)</Label>
+              <Label htmlFor={`score-${c.id}`}>التقييم (0–100)</Label>
               <Input
                 id={`score-${c.id}`}
                 type="number"
@@ -425,7 +431,7 @@ function AdminContributionRow({
               />
             </div>
             <div>
-              <Label htmlFor={`dup-${c.id}`}>Duplicate status</Label>
+              <Label htmlFor={`dup-${c.id}`}>حالة التكرار</Label>
               <select
                 id={`dup-${c.id}`}
                 className={SELECT_CLASS}
@@ -434,18 +440,20 @@ function AdminContributionRow({
                   setDuplicate(e.target.value as DuplicateStatus)
                 }
               >
-                <option value="original">Original</option>
-                <option value="partial">Partially duplicate</option>
-                <option value="duplicate">Duplicate</option>
+                <option value="original">{DUPLICATE_META.original.text}</option>
+                <option value="partial">{DUPLICATE_META.partial.text}</option>
+                <option value="duplicate">
+                  {DUPLICATE_META.duplicate.text}
+                </option>
               </select>
             </div>
             <div>
-              <Label htmlFor={`note-${c.id}`}>Note (shown publicly)</Label>
+              <Label htmlFor={`note-${c.id}`}>ملاحظة (تظهر للجميع)</Label>
               <Input
                 id={`note-${c.id}`}
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                placeholder="Why you changed it"
+                placeholder="سبب التعديل"
                 maxLength={200}
               />
             </div>
@@ -464,7 +472,7 @@ function AdminContributionRow({
                 if (ok) setOpen(false);
               }}
             >
-              Save override
+              حفظ التعديل
             </Button>
             {overridden && (
               <Button
@@ -475,13 +483,13 @@ function AdminContributionRow({
                   send(`/api/contributions/${c.id}`, "PATCH", { clear: true })
                 }
               >
-                Reset to AI score ({c.evaluation.finalScore})
+                إعادة إلى تقييم الذكاء الاصطناعي ({c.evaluation.finalScore})
               </Button>
             )}
             <Button
               variant="outline"
               size="sm"
-              className="ml-auto"
+              className="ms-auto"
               disabled={busy}
               onClick={() =>
                 send(`/api/contributions/${c.id}`, "PATCH", {
@@ -492,12 +500,12 @@ function AdminContributionRow({
                 color: c.removed ? "var(--success)" : "var(--destructive)",
               }}
             >
-              {c.removed ? "Restore submission" : "Remove submission"}
+              {c.removed ? "استعادة المساهمة" : "إزالة المساهمة"}
             </Button>
           </div>
 
           <p className="mt-3 text-xs text-muted-foreground">
-            AI reasoning: {c.evaluation.reason}
+            تحليل الذكاء الاصطناعي: {c.evaluation.reason}
           </p>
         </div>
       )}

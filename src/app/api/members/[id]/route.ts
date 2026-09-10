@@ -17,7 +17,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   };
   const member = await updateMember(id, body);
   if (!member) {
-    return NextResponse.json({ error: "Member not found." }, { status: 404 });
+    return NextResponse.json({ error: "العضو غير موجود." }, { status: 404 });
   }
   return NextResponse.json({ member });
 }
@@ -29,7 +29,7 @@ export async function DELETE(req: Request, { params }: Ctx) {
   const { id } = await params;
   const ok = await removeMember(id);
   if (!ok) {
-    return NextResponse.json({ error: "Member not found." }, { status: 404 });
+    return NextResponse.json({ error: "العضو غير موجود." }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
 }

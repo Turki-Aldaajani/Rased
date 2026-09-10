@@ -63,15 +63,15 @@ export function computeFinalScore(
   if (dupMult < 1) {
     penalties.push(
       duplicate === "duplicate"
-        ? `Duplicate of an earlier submission — score reduced to ${Math.round(dupMult * 100)}%.`
-        : `Partially duplicate — score reduced to ${Math.round(dupMult * 100)}%.`,
+        ? `تكرار لمساهمة سابقة — خُفِّض التقييم إلى ${Math.round(dupMult * 100)}٪.`
+        : `تكرار جزئي — خُفِّض التقييم إلى ${Math.round(dupMult * 100)}٪.`,
     );
   }
   if (verMult < 1) {
     penalties.push(
       verified === "unverified"
-        ? `Could not verify the source — score reduced to ${Math.round(verMult * 100)}%.`
-        : `Only partially verified — score reduced to ${Math.round(verMult * 100)}%.`,
+        ? `تعذّر التحقق من المصدر — خُفِّض التقييم إلى ${Math.round(verMult * 100)}٪.`
+        : `تحقق جزئي فقط — خُفِّض التقييم إلى ${Math.round(verMult * 100)}٪.`,
     );
   }
 
@@ -97,12 +97,12 @@ export function recencyPoints(originalDate: string | null): number {
 }
 
 export function recencyLabel(originalDate: string | null): string {
-  if (!originalDate) return "Publication date unknown";
+  if (!originalDate) return "تاريخ النشر غير معروف";
   const d = new Date(originalDate);
-  if (Number.isNaN(d.getTime())) return "Publication date unclear";
+  if (Number.isNaN(d.getTime())) return "تاريخ النشر غير واضح";
   const age = daysBetween(d, new Date());
   for (const band of SCORING.recencyBands) {
-    if (age <= band.maxAgeDays) return band.label;
+    if (age <= band.maxAgeDays) return band.labelAr;
   }
-  return "Older than a year";
+  return "أقدم من عام";
 }

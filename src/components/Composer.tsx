@@ -15,14 +15,15 @@ import { Textarea } from "@/components/ui/textarea";
 import { CONTRIBUTION_TYPES, type Contribution } from "@/lib/db/schema";
 import type { AutoLabel } from "@/lib/services/title";
 import { cn } from "@/lib/utils";
+import { typeLabel } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
 
 const STEPS = [
-  "Reading the source",
-  "Verifying it on the web",
-  "Checking the publication date",
-  "Comparing with earlier finds",
-  "Scoring the contribution",
+  "قراءة المصدر",
+  "التحقق منه على الإنترنت",
+  "التحقق من تاريخ النشر",
+  "المقارنة مع اكتشافات سابقة",
+  "تقييم المساهمة",
 ];
 
 function looksLikeUrl(value: string): boolean {
@@ -104,12 +105,12 @@ export default function Composer() {
 
     const link = url.trim();
     if (!looksLikeUrl(link)) {
-      setError("Paste a link that starts with https://");
+      setError("الصق رابطًا يبدأ بـ https://");
       return;
     }
     if (!member) {
       setPickingMember(true);
-      setError("Pick your name so the points land in the right place.");
+      setError("اختر اسمك حتى تُحتسب النقاط في مكانها الصحيح.");
       return;
     }
 
@@ -139,14 +140,14 @@ export default function Composer() {
         error?: string;
       };
       if (!res.ok || !data.contribution) {
-        setError(data.error ?? "Something went wrong. Try again.");
+        setError(data.error ?? "حدث خطأ ما. حاول مرة أخرى.");
         return;
       }
       router.push(`/result/${data.contribution.id}`);
       return;
     } catch (err) {
       setError(
-        `Could not reach the server (${(err as Error)?.message ?? "network error"}).`,
+        `تعذّر الوصول إلى الخادم (${(err as Error)?.message ?? "خطأ في الشبكة"}).`,
       );
     } finally {
       clearInterval(ticker);
@@ -157,18 +158,18 @@ export default function Composer() {
   return (
     <section className="mx-auto w-full max-w-xl">
       <div className="mb-10 text-center">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
-          What did you find?
+        <h1 className="font-serif-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
+          ماذا اكتشفت؟
         </h1>
         <p className="mt-2.5 text-sm text-muted-foreground">
-          Paste a link. It gets read, verified and scored — no form to fill in.
+          الصق رابطًا، يُقرأ ويُتحقق منه ويُقيّم تلقائيًا — بدون نماذج معقدة.
         </p>
       </div>
 
       <form onSubmit={onSubmit}>
         <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-2 transition-colors duration-200 focus-within:border-ring">
           <Link2
-            className="ml-1.5 size-4 shrink-0 text-muted-foreground"
+            className="ms-1.5 size-4 shrink-0 text-muted-foreground"
             aria-hidden
           />
           <Input
@@ -180,8 +181,9 @@ export default function Composer() {
             disabled={busy}
             inputMode="url"
             autoComplete="off"
-            aria-label="Link to the thing you found"
+            aria-label="رابط الشيء الذي اكتشفته"
             placeholder="https://"
+            dir="ltr"
             className="h-9 border-0 bg-transparent px-1 text-base focus-visible:border-0 sm:text-sm"
           />
           <Button
@@ -190,7 +192,7 @@ export default function Composer() {
             className="shrink-0"
           >
             {busy ? <Loader2 className="animate-spin" /> : null}
-            {busy ? "Evaluating" : "Evaluate"}
+            {busy ? "جارٍ التقييم" : "قيّم"}
           </Button>
         </div>
 
@@ -217,20 +219,20 @@ export default function Composer() {
                       }}
                       autoFocus
                       maxLength={200}
-                      aria-label="Title"
+                      aria-label="العنوان"
                       className="text-sm font-medium"
                     />
                   ) : (
                     <div className="flex items-start gap-2">
                       <p className="text-sm font-medium leading-snug text-foreground">
-                        {title || "Untitled find"}
+                        {title || "اكتشاف بلا عنوان"}
                       </p>
                       <button
                         type="button"
                         onClick={() => setEditingTitle(true)}
                         disabled={busy}
-                        aria-label="Edit the title"
-                        title="Edit the title"
+                        aria-label="تعديل العنوان"
+                        title="تعديل العنوان"
                         className="mt-0.5 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground"
                       >
                         <Pencil className="size-3.5" />
@@ -243,19 +245,19 @@ export default function Composer() {
                       value={type}
                       onChange={(e) => setType(e.target.value)}
                       disabled={busy}
-                      aria-label="Contribution type"
+                      aria-label="نوع المساهمة"
                       className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-4 outline-none transition-colors duration-200 hover:text-foreground"
                     >
                       {CONTRIBUTION_TYPES.map((t) => (
                         <option key={t} value={t}>
-                          {t}
+                          {typeLabel(t)}
                         </option>
                       ))}
                     </select>
                     <span aria-hidden>·</span>
                     <span>{label.domain}</span>
                     <span aria-hidden>·</span>
-                    <span>named automatically</span>
+                    <span>سُمّي تلقائيًا</span>
                   </div>
 
                   {label.summary && (
@@ -277,11 +279,11 @@ export default function Composer() {
               onChange={(e) => setNote(e.target.value)}
               disabled={busy}
               maxLength={2000}
-              placeholder="Why is this useful? What would you use it for?"
+              placeholder="لماذا هذا مفيد؟ وفيم قد تستخدمه؟"
               className="text-sm"
             />
             <p className="mt-1.5 px-1 text-xs text-muted-foreground">
-              Optional — this is where your personal points come from.
+              اختياري — من هنا تأتي نقاطك الشخصية.
             </p>
           </div>
         ) : (
@@ -297,7 +299,7 @@ export default function Composer() {
               className="mt-3"
             >
               <Plus />
-              Add your take
+              أضف رأيك
             </Button>
           )
         )}
@@ -327,7 +329,7 @@ export default function Composer() {
           <span className="h-3 w-28 rounded bg-muted" />
         ) : pickingMember || !member ? (
           <div className="flex flex-wrap items-center justify-center gap-1">
-            <span className="mr-1">You are</span>
+            <span className="me-1">أنت</span>
             {members.map((m) => (
               <Button
                 key={m.id}
@@ -347,7 +349,7 @@ export default function Composer() {
               </Button>
             ))}
             {members.length === 0 && (
-              <span>No team members yet — add them in Admin.</span>
+              <span>لا يوجد أعضاء بعد — أضفهم من الإدارة.</span>
             )}
           </div>
         ) : (
@@ -356,7 +358,7 @@ export default function Composer() {
             onClick={() => setPickingMember(true)}
             className="transition-colors duration-200 hover:text-foreground"
           >
-            Submitting as <span className="text-foreground">{member.name}</span>
+            تُرسَل باسم <span className="text-foreground">{member.name}</span>
           </button>
         )}
       </div>

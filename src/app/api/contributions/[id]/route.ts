@@ -12,7 +12,7 @@ export async function GET(_req: Request, { params }: Ctx) {
   const { id } = await params;
   const contribution = await getContribution(id);
   if (!contribution) {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ error: "غير موجود." }, { status: 404 });
   }
   return NextResponse.json({ contribution });
 }
@@ -25,7 +25,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
   const current = await getContribution(id);
   if (!current) {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ error: "غير موجود." }, { status: 404 });
   }
 
   const body = (await req.json().catch(() => ({}))) as {
@@ -72,7 +72,7 @@ export async function DELETE(req: Request, { params }: Ctx) {
   const { id } = await params;
   const updated = await updateContribution(id, { removed: true });
   if (!updated) {
-    return NextResponse.json({ error: "Not found." }, { status: 404 });
+    return NextResponse.json({ error: "غير موجود." }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
 }

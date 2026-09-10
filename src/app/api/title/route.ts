@@ -20,14 +20,14 @@ export async function POST(req: Request) {
   const note = (body.note ?? "").trim();
 
   if (!url) {
-    return NextResponse.json({ error: "Paste a link first." }, { status: 400 });
+    return NextResponse.json({ error: "الصق رابطًا أولًا." }, { status: 400 });
   }
   try {
     const parsed = new URL(url);
     if (!/^https?:$/.test(parsed.protocol)) throw new Error("bad protocol");
   } catch {
     return NextResponse.json(
-      { error: "That link does not look valid — it should start with https://" },
+      { error: "هذا الرابط غير صالح — يجب أن يبدأ بـ https://" },
       { status: 400 },
     );
   }

@@ -44,13 +44,13 @@ export default function HeroScene({ scene = DEFAULT_SCENE }: { scene?: string })
 
         <div className="flex flex-col md:flex-row">
           <div className="flex flex-1 flex-col justify-center p-8 md:p-10">
-            <h2 className="text-lg font-semibold tracking-tight text-foreground">
-              Nothing is taken at face value
+            <h2 className="font-serif-display text-lg font-semibold tracking-tight text-foreground">
+              لا شيء يُؤخذ على عِلّاته
             </h2>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
-              Your link is opened and read, checked against the web, dated from
-              its original announcement — not from when you found it — and
-              compared with every earlier find before it scores.
+              رابطك يُفتح ويُقرأ، ويُتحقق منه على الإنترنت، ويُؤرَّخ بإعلانه
+              الأصلي — لا بوقت اكتشافك له — ويُقارَن بكل اكتشاف سابق قبل أن
+              يُحتسب تقييمه.
             </p>
           </div>
 

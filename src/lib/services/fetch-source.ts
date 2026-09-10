@@ -97,10 +97,10 @@ export async function fetchSource(rawUrl: string): Promise<SourceSnapshot> {
   try {
     parsed = new URL(rawUrl);
     if (!/^https?:$/.test(parsed.protocol)) {
-      return { ...base, error: "Only http(s) URLs can be checked." };
+      return { ...base, error: "يمكن التحقق من روابط http(s) فقط." };
     }
   } catch {
-    return { ...base, error: "That does not look like a valid URL." };
+    return { ...base, error: "هذا لا يبدو رابطًا صالحًا." };
   }
 
   const controller = new AbortController();
@@ -126,10 +126,13 @@ export async function fetchSource(rawUrl: string): Promise<SourceSnapshot> {
     };
 
     if (!res.ok) {
-      return { ...snapshot, error: `Source responded with HTTP ${res.status}.` };
+      return { ...snapshot, error: `استجاب المصدر بـ HTTP ${res.status}.` };
     }
     if (!/html|text|json/i.test(contentType)) {
-      return { ...snapshot, error: `Source is ${contentType || "a binary file"}.` };
+      return {
+        ...snapshot,
+        error: `المصدر من نوع ${contentType || "ملف ثنائي"}.`,
+      };
     }
 
     const html = (await res.text()).slice(0, 600_000);
@@ -154,8 +157,8 @@ export async function fetchSource(rawUrl: string): Promise<SourceSnapshot> {
   } catch (err) {
     const message =
       (err as Error)?.name === "AbortError"
-        ? "Source timed out after 15s."
-        : `Could not reach the source (${(err as Error)?.message ?? "network error"}).`;
+        ? "انتهت مهلة الاتصال بالمصدر بعد 15 ثانية."
+        : `تعذّر الوصول إلى المصدر (${(err as Error)?.message ?? "خطأ في الشبكة"}).`;
     return { ...base, error: message };
   } finally {
     clearTimeout(timer);

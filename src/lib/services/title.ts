@@ -21,9 +21,9 @@ const MODEL = process.env.AI_HUNT_TITLE_MODEL || "claude-opus-5";
 const SYSTEM_PROMPT = `You label submissions for "AI Hunt", an internal knowledge-sharing game for a small AI team.
 
 A member pasted a link. Read the page metadata you are given and produce:
-1. title — the headline of the thing itself, in English, 4 to 12 words. Say what happened or what the thing is ("Anthropic releases Claude Opus 5", "Cursor adds background agents"). Strip site names, taglines, "| TechCrunch" suffixes, clickbait framing and marketing adjectives. Never invent facts that are not in the metadata; if the page is thin, describe it plainly from what is there.
-2. type — the single best fit from the allowed list.
-3. summary — one neutral sentence (max 25 words) saying what this is and why an AI team would look at it.
+1. title — the headline of the thing itself, in Modern Standard Arabic, 4 to 12 words. Say what happened or what the thing is (e.g. "أنثروبيك تطلق Claude Opus 5", "كيرسر يضيف عملاء خلفية"). Keep product/company/model names in their original Latin spelling inside the Arabic sentence. Strip site names, taglines, "| TechCrunch" suffixes, clickbait framing and marketing adjectives. Never invent facts that are not in the metadata; if the page is thin, describe it plainly from what is there.
+2. type — the single best fit from the allowed list (use the exact English value from the list).
+3. summary — one neutral sentence in Modern Standard Arabic (max 25 words) saying what this is and why an AI team would look at it.
 
 Answer with the JSON object only.`;
 
@@ -140,7 +140,7 @@ function labelFromMetadata(
 ): AutoLabel {
   const domain = snapshot.domain || hostname(url);
   const fromPage = cleanTitle(snapshot.pageTitle ?? "");
-  const title = fromPage || titleFromUrl(url) || domain || "Untitled find";
+  const title = fromPage || titleFromUrl(url) || domain || "اكتشاف بلا عنوان";
 
   return {
     title,

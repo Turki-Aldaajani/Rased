@@ -9,10 +9,10 @@ import { cn } from "@/lib/utils";
 import { useCurrentUser } from "./CurrentUser";
 
 const NAV = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/leaderboard", label: "Leaderboard" },
-  { href: "/feed", label: "All finds" },
-  { href: "/admin", label: "Admin" },
+  { href: "/dashboard", label: "الرئيسية" },
+  { href: "/leaderboard", label: "المتصدرون" },
+  { href: "/feed", label: "كل الاكتشافات" },
+  { href: "/admin", label: "الإدارة" },
 ];
 
 function MemberPicker() {
@@ -43,18 +43,18 @@ function MemberPicker() {
         aria-expanded={open}
         className="text-foreground"
       >
-        {member ? member.name : "Who are you?"}
+        {member ? member.name : "من أنت؟"}
         <ChevronDown className="text-muted-foreground" />
       </Button>
 
       {open && (
         <div
-          className="fade-in absolute right-0 z-30 mt-1 w-52 overflow-hidden rounded-lg border border-border bg-card p-1 shadow-[var(--shadow-card)]"
+          className="fade-in absolute end-0 z-30 mt-1 w-52 overflow-hidden rounded-lg border border-border bg-card p-1 shadow-[var(--shadow-card)]"
           role="listbox"
         >
           {members.length === 0 && (
             <p className="px-3 py-3 text-xs text-muted-foreground">
-              No team members yet. Add them in Admin.
+              لا يوجد أعضاء بعد. أضفهم من الإدارة.
             </p>
           )}
           {members.map((m) => (
@@ -68,13 +68,13 @@ function MemberPicker() {
                 setOpen(false);
               }}
               className={cn(
-                "flex w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm transition-colors duration-200 hover:bg-muted",
+                "flex w-full items-center gap-2 rounded-md px-3 py-2 text-start text-sm transition-colors duration-200 hover:bg-muted",
                 m.id === member?.id ? "text-foreground" : "text-muted-foreground",
               )}
             >
               {m.name}
               {m.id === member?.id && (
-                <Check className="ml-auto size-3.5 text-primary" />
+                <Check className="ms-auto size-3.5 text-primary" />
               )}
             </button>
           ))}
@@ -85,9 +85,9 @@ function MemberPicker() {
                 setMemberId(null);
                 setOpen(false);
               }}
-              className="mt-1 w-full border-t border-border px-3 py-2 text-left text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+              className="mt-1 w-full border-t border-border px-3 py-2 text-start text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
             >
-              Switch off
+              تسجيل الخروج
             </button>
           )}
         </div>
@@ -139,11 +139,11 @@ export default function Header() {
           </nav>
         )}
 
-        <div className="ml-auto flex items-center gap-1">
+        <div className="ms-auto flex items-center gap-1">
           <MemberPicker />
           {!bare && (
-            <Button asChild size="sm" className="ml-1">
-              <Link href="/">New find</Link>
+            <Button asChild size="sm" className="ms-1">
+              <Link href="/">اكتشاف جديد</Link>
             </Button>
           )}
         </div>
