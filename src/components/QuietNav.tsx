@@ -2,6 +2,7 @@
 
 import { LayoutDashboard, List, Settings, Trophy, User } from "lucide-react";
 import Link from "next/link";
+import { findsCount } from "@/lib/util/ar";
 import { useCurrentUser } from "./CurrentUser";
 
 /**
@@ -12,12 +13,12 @@ export default function QuietNav({ thisWeek }: { thisWeek: number }) {
   const { member } = useCurrentUser();
 
   const items = [
-    { href: "/dashboard", label: "Dashboard", Icon: LayoutDashboard },
-    { href: "/leaderboard", label: "Leaderboard", Icon: Trophy },
-    { href: "/feed", label: "All finds", Icon: List },
+    { href: "/dashboard", label: "الرئيسية", Icon: LayoutDashboard },
+    { href: "/leaderboard", label: "المتصدرون", Icon: Trophy },
+    { href: "/feed", label: "كل الاكتشافات", Icon: List },
     member
-      ? { href: `/profile/${member.id}`, label: "Your finds", Icon: User }
-      : { href: "/admin", label: "Admin", Icon: Settings },
+      ? { href: `/profile/${member.id}`, label: "اكتشافاتك", Icon: User }
+      : { href: "/admin", label: "الإدارة", Icon: Settings },
   ];
 
   return (
@@ -37,8 +38,8 @@ export default function QuietNav({ thisWeek }: { thisWeek: number }) {
 
       <p className="mt-5 text-center text-xs text-muted-foreground">
         {thisWeek === 0
-          ? "No finds yet this week."
-          : `${thisWeek} find${thisWeek === 1 ? "" : "s"} this week.`}
+          ? "لا توجد اكتشافات هذا الأسبوع بعد."
+          : `${findsCount(thisWeek)} هذا الأسبوع.`}
       </p>
     </div>
   );

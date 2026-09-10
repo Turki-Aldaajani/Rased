@@ -69,15 +69,15 @@ export async function evaluateContribution(
       return { evaluation, snapshot, candidates, notices };
     } catch (err) {
       notices.push(
-        `The AI evaluator could not be reached (${truncate(
-          (err as Error)?.message ?? "unknown error",
+        `تعذّر الوصول إلى مقيّم الذكاء الاصطناعي (${truncate(
+          (err as Error)?.message ?? "خطأ غير معروف",
           160,
-        )}). Fell back to offline scoring.`,
+        )}). تم اللجوء إلى التقييم غير المتصل.`,
       );
     }
   } else {
     notices.push(
-      "Running in offline mode: no ANTHROPIC_API_KEY is set, so this was scored by the built-in heuristic instead of the AI evaluator.",
+      "وضع غير متصل: لم يُضبط ANTHROPIC_API_KEY، فتم التقييم بالخوارزمية المدمجة بدلًا من مقيّم الذكاء الاصطناعي.",
     );
   }
 
@@ -139,7 +139,7 @@ async function evaluateWithAi(
 
     if (response.stop_reason === "pause_turn") continue;
     if (response.stop_reason === "refusal") {
-      throw new Error("The evaluator declined to score this submission.");
+      throw new Error("رفض المقيّم تقييم هذه المساهمة.");
     }
     messages.push({
       role: "user",
@@ -149,7 +149,7 @@ async function evaluateWithAi(
   }
 
   if (!toolInput) {
-    throw new Error("The evaluator never returned a structured result.");
+    throw new Error("لم يُعِد المقيّم نتيجة منظَّمة.");
   }
 
   return buildEvaluation(toolInput, candidates, "ai", MODEL);
@@ -309,16 +309,16 @@ function evaluateHeuristically(
   // Duplicate — purely local similarity in offline mode.
   const top = candidates[0];
   let duplicate: Evaluation["duplicate"] = "original";
-  let duplicateReason = "Nothing similar was submitted before.";
+  let duplicateReason = "لم يُرسل شيء مشابه من قبل.";
   if (top && (top.sameUrl || top.score >= SCORING.duplicateSimilarityThreshold)) {
     const addsMore = meaningfulWordCount(why) >= 15 && !top.sameUrl;
     duplicate = addsMore ? "partial" : "duplicate";
-    duplicateReason = `${Math.round(top.score * 100)}% match with "${truncate(
+    duplicateReason = `تطابق ${Math.round(top.score * 100)}٪ مع "${truncate(
       top.contribution.title,
       70,
-    )}" submitted by ${top.contribution.memberName}${
-      top.sameUrl ? " (same URL)" : ""
-    }.${addsMore ? " This submission adds a longer personal note, so it scores partial credit." : ""}`;
+    )}" الذي أرسله ${top.contribution.memberName}${
+      top.sameUrl ? " (نفس الرابط)" : ""
+    }.${addsMore ? " هذه المساهمة تضيف ملاحظة شخصية أطول، لذا حصلت على تقييم جزئي." : ""}`;
   }
 
   const verified: Evaluation["verified"] = snapshot.ok
@@ -336,18 +336,18 @@ function evaluateHeuristically(
   const evidence: string[] = [];
   evidence.push(
     snapshot.ok
-      ? `Opened ${snapshot.domain} successfully (HTTP ${snapshot.status}).`
-      : `Could not open the source: ${snapshot.error}`,
+      ? `تم فتح ${snapshot.domain} بنجاح (HTTP ${snapshot.status}).`
+      : `تعذّر فتح المصدر: ${snapshot.error}`,
   );
   if (snapshot.pageTitle) {
-    evidence.push(`Page title reads "${truncate(snapshot.pageTitle, 120)}".`);
+    evidence.push(`عنوان الصفحة: "${truncate(snapshot.pageTitle, 120)}".`);
   }
   evidence.push(
     tier === "trusted"
-      ? `${snapshot.domain} is on the trusted/official source list.`
+      ? `${snapshot.domain} ضمن قائمة المصادر الرسمية الموثوقة.`
       : tier === "reputable"
-        ? `${snapshot.domain} is reputable tech coverage, not the primary source.`
-        : `${snapshot.domain || "The domain"} is not a known official source.`,
+        ? `${snapshot.domain} تغطية تقنية موثوقة، وليس المصدر الأساسي.`
+        : `${snapshot.domain || "النطاق"} ليس مصدرًا رسميًا معروفًا.`,
   );
   evidence.push(recencyLabel(originalDate));
   evidence.push(...penalties);
@@ -379,25 +379,25 @@ function buildHeuristicReason(
   const bits: string[] = [];
   bits.push(
     b.importance >= 18
-      ? "Looks like a significant AI development."
+      ? "يبدو تطورًا مهمًا في الذكاء الاصطناعي."
       : b.importance >= 11
-        ? "A useful but not major AI item."
-        : "Limited significance for the team.",
+        ? "عنصر مفيد لكنه غير رئيسي في الذكاء الاصطناعي."
+        : "أهمية محدودة بالنسبة للفريق.",
   );
   bits.push(
     verified === "verified"
-      ? `The source opened cleanly and it is ${tier === "trusted" ? "an official source" : "a readable source"}.`
+      ? `فُتح المصدر بلا مشاكل وهو ${tier === "trusted" ? "مصدر رسمي" : "مصدر يمكن قراءته"}.`
       : verified === "partial"
-        ? "The page loaded but no publication date could be confirmed."
-        : "The source could not be opened, so the claim is unconfirmed.",
+        ? "تم تحميل الصفحة لكن تعذّر تأكيد تاريخ النشر."
+        : "تعذّر فتح المصدر، لذا لم يُؤكَّد الادعاء.",
   );
   if (duplicate !== "original") {
-    bits.push("It overlaps with an earlier submission, so points were reduced.");
+    bits.push("يتداخل مع مساهمة سابقة، لذا خُفّضت النقاط.");
   }
   bits.push(
     b.personalContribution >= 6
-      ? "The member added a concrete, specific reason it matters."
-      : "The personal note could be more specific to score higher.",
+      ? "أضاف العضو سببًا محددًا وواضحًا لأهميته."
+      : "يمكن أن تكون الملاحظة الشخصية أكثر تحديدًا للحصول على تقييم أعلى.",
   );
   return bits.join(" ");
 }

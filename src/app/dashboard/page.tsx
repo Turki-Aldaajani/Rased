@@ -6,6 +6,7 @@ import { Card } from "@/components/ui/card";
 import { effectiveScore, type Contribution } from "@/lib/db/schema";
 import { listContributions, listMembers } from "@/lib/db/store";
 import { teamSummary, type LeaderboardRow } from "@/lib/services/leaderboard";
+import { findsCount, pointsCount } from "@/lib/util/ar";
 import { monthLabel, weekLabel } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
@@ -30,8 +31,8 @@ function LeaderCard({
             {row.memberName}
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            {row.points} points · {row.contributions} find
-            {row.contributions === 1 ? "" : "s"} · {period}
+            {pointsCount(row.points)} · {findsCount(row.contributions)} ·{" "}
+            {period}
           </p>
           {row.bestContribution && (
             <Link
@@ -43,7 +44,7 @@ function LeaderCard({
               </span>
               <span className="min-w-0">
                 <span className="block text-xs text-muted-foreground">
-                  Best find
+                  أفضل اكتشاف
                 </span>
                 <span className="block truncate text-sm text-foreground">
                   {row.bestContribution.title}
@@ -64,7 +65,7 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
   if (scored.length === 0) {
     return (
       <p className="px-5 py-6 text-sm text-muted-foreground">
-        No points yet this week.
+        لا توجد نقاط بعد هذا الأسبوع.
       </p>
     );
   }
@@ -84,7 +85,7 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
                 {row.memberName}
               </span>
               <span className="block text-xs text-muted-foreground">
-                {row.counted} of {row.contributions} counted
+                احتُسب {row.counted} من {row.contributions}
               </span>
             </span>
             <span className="text-sm font-semibold tabular-nums text-foreground">
@@ -121,27 +122,27 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Dashboard
+        <h1 className="font-serif-display text-xl font-semibold tracking-tight text-foreground">
+          الرئيسية
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {weekLabel(summary.week)} · {summary.totals.thisWeek} find
-          {summary.totals.thisWeek === 1 ? "" : "s"} so far
+          {weekLabel(summary.week)} · {findsCount(summary.totals.thisWeek)}{" "}
+          حتى الآن
         </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <LeaderCard
-          label="Contributor of the week"
+          label="مساهم الأسبوع"
           period={weekLabel(summary.week)}
           row={top}
-          emptyText="Nobody has scored yet this week."
+          emptyText="لم يحصل أحد على نقاط بعد هذا الأسبوع."
         />
         <LeaderCard
-          label="Monthly champion"
+          label="بطل الشهر"
           period={monthLabel(summary.month)}
           row={summary.monthlyChampion}
-          emptyText="The monthly race starts with the first scored find."
+          emptyText="يبدأ سباق الشهر مع أول اكتشاف يُقيَّم."
         />
       </div>
 
@@ -157,14 +158,14 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-foreground">
-                Weekly leaderboard
+                متصدرو الأسبوع
               </h2>
               <p className="text-xs text-muted-foreground">
-                Best 3 finds per person
+                أفضل 3 اكتشافات لكل شخص
               </p>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link href="/leaderboard">All</Link>
+              <Link href="/leaderboard">الكل</Link>
             </Button>
           </div>
           <LeaderboardList rows={summary.weekly} />
@@ -174,27 +175,27 @@ export default async function DashboardPage() {
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-foreground">
-                Recent finds
+                أحدث الاكتشافات
               </h2>
               <p className="text-xs text-muted-foreground">
-                {summary.totals.contributions} total ·{" "}
-                {summary.totals.originals} original ·{" "}
-                {summary.totals.duplicates} duplicate
+                {summary.totals.contributions} إجمالًا ·{" "}
+                {summary.totals.originals} أصلي ·{" "}
+                {summary.totals.duplicates} مكرر
               </p>
             </div>
             <Button asChild variant="ghost" size="sm">
-              <Link href="/feed">All</Link>
+              <Link href="/feed">الكل</Link>
             </Button>
           </div>
           <div className="p-2">
             {summary.recent.length === 0 ? (
               <div className="px-3 py-10 text-center">
-                <p className="text-sm text-foreground">No contributions yet</p>
+                <p className="text-sm text-foreground">لا توجد مساهمات بعد</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  Found something interesting in AI this week?
+                  وجدت شيئًا مثيرًا للاهتمام في الذكاء الاصطناعي هذا الأسبوع؟
                 </p>
                 <Button asChild size="sm" className="mt-4">
-                  <Link href="/">Add the first one</Link>
+                  <Link href="/">أضف الأول</Link>
                 </Button>
               </div>
             ) : (

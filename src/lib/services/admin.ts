@@ -19,7 +19,7 @@ export function isAdmin(req: Request): boolean {
 export function requireAdmin(req: Request): NextResponse | null {
   if (isAdmin(req)) return null;
   return NextResponse.json(
-    { error: "Admin passcode required." },
+    { error: "رمز دخول المضيف مطلوب." },
     { status: 401 },
   );
 }

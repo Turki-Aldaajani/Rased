@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { Contribution } from "@/lib/db/schema";
 import type { LeaderboardRow } from "@/lib/services/leaderboard";
+import { membersCount, pointsCount } from "@/lib/util/ar";
 import { ContributionRow } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
 
@@ -31,10 +32,10 @@ export default function YourStats({
     return (
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-foreground">
-          Pick your name to see your stats
+          اختر اسمك لترى إحصاءاتك
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
-          No sign-up, no password.
+          بلا تسجيل، وبلا كلمة مرور.
         </p>
         <div className="mt-3 flex flex-wrap gap-1">
           {members.map((m) => (
@@ -49,9 +50,9 @@ export default function YourStats({
           ))}
           {members.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              No members yet —{" "}
+              لا يوجد أعضاء بعد —{" "}
               <Link href="/admin" className="text-primary underline-offset-4 hover:underline">
-                add the team in Admin
+                أضف الفريق من الإدارة
               </Link>
               .
             </p>
@@ -67,17 +68,17 @@ export default function YourStats({
   const mine = latest[member.id] ?? [];
 
   const tiles = [
-    { label: "Weekly points", value: week?.points ?? 0, sub: "best 3 finds" },
+    { label: "نقاط الأسبوع", value: week?.points ?? 0, sub: "أفضل 3 اكتشافات" },
     {
-      label: "Weekly rank",
+      label: "ترتيب الأسبوع",
       value: week && week.points > 0 ? week.rank : "—",
-      sub: `of ${weekly.length} members`,
+      sub: `من أصل ${membersCount(weekly.length)}`,
     },
-    { label: "Monthly points", value: month?.points ?? 0, sub: "best 3 weeks" },
+    { label: "نقاط الشهر", value: month?.points ?? 0, sub: "أفضل 3 أسابيع" },
     {
-      label: "Contributions",
+      label: "المساهمات",
       value: total.count,
-      sub: `${total.points} pts all-time`,
+      sub: `${pointsCount(total.points)} إجمالًا`,
     },
   ];
 
@@ -88,10 +89,10 @@ export default function YourStats({
           <p className="text-sm font-semibold text-foreground">
             {member.name}
           </p>
-          <p className="text-xs text-muted-foreground">Your season so far</p>
+          <p className="text-xs text-muted-foreground">موسمك حتى الآن</p>
         </div>
-        <Button asChild variant="outline" size="sm" className="ml-auto">
-          <Link href={`/profile/${member.id}`}>Full profile</Link>
+        <Button asChild variant="outline" size="sm" className="ms-auto">
+          <Link href={`/profile/${member.id}`}>الملف الكامل</Link>
         </Button>
       </div>
 
@@ -113,12 +114,12 @@ export default function YourStats({
       <div className="p-2">
         {mine.length === 0 ? (
           <p className="px-3 py-4 text-sm text-muted-foreground">
-            Nothing submitted yet.{" "}
+            لم تُرسل شيئًا بعد.{" "}
             <Link
               href="/"
               className="text-primary underline-offset-4 hover:underline"
             >
-              Add your first find
+              أضف اكتشافك الأول
             </Link>
             .
           </p>

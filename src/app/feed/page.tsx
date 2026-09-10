@@ -3,6 +3,7 @@ import { ContributionRow, EmptyState } from "@/components/contribution";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { listContributions } from "@/lib/db/store";
+import { findsCount } from "@/lib/util/ar";
 import { weekLabel } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
@@ -21,21 +22,21 @@ export default async function FeedPage() {
   return (
     <div className="mx-auto max-w-3xl space-y-8">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          All finds
+        <h1 className="font-serif-display text-xl font-semibold tracking-tight text-foreground">
+          كل الاكتشافات
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Everything the team has submitted, newest first.
+          كل ما أرسله الفريق، الأحدث أولًا.
         </p>
       </div>
 
       {contributions.length === 0 ? (
         <EmptyState
-          title="Nothing here yet"
-          body="The hunt starts with the first submission."
+          title="لا يوجد شيء هنا بعد"
+          body="يبدأ الصيد مع أول مساهمة."
           action={
             <Button asChild size="sm" className="mt-4">
-              <Link href="/">Add a find</Link>
+              <Link href="/">أضف اكتشافًا</Link>
             </Button>
           }
         />
@@ -47,7 +48,7 @@ export default async function FeedPage() {
                 {weekLabel(week)}
               </h2>
               <p className="text-xs text-muted-foreground">
-                {items.length} find{items.length === 1 ? "" : "s"}
+                {findsCount(items.length)}
               </p>
             </div>
             <div className="p-2">

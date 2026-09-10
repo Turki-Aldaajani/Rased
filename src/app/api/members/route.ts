@@ -17,11 +17,11 @@ export async function POST(req: Request) {
   const body = (await req.json().catch(() => ({}))) as { name?: string };
   const name = (body.name ?? "").trim();
   if (!name) {
-    return NextResponse.json({ error: "A name is required." }, { status: 400 });
+    return NextResponse.json({ error: "الاسم مطلوب." }, { status: 400 });
   }
   if (name.length > 40) {
     return NextResponse.json(
-      { error: "That name is too long." },
+      { error: "هذا الاسم طويل جدًا." },
       { status: 400 },
     );
   }

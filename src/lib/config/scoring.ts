@@ -39,11 +39,36 @@ export const SCORING = {
    * heuristic. Age is measured from the ORIGINAL publication date.
    */
   recencyBands: [
-    { maxAgeDays: 7, points: 20, label: "Published within the last week" },
-    { maxAgeDays: 30, points: 16, label: "Published within the last month" },
-    { maxAgeDays: 90, points: 11, label: "Published within the last 3 months" },
-    { maxAgeDays: 365, points: 6, label: "Published within the last year" },
-    { maxAgeDays: Infinity, points: 2, label: "Older than a year" },
+    {
+      maxAgeDays: 7,
+      points: 20,
+      label: "Published within the last week",
+      labelAr: "نُشر خلال الأسبوع الماضي",
+    },
+    {
+      maxAgeDays: 30,
+      points: 16,
+      label: "Published within the last month",
+      labelAr: "نُشر خلال الشهر الماضي",
+    },
+    {
+      maxAgeDays: 90,
+      points: 11,
+      label: "Published within the last 3 months",
+      labelAr: "نُشر خلال الأشهر الثلاثة الماضية",
+    },
+    {
+      maxAgeDays: 365,
+      points: 6,
+      label: "Published within the last year",
+      labelAr: "نُشر خلال العام الماضي",
+    },
+    {
+      maxAgeDays: Infinity,
+      points: 2,
+      label: "Older than a year",
+      labelAr: "أقدم من عام",
+    },
   ],
 
   /** Domains we treat as first-party / high trust. */
@@ -109,10 +134,10 @@ export const TOTAL_POINTS = Object.values(SCORING.maxPoints).reduce(
 );
 
 export const DIMENSION_LABELS: Record<keyof typeof SCORING.maxPoints, string> = {
-  importance: "Importance",
-  recency: "Recency",
-  usefulness: "Practical usefulness",
-  relevance: "Category relevance",
-  sourceReliability: "Source reliability",
-  personalContribution: "Personal contribution",
+  importance: "الأهمية",
+  recency: "الحداثة",
+  usefulness: "الفائدة العملية",
+  relevance: "ملاءمة التصنيف",
+  sourceReliability: "موثوقية المصدر",
+  personalContribution: "المساهمة الشخصية",
 };

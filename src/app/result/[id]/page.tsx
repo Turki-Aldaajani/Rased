@@ -1,4 +1,4 @@
-import { ArrowLeft, ExternalLink } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -44,14 +44,14 @@ export default async function ResultPage({ params }: Props) {
   return (
     <div className="mx-auto max-w-3xl space-y-4">
       <div className="flex items-center justify-between gap-3">
-        <Button asChild variant="ghost" size="sm" className="-ml-3">
+        <Button asChild variant="ghost" size="sm" className="-ms-3">
           <Link href="/dashboard">
-            <ArrowLeft />
-            Dashboard
+            <ArrowRight />
+            الرئيسية
           </Link>
         </Button>
         <Button asChild size="sm">
-          <Link href="/">Add another find</Link>
+          <Link href="/">أضف اكتشافًا آخر</Link>
         </Button>
       </div>
 
@@ -69,7 +69,7 @@ export default async function ResultPage({ params }: Props) {
               {c.title}
             </h1>
             <p className="mt-1.5 text-sm text-muted-foreground">
-              Submitted by{" "}
+              أرسله{" "}
               <Link
                 href={`/profile/${c.memberId}`}
                 className="text-foreground underline-offset-4 hover:underline"
@@ -89,35 +89,35 @@ export default async function ResultPage({ params }: Props) {
       {overridden && (
         <Card className="p-5">
           <p className="text-sm font-semibold text-foreground">
-            Adjusted by the host
+            عدّله المضيف
           </p>
           <p className="mt-1 text-sm text-muted-foreground">
-            The automatic score was {e.finalScore}. It was changed to {score}.
-            {c.adminOverride?.note ? ` “${c.adminOverride.note}”` : ""}
+            كان التقييم التلقائي {e.finalScore}، وتم تغييره إلى {score}.
+            {c.adminOverride?.note ? ` «${c.adminOverride.note}»` : ""}
           </p>
         </Card>
       )}
 
       {/* Verification facts */}
       <Card className="p-5">
-        <h2 className="text-sm font-semibold text-foreground">Verification</h2>
+        <h2 className="text-sm font-semibold text-foreground">التحقق</h2>
         <dl className="mt-4 grid gap-4 sm:grid-cols-2">
           <div>
-            <dt className="text-xs text-muted-foreground">Status</dt>
+            <dt className="text-xs text-muted-foreground">الحالة</dt>
             <dd className="mt-1.5">
               <VerificationBadge status={e.verified} />
             </dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">
-              Original publication date
+              تاريخ النشر الأصلي
             </dt>
             <dd className="mt-1.5 text-sm text-foreground">
               {formatDate(e.originalDate)}
             </dd>
           </div>
           <div className="min-w-0">
-            <dt className="text-xs text-muted-foreground">Submitted source</dt>
+            <dt className="text-xs text-muted-foreground">المصدر المُرسَل</dt>
             <dd className="mt-1.5 truncate text-sm">
               <a
                 href={c.url}
@@ -132,7 +132,7 @@ export default async function ResultPage({ params }: Props) {
           </div>
           <div className="min-w-0">
             <dt className="text-xs text-muted-foreground">
-              Original / official source
+              المصدر الأصلي / الرسمي
             </dt>
             <dd className="mt-1.5 truncate text-sm">
               {e.resolvedSource ? (
@@ -146,7 +146,7 @@ export default async function ResultPage({ params }: Props) {
                   <ExternalLink className="size-3 text-muted-foreground" />
                 </a>
               ) : (
-                <span className="text-muted-foreground">Not identified</span>
+                <span className="text-muted-foreground">غير محدَّد</span>
               )}
             </dd>
           </div>
@@ -170,24 +170,24 @@ export default async function ResultPage({ params }: Props) {
       <Card className="p-5">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-sm font-semibold text-foreground">
-            Duplicate check
+            فحص التكرار
           </h2>
           <DuplicateBadge status={duplicate} always />
         </div>
         <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
-          {e.duplicateReason ?? "No duplicate information recorded."}
+          {e.duplicateReason ?? "لا توجد معلومات مسجَّلة عن التكرار."}
         </p>
         {original && (
           <Link
             href={`/result/${original.id}`}
             className="mt-4 flex items-center gap-3 rounded-md border border-border p-3 transition-colors duration-200 hover:bg-muted"
           >
-            <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+            <span className="w-8 shrink-0 text-end text-sm font-semibold tabular-nums text-foreground">
               {effectiveScore(original)}
             </span>
             <span className="min-w-0">
               <span className="block text-xs text-muted-foreground">
-                First submitted by {original.memberName} on{" "}
+                أرسله أولًا {original.memberName} في{" "}
                 {formatDate(original.createdAt)}
               </span>
               <span className="block truncate text-sm text-foreground">
@@ -201,7 +201,7 @@ export default async function ResultPage({ params }: Props) {
       {/* Score breakdown */}
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-foreground">
-          Score breakdown
+          تفاصيل التقييم
         </h2>
         <ul className="mt-4 space-y-3.5">
           {dimensions.map((d) => (
@@ -222,17 +222,17 @@ export default async function ResultPage({ params }: Props) {
 
         <div className="mt-5 space-y-1.5 border-t border-border pt-4 text-sm">
           <div className="flex justify-between text-muted-foreground">
-            <span>Subtotal</span>
+            <span>المجموع الفرعي</span>
             <span className="tabular-nums">{e.rawScore} / 100</span>
           </div>
           {e.rawScore !== e.finalScore && (
             <div className="flex justify-between text-muted-foreground">
-              <span>After verification &amp; duplicate adjustment</span>
+              <span>بعد تعديل التحقق والتكرار</span>
               <span className="tabular-nums">{e.finalScore} / 100</span>
             </div>
           )}
           <div className="flex justify-between pt-1 font-semibold text-foreground">
-            <span>Final score</span>
+            <span>التقييم النهائي</span>
             <span className="tabular-nums">{score} / 100</span>
           </div>
         </div>
@@ -241,20 +241,20 @@ export default async function ResultPage({ params }: Props) {
       {/* What the member wrote */}
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-foreground">
-          What {c.memberName} submitted
+          ما أرسله {c.memberName}
         </h2>
         <dl className="mt-4 space-y-4 text-sm">
           <div>
-            <dt className="text-xs text-muted-foreground">What is it?</dt>
-            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
+            <dt className="text-xs text-muted-foreground">ما هو؟</dt>
+            <dd className="font-serif-text mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
               {c.description || "—"}
             </dd>
           </div>
           <div>
             <dt className="text-xs text-muted-foreground">
-              Why is this useful?
+              لماذا هذا مفيد؟
             </dt>
-            <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
+            <dd className="font-serif-text mt-1 whitespace-pre-wrap leading-relaxed text-foreground">
               {c.whyUseful || "—"}
             </dd>
           </div>
@@ -263,8 +263,8 @@ export default async function ResultPage({ params }: Props) {
 
       <p className="pb-2 text-center text-xs text-muted-foreground">
         {e.engine === "ai"
-          ? `Evaluated by ${e.model} with live web verification.`
-          : "Evaluated by the offline heuristic — set ANTHROPIC_API_KEY for AI-verified scoring."}
+          ? `قُيِّم بواسطة ${e.model} مع تحقق مباشر من الإنترنت.`
+          : "قُيِّم بالخوارزمية غير المتصلة — فعّل ANTHROPIC_API_KEY للتقييم بالذكاء الاصطناعي."}
       </p>
     </div>
   );

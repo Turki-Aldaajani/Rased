@@ -8,5 +8,5 @@ export async function POST(req: Request) {
   if ((body.passcode ?? "") === adminPasscode()) {
     return NextResponse.json({ ok: true });
   }
-  return NextResponse.json({ error: "Wrong passcode." }, { status: 401 });
+  return NextResponse.json({ error: "رمز الدخول غير صحيح." }, { status: 401 });
 }

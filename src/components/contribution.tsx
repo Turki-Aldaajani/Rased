@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import type {
   Contribution,
+  ContributionType,
   DuplicateStatus,
   VerificationStatus,
 } from "@/lib/db/schema";
@@ -11,10 +12,24 @@ import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
+export const TYPE_LABELS: Record<ContributionType, string> = {
+  "AI News": "أخبار الذكاء الاصطناعي",
+  "AI Tool": "أداة ذكاء اصطناعي",
+  "Research / Paper": "بحث / ورقة علمية",
+  Project: "مشروع",
+  "AI Use Case": "حالة استخدام",
+  "Learning Resource": "مصدر تعليمي",
+  Other: "أخرى",
+};
+
+export function typeLabel(type: string): string {
+  return TYPE_LABELS[type as ContributionType] ?? type;
+}
+
 export function ScoreRing({
   score,
   size = 64,
-  label = "points",
+  label = "نقطة",
 }: {
   score: number;
   size?: number;
@@ -29,7 +44,7 @@ export function ScoreRing({
     <div
       className="relative shrink-0"
       style={{ width: size, height: size }}
-      aria-label={`${score} out of 100 ${label}`}
+      aria-label={`${score} من 100 ${label}`}
     >
       <svg width={size} height={size} className="-rotate-90">
         <circle
@@ -82,9 +97,9 @@ const VERIFICATION_META: Record<
   VerificationStatus,
   { text: string; color: string }
 > = {
-  verified: { text: "Verified", color: "var(--success)" },
-  partial: { text: "Partly verified", color: "var(--warning)" },
-  unverified: { text: "Unverified", color: "var(--destructive)" },
+  verified: { text: "موثّق", color: "var(--success)" },
+  partial: { text: "موثّق جزئيًا", color: "var(--warning)" },
+  unverified: { text: "غير موثّق", color: "var(--destructive)" },
 };
 
 export function VerificationBadge({
@@ -106,12 +121,14 @@ export function VerificationBadge({
   );
 }
 
-const DUPLICATE_META: Record<DuplicateStatus, { text: string; color: string }> =
-  {
-    original: { text: "Original", color: "var(--success)" },
-    partial: { text: "Partly duplicate", color: "var(--warning)" },
-    duplicate: { text: "Duplicate", color: "var(--destructive)" },
-  };
+export const DUPLICATE_META: Record<
+  DuplicateStatus,
+  { text: string; color: string }
+> = {
+  original: { text: "أصلي", color: "var(--success)" },
+  partial: { text: "تكرار جزئي", color: "var(--warning)" },
+  duplicate: { text: "تكرار", color: "var(--destructive)" },
+};
 
 /** "Original" is the norm, so it says nothing unless asked to. */
 export function DuplicateBadge({
@@ -132,7 +149,7 @@ export function DuplicateBadge({
 }
 
 export function TypePill({ type }: { type: string }) {
-  return <Badge>{type}</Badge>;
+  return <Badge>{typeLabel(type)}</Badge>;
 }
 
 export function EmptyState({
@@ -174,7 +191,7 @@ export function ContributionRow({
         className,
       )}
     >
-      <span className="w-8 shrink-0 pt-0.5 text-right text-sm font-semibold tabular-nums text-foreground">
+      <span className="w-8 shrink-0 pt-0.5 text-end text-sm font-semibold tabular-nums text-foreground">
         {score}
       </span>
       <span className="min-w-0 flex-1">
@@ -185,12 +202,12 @@ export function ContributionRow({
           {showMember && (
             <span className="text-foreground">{contribution.memberName}</span>
           )}
-          <span>{contribution.type}</span>
+          <span>{typeLabel(contribution.type)}</span>
           <span aria-hidden>·</span>
           <span>{relativeTime(contribution.createdAt)}</span>
           {dup !== "original" && <DuplicateBadge status={dup} />}
           {contribution.adminOverride?.score != null && (
-            <span>adjusted by host</span>
+            <span>بتعديل من المضيف</span>
           )}
         </span>
       </span>

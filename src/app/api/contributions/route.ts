@@ -53,13 +53,13 @@ export async function POST(req: Request) {
 
   if (!memberId) {
     return NextResponse.json(
-      { error: "Pick who you are before submitting." },
+      { error: "اختر من أنت قبل الإرسال." },
       { status: 400 },
     );
   }
   if (!url) {
     return NextResponse.json(
-      { error: "A URL or source is required." },
+      { error: "الرابط أو المصدر مطلوب." },
       { status: 400 },
     );
   }
@@ -68,14 +68,14 @@ export async function POST(req: Request) {
     if (!/^https?:$/.test(parsed.protocol)) throw new Error("bad protocol");
   } catch {
     return NextResponse.json(
-      { error: "That URL does not look valid. It should start with https://" },
+      { error: "هذا الرابط غير صالح. يجب أن يبدأ بـ https://" },
       { status: 400 },
     );
   }
   const member = await getMember(memberId);
   if (!member) {
     return NextResponse.json(
-      { error: "That team member no longer exists." },
+      { error: "هذا العضو لم يعد موجودًا." },
       { status: 404 },
     );
   }
@@ -101,7 +101,7 @@ export async function POST(req: Request) {
   } catch (err) {
     return NextResponse.json(
       {
-        error: `Evaluation failed: ${(err as Error)?.message ?? "unknown error"}`,
+        error: `فشل التقييم: ${(err as Error)?.message ?? "خطأ غير معروف"}`,
       },
       { status: 502 },
     );

@@ -25,7 +25,9 @@ How to work:
 4. Judge the member's own contribution from their "Why is this useful?" note. Reward specific, tested, applied insight. Do not reward long but empty text. A generic restatement of the headline is worth very little.
 5. Compare against the earlier submissions you are given. Same news/tool already submitted = duplicate. Same topic but with materially new information, testing, or a concrete use case = partially duplicate, not a full duplicate.
 
-Be fair, consistent and concise. Explain your reasoning in plain language a student can follow. Always finish by calling the submit_evaluation tool exactly once.`;
+Be fair, consistent and concise. Explain your reasoning in plain language a student can follow. Always finish by calling the submit_evaluation tool exactly once.
+
+Write the "reason", "evidence" and "duplicateReason" fields in Modern Standard Arabic (Simple, clear Arabic — not machine-translated-sounding). Everything else in the tool call (dates, URLs) stays in its original format.`;
 
 export function buildUserPrompt(
   input: EvaluationInput,

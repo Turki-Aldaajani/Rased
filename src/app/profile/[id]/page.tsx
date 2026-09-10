@@ -1,13 +1,14 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ContributionRow, ScoreRing } from "@/components/contribution";
+import { ContributionRow, ScoreRing, typeLabel } from "@/components/contribution";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { SCORING } from "@/lib/config/scoring";
 import { effectiveScore } from "@/lib/db/schema";
 import { getMember, listContributions, listMembers } from "@/lib/db/store";
 import { memberStats } from "@/lib/services/leaderboard";
+import { contributionsCount, membersCount } from "@/lib/util/ar";
 import { weekKey } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
@@ -27,47 +28,46 @@ export default async function ProfilePage({ params }: Props) {
   const thisWeek = weekKey(new Date());
 
   const tiles = [
-    { label: "Total points", value: stats.totalPoints, sub: "all time" },
+    { label: "إجمالي النقاط", value: stats.totalPoints, sub: "كل الأوقات" },
     {
-      label: "Weekly points",
+      label: "نقاط الأسبوع",
       value: stats.weeklyPoints,
-      sub: `best ${SCORING.bestContributionsPerWeek} finds`,
+      sub: `أفضل ${SCORING.bestContributionsPerWeek} اكتشافات`,
     },
     {
-      label: "Monthly points",
+      label: "نقاط الشهر",
       value: stats.monthlyPoints,
-      sub: `best ${SCORING.bestWeeksPerMonth} weeks`,
+      sub: `أفضل ${SCORING.bestWeeksPerMonth} أسابيع`,
     },
     {
-      label: "Weekly rank",
+      label: "ترتيب الأسبوع",
       value: stats.weeklyPoints > 0 ? (stats.weeklyRank ?? "—") : "—",
-      sub: `of ${members.length} members`,
+      sub: `من أصل ${membersCount(members.length)}`,
     },
     {
-      label: "Contributions",
+      label: "المساهمات",
       value: stats.contributionCount,
-      sub: `${stats.weeklyCount} this week`,
+      sub: `${stats.weeklyCount} هذا الأسبوع`,
     },
   ];
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Button asChild variant="ghost" size="sm" className="-ml-3">
+      <Button asChild variant="ghost" size="sm" className="-ms-3">
         <Link href="/leaderboard">
-          <ArrowLeft />
-          Leaderboard
+          <ArrowRight />
+          المتصدرون
         </Link>
       </Button>
 
       <Card className="flex flex-wrap items-center gap-4 p-5">
         <div className="min-w-0 flex-1">
-          <h1 className="text-lg font-semibold text-foreground">
+          <h1 className="font-serif-display text-lg font-semibold text-foreground">
             {member.name}
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {stats.contributionCount} contribution
-            {stats.contributionCount === 1 ? "" : "s"} · {stats.totalPoints}{" "}
-            points all time
+            {contributionsCount(stats.contributionCount)} ·{" "}
+            {stats.totalPoints} نقطة في كل الأوقات
           </p>
         </div>
         {stats.bestContribution && (
@@ -90,13 +90,13 @@ export default async function ProfilePage({ params }: Props) {
       {stats.bestContribution && (
         <Card className="p-5">
           <h2 className="text-sm font-semibold text-foreground">
-            Best contribution
+            أفضل مساهمة
           </h2>
           <Link
             href={`/result/${stats.bestContribution.id}`}
             className="mt-3 flex items-start gap-3"
           >
-            <span className="w-8 shrink-0 text-right text-sm font-semibold tabular-nums text-foreground">
+            <span className="w-8 shrink-0 text-end text-sm font-semibold tabular-nums text-foreground">
               {effectiveScore(stats.bestContribution)}
             </span>
             <span className="min-w-0">
@@ -104,7 +104,7 @@ export default async function ProfilePage({ params }: Props) {
                 {stats.bestContribution.title}
               </span>
               <span className="mt-0.5 block text-xs text-muted-foreground">
-                {stats.bestContribution.type} ·{" "}
+                {typeLabel(stats.bestContribution.type)} ·{" "}
                 {stats.bestContribution.evaluation.reason}
               </span>
             </span>
@@ -114,25 +114,24 @@ export default async function ProfilePage({ params }: Props) {
 
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">
-          <h2 className="text-sm font-semibold text-foreground">History</h2>
+          <h2 className="text-sm font-semibold text-foreground">السجل</h2>
           <p className="text-xs text-muted-foreground">
-            Everything counts toward the record; only the best{" "}
-            {SCORING.bestContributionsPerWeek} of each week count toward the
-            ranking.
+            كل شيء يُحتسب في السجل؛ فقط أفضل{" "}
+            {SCORING.bestContributionsPerWeek} من كل أسبوع تُحتسب في الترتيب.
           </p>
         </div>
         <div className="p-2">
           {stats.history.length === 0 ? (
             <p className="px-3 py-6 text-sm text-muted-foreground">
-              No contributions yet.
+              لا توجد مساهمات بعد.
             </p>
           ) : (
             stats.history.map((c) => (
               <div key={c.id} className="relative">
                 <ContributionRow contribution={c} showMember={false} />
                 {c.weekKey === thisWeek && (
-                  <span className="pointer-events-none absolute right-3 top-3.5 text-xs text-muted-foreground">
-                    this week
+                  <span className="pointer-events-none absolute end-3 top-3.5 text-xs text-muted-foreground">
+                    هذا الأسبوع
                   </span>
                 )}
               </div>

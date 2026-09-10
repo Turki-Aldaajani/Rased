@@ -6,7 +6,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "AI Hunt",
   description:
-    "Find something useful in AI, paste the link, and get it verified and scored.",
+    "الصق رابطًا لشيء مفيد في الذكاء الاصطناعي، ويُتحقق منه ويُقيّم تلقائيًا.",
 };
 
 export default function RootLayout({
@@ -15,20 +15,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link
-          rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossOrigin=""
-        />
-        {/* Fallback for the brand font (Thmanyah) when it is not installed locally. */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-      </head>
+    <html lang="ar" dir="rtl">
       <body className="min-h-screen">
         <CurrentUserProvider>
           <Header />
@@ -36,7 +23,7 @@ export default function RootLayout({
             {children}
           </main>
           <footer className="mx-auto max-w-5xl px-4 pb-10 text-center text-xs text-muted-foreground sm:px-6">
-            Scores are AI-assisted and can be corrected by the host.
+            التقييمات بمساعدة الذكاء الاصطناعي، ويمكن للمشرف تعديلها.
           </footer>
         </CurrentUserProvider>
       </body>

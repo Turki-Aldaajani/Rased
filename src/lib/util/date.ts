@@ -37,11 +37,13 @@ export function daysBetween(a: Date | string, b: Date | string): number {
   );
 }
 
+const AR_LOCALE = "ar-u-nu-latn";
+
 export function formatDate(iso: string | null | undefined): string {
-  if (!iso) return "Unknown";
+  if (!iso) return "غير معروف";
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return String(iso);
-  return d.toLocaleDateString("en-GB", {
+  return d.toLocaleDateString(AR_LOCALE, {
     day: "numeric",
     month: "short",
     year: "numeric",
@@ -51,16 +53,16 @@ export function formatDate(iso: string | null | undefined): string {
 export function relativeTime(iso: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.round(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
+  if (mins < 1) return "الآن";
+  if (mins < 60) return `منذ ${mins} د`;
   const hrs = Math.round(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
+  if (hrs < 24) return `منذ ${hrs} س`;
   const days = Math.round(hrs / 24);
-  if (days < 30) return `${days}d ago`;
+  if (days < 30) return `منذ ${days} يوم`;
   return formatDate(iso);
 }
 
-/** Human label for the current week, e.g. "8–14 Sep". */
+/** Human label for the current week, e.g. "8–14 سبتمبر". */
 export function weekLabel(key: string): string {
   const [yearStr, weekStr] = key.split("-W");
   const year = Number(yearStr);
@@ -72,7 +74,7 @@ export function weekLabel(key: string): string {
   const sunday = new Date(monday);
   sunday.setUTCDate(monday.getUTCDate() + 6);
   const fmt = (d: Date, withMonth: boolean) =>
-    d.toLocaleDateString("en-GB", {
+    d.toLocaleDateString(AR_LOCALE, {
       day: "numeric",
       ...(withMonth ? { month: "short" } : {}),
       timeZone: "UTC",
@@ -83,7 +85,7 @@ export function weekLabel(key: string): string {
 
 export function monthLabel(key: string): string {
   const [y, m] = key.split("-").map(Number);
-  return new Date(y, m - 1, 1).toLocaleDateString("en-GB", {
+  return new Date(y, m - 1, 1).toLocaleDateString(AR_LOCALE, {
     month: "long",
     year: "numeric",
   });
