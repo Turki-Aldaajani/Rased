@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, ChevronDown, Moon, Sun } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -14,52 +14,6 @@ const NAV = [
   { href: "/feed", label: "All finds" },
   { href: "/admin", label: "Admin" },
 ];
-
-function ThemeToggle() {
-  const [theme, setTheme] = useState<"light" | "dark" | null>(null);
-
-  useEffect(() => {
-    const stored = (() => {
-      try {
-        return localStorage.getItem("ai-hunt:theme");
-      } catch {
-        return null;
-      }
-    })();
-    if (stored === "light" || stored === "dark") {
-      setTheme(stored);
-      document.documentElement.setAttribute("data-theme", stored);
-    }
-  }, []);
-
-  const toggle = () => {
-    const current =
-      theme ??
-      (window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light");
-    const next = current === "dark" ? "light" : "dark";
-    setTheme(next);
-    document.documentElement.setAttribute("data-theme", next);
-    try {
-      localStorage.setItem("ai-hunt:theme", next);
-    } catch {
-      /* ignore */
-    }
-  };
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={toggle}
-      aria-label="Toggle light and dark mode"
-      title="Toggle light / dark"
-    >
-      {theme === "dark" ? <Sun /> : <Moon />}
-    </Button>
-  );
-}
 
 function MemberPicker() {
   const { members, member, setMemberId, ready } = useCurrentUser();
@@ -186,7 +140,6 @@ export default function Header() {
         )}
 
         <div className="ml-auto flex items-center gap-1">
-          <ThemeToggle />
           <MemberPicker />
           {!bare && (
             <Button asChild size="sm" className="ml-1">

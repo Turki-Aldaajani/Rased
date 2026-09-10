@@ -9,19 +9,6 @@ export const metadata: Metadata = {
     "Find something useful in AI, paste the link, and get it verified and scored.",
 };
 
-/**
- * Applies the saved theme before first paint so a dark-mode user never
- * sees a white flash.
- */
-const THEME_SCRIPT = `
-try {
-  var t = localStorage.getItem("ai-hunt:theme");
-  if (t === "light" || t === "dark") {
-    document.documentElement.setAttribute("data-theme", t);
-  }
-} catch (e) {}
-`;
-
 export default function RootLayout({
   children,
 }: {
@@ -30,7 +17,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_SCRIPT }} />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link
           rel="preconnect"

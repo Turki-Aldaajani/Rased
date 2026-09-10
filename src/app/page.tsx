@@ -1,4 +1,5 @@
 import Composer from "@/components/Composer";
+import HeroScene from "@/components/HeroScene";
 import QuietNav from "@/components/QuietNav";
 import { listContributions } from "@/lib/db/store";
 import { weekKey } from "@/lib/util/date";
@@ -17,6 +18,7 @@ export default async function HomePage() {
   return (
     <div className="py-16 sm:py-24">
       <Composer />
+      <HeroScene />
       <QuietNav thisWeek={thisWeek} />
     </div>
   );

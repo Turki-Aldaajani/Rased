@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Design tokens.
+   Design tokens. Dark only — there is no light theme and no toggle.
 
    The interface is built almost entirely from neutrals: background, text and
    borders. The green is spent only where the eye should land — the primary
@@ -11,50 +11,18 @@
    --------------------------------------------------------------------------- */
 
 :root {
-  color-scheme: light;
-
-  --background: #fafafa;
-  --foreground: #2b2b2b;
-
-  --card: #ffffff;
-  --card-foreground: #2b2b2b;
-
-  /* Muted = quiet surface. Muted-foreground = quiet text. */
-  --muted: #f2efe6;
-  --muted-foreground: #9a968a;
-
-  --surface-secondary: #e3d8b3;
-
-  --border: #e7e3d6;
-  --input: #e7e3d6;
-  --ring: #125d64;
-
-  --primary: #155043;
-  --primary-foreground: #fafafa;
-  --primary-muted: #eef2f0;
-
-  --interactive: #125d64;
-  --accent: #869200;
-
-  --success: #3ca45d;
-  --warning: #f3c43c;
-  --destructive: #fb4c3c;
-  --info: #3ca6eb;
-  --highlight: #eb3c87;
-
-  --radius: 0.375rem;
-  --shadow-card: 0 1px 2px rgb(19 28 24 / 0.04);
-}
-
-:root[data-theme="dark"] {
   color-scheme: dark;
 
   --background: #131c18;
   --foreground: #f1efe6;
 
+  /* Deepest surface, for the one 3D panel on the home page. */
+  --surface-deep: #0b100d;
+
   --card: #18231e;
   --card-foreground: #f1efe6;
 
+  /* Muted = quiet surface. Muted-foreground = quiet text. */
   --muted: #1f2b25;
   --muted-foreground: #9a968a;
 
@@ -68,7 +36,11 @@
   --primary-foreground: #fafafa;
   --primary-muted: #1b2a24;
 
-  --interactive: #4f9aa1;
+  /* The identity greens, kept raw for lighting and glows. */
+  --brand-deep: #155043;
+  --interactive: #125d64;
+  --interactive-bright: #4f9aa1;
+
   --accent: #a4b02c;
 
   --success: #4fb972;
@@ -77,48 +49,14 @@
   --info: #5cb6f0;
   --highlight: #f25c9c;
 
+  --radius: 0.375rem;
   --shadow-card: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    color-scheme: dark;
-
-    --background: #131c18;
-    --foreground: #f1efe6;
-
-    --card: #18231e;
-    --card-foreground: #f1efe6;
-
-    --muted: #1f2b25;
-    --muted-foreground: #9a968a;
-
-    --surface-secondary: #3a3826;
-
-    --border: #26332c;
-    --input: #26332c;
-    --ring: #4f9aa1;
-
-    --primary: #2e7d69;
-    --primary-foreground: #fafafa;
-    --primary-muted: #1b2a24;
-
-    --interactive: #4f9aa1;
-    --accent: #a4b02c;
-
-    --success: #4fb972;
-    --warning: #f3c43c;
-    --destructive: #ff6b5c;
-    --info: #5cb6f0;
-    --highlight: #f25c9c;
-
-    --shadow-card: none;
-  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface-deep: var(--surface-deep);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
@@ -130,6 +68,7 @@
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-muted: var(--primary-muted);
+  --color-brand-deep: var(--brand-deep);
   --color-interactive: var(--interactive);
   --color-accent: var(--accent);
   --color-success: var(--success);
@@ -161,7 +100,7 @@ body {
 
 ::selection {
   background: var(--primary-muted);
-  color: var(--primary);
+  color: var(--foreground);
 }
 
 :focus-visible {
@@ -182,6 +121,23 @@ body {
   border-radius: 999px;
   background: var(--primary);
   transition: width 250ms ease;
+}
+
+/* Fallback spinner while the 3D scene loads. */
+.loader {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--border);
+  border-top-color: var(--interactive-bright);
+  border-radius: 999px;
+  animation: spin 700ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes fade-in {
@@ -205,5 +161,9 @@ body {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+  .loader {
+    animation-duration: 900ms !important;
+    animation-iteration-count: infinite !important;
   }
 }
