@@ -9,6 +9,30 @@ export interface DuplicateCandidate {
   sameUrl: boolean;
 }
 
+const squash = (s: string) => s.replace(/\s+/g, " ").trim().toLowerCase();
+
+/**
+ * Text similarity between two submissions (0..1).
+ *
+ * Many sites put the same meta description on every page. When two different
+ * pages share it word for word, it says nothing about their content, so only
+ * the titles are compared.
+ */
+export function contentSimilarity(
+  a: { title: string; description: string },
+  b: { title: string; description: string },
+): number {
+  const titleScore = similarity(a.title, b.title);
+  const sharedBoilerplate =
+    squash(a.description).length > 0 &&
+    squash(a.description) === squash(b.description);
+  if (sharedBoilerplate) return titleScore;
+  return Math.max(
+    similarity(`${a.title} ${a.description}`, `${b.title} ${b.description}`),
+    titleScore * 0.9,
+  );
+}
+
 /**
  * Cheap local pass that narrows the field before the evaluator reads it.
  * Signals: normalised URL, title similarity and body-text similarity. The
@@ -20,17 +44,13 @@ export function findDuplicateCandidates(
   existing: Contribution[],
   limit = DUPLICATES.maxCandidates,
 ): DuplicateCandidate[] {
-  const needle = `${input.title} ${input.description}`;
   return existing
     .filter((c) => !c.removed && effectiveStatus(c) !== "rejected")
     .map((c) => {
       const sameUrl = sameResource(input.url, c.url);
-      const textScore = similarity(needle, `${c.title} ${c.description}`);
-      const titleScore = similarity(input.title, c.title);
+      const textScore = contentSimilarity(input, c);
       // A shared URL is strong evidence on its own.
-      const score = sameUrl
-        ? Math.max(0.9, textScore)
-        : Math.max(textScore, titleScore * 0.9);
+      const score = sameUrl ? Math.max(0.9, textScore) : textScore;
       return { contribution: c, score, sameUrl };
     })
     .filter((c) => c.sameUrl || c.score >= DUPLICATES.candidateThreshold)
