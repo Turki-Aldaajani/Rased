@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2, Loader2, Pencil, Plus } from "lucide-react";
+import { Link2, Loader2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -12,17 +12,22 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { CONTRIBUTION_TYPES, type Contribution } from "@/lib/db/schema";
+import {
+  NEWSLETTER_CATEGORIES,
+  type Contribution,
+  type NewsletterCategory,
+} from "@/lib/db/schema";
 import type { AutoLabel } from "@/lib/services/title";
 import { cn } from "@/lib/utils";
-import { typeLabel } from "./contribution";
+import { CATEGORY_LABELS } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
 
 const STEPS = [
   "قراءة المصدر",
   "التحقق منه على الإنترنت",
   "التحقق من تاريخ النشر",
-  "المقارنة مع اكتشافات سابقة",
+  "المقارنة مع مساهمات سابقة",
+  "التصنيف وتحديد الجمهور",
   "تقييم المساهمة",
 ];
 
@@ -38,16 +43,14 @@ function looksLikeUrl(value: string): boolean {
 
 export default function Composer() {
   const router = useRouter();
-  const { member, members, setMemberId, ready } = useCurrentUser();
+  const { member, members, setMemberId, ready, refresh } = useCurrentUser();
 
   const [url, setUrl] = useState("");
-  const [note, setNote] = useState("");
-  const [noteOpen, setNoteOpen] = useState(false);
+  const [reason, setReason] = useState("");
   const [label, setLabel] = useState<AutoLabel | null>(null);
   const [labeling, setLabeling] = useState(false);
   const [title, setTitle] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
-  const [type, setType] = useState<string>("");
   const [pickingMember, setPickingMember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
@@ -55,7 +58,6 @@ export default function Composer() {
 
   // Only the newest naming request is allowed to write to state.
   const labelRun = useRef(0);
-  const noteRef = useRef<HTMLTextAreaElement>(null);
 
   const runLabel = useCallback(async (link: string, context: string) => {
     const run = ++labelRun.current;
@@ -71,7 +73,6 @@ export default function Composer() {
       if (data.label) {
         setLabel(data.label);
         setTitle(data.label.title);
-        setType(data.label.type);
       }
     } catch {
       // Silent: the server names it again at submit time if we have nothing.
@@ -88,16 +89,25 @@ export default function Composer() {
       labelRun.current++;
       setLabel(null);
       setTitle("");
-      setType("");
       setLabeling(false);
       return;
     }
-    const timer = setTimeout(() => void runLabel(link, note), 650);
+    const timer = setTimeout(() => void runLabel(link, reason), 650);
     return () => clearTimeout(timer);
-    // `note` is deliberately not a dependency: typing a take should not
-    // re-trigger the naming request.
+    // `reason` is deliberately not a dependency: typing should not re-trigger
+    // the naming request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, busy, runLabel]);
+
+  async function setFocus(next: NewsletterCategory | null) {
+    if (!member) return;
+    await fetch(`/api/members/${member.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ focusArea: next }),
+    });
+    await refresh();
+  }
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -110,7 +120,11 @@ export default function Composer() {
     }
     if (!member) {
       setPickingMember(true);
-      setError("اختر اسمك حتى تُحتسب النقاط في مكانها الصحيح.");
+      setError("اختر اسمك حتى تُحتسب النقطة في مكانها الصحيح.");
+      return;
+    }
+    if (reason.trim().length < 10) {
+      setError("اكتب سببًا محددًا لأهمية هذا المحتوى — جملة قصيرة تكفي.");
       return;
     }
 
@@ -130,9 +144,8 @@ export default function Composer() {
           memberId: member.id,
           url: link,
           title: title.trim(),
-          type,
-          description: label?.summary ?? "",
-          whyUseful: note.trim(),
+          memberReason: reason.trim(),
+          focusArea: member.focusArea ?? undefined,
         }),
       });
       const data = (await res.json()) as {
@@ -162,7 +175,7 @@ export default function Composer() {
           ماذا اكتشفت؟
         </h1>
         <p className="mt-2.5 text-sm text-muted-foreground">
-          الصق رابطًا، يُقرأ ويُتحقق منه ويُقيّم تلقائيًا — بدون نماذج معقدة.
+          الصق رابطًا واكتب لماذا يهم — ورصد يتولّى التحقق والتصنيف.
         </p>
       </div>
 
@@ -192,7 +205,7 @@ export default function Composer() {
             className="shrink-0"
           >
             {busy ? <Loader2 className="animate-spin" /> : null}
-            {busy ? "جارٍ التقييم" : "قيّم"}
+            {busy ? "جارٍ التقييم" : "أرسل"}
           </Button>
         </div>
 
@@ -225,7 +238,7 @@ export default function Composer() {
                   ) : (
                     <div className="flex items-start gap-2">
                       <p className="text-sm font-medium leading-snug text-foreground">
-                        {title || "اكتشاف بلا عنوان"}
+                        {title || "مساهمة بلا عنوان"}
                       </p>
                       <button
                         type="button"
@@ -241,23 +254,11 @@ export default function Composer() {
                   )}
 
                   <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
-                    <select
-                      value={type}
-                      onChange={(e) => setType(e.target.value)}
-                      disabled={busy}
-                      aria-label="نوع المساهمة"
-                      className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-4 outline-none transition-colors duration-200 hover:text-foreground"
-                    >
-                      {CONTRIBUTION_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {typeLabel(t)}
-                        </option>
-                      ))}
-                    </select>
-                    <span aria-hidden>·</span>
                     <span>{label.domain}</span>
                     <span aria-hidden>·</span>
                     <span>سُمّي تلقائيًا</span>
+                    <span aria-hidden>·</span>
+                    <span>التصنيف يحدده رصد</span>
                   </div>
 
                   {label.summary && (
@@ -271,38 +272,24 @@ export default function Composer() {
           </div>
         )}
 
-        {noteOpen ? (
-          <div className="fade-in mt-4">
-            <Textarea
-              ref={noteRef}
-              value={note}
-              onChange={(e) => setNote(e.target.value)}
-              disabled={busy}
-              maxLength={2000}
-              placeholder="لماذا هذا مفيد؟ وفيم قد تستخدمه؟"
-              className="text-sm"
-            />
-            <p className="mt-1.5 px-1 text-xs text-muted-foreground">
-              اختياري — من هنا تأتي نقاطك الشخصية.
-            </p>
-          </div>
-        ) : (
-          !busy && (
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setNoteOpen(true);
-                setTimeout(() => noteRef.current?.focus(), 40);
-              }}
-              className="mt-3"
-            >
-              <Plus />
-              أضف رأيك
-            </Button>
-          )
-        )}
+        {/* The one field the member actually writes. */}
+        <div className="mt-4">
+          <Textarea
+            value={reason}
+            onChange={(e) => {
+              setReason(e.target.value);
+              setError(null);
+            }}
+            disabled={busy}
+            maxLength={2000}
+            aria-label="لماذا ترى أن هذا مهم؟"
+            placeholder="لماذا ترى أن هذا مهم؟"
+            className="text-sm"
+          />
+          <p className="mt-1.5 px-1 text-xs text-muted-foreground">
+            مطلوب — جملة أو جملتان تكفيان. كلامك يُحفظ كما هو.
+          </p>
+        </div>
 
         {busy && (
           <div className="fade-in mt-5 px-1">
@@ -341,9 +328,7 @@ export default function Composer() {
                   setPickingMember(false);
                   setError(null);
                 }}
-                className={cn(
-                  m.id === member?.id && "text-foreground",
-                )}
+                className={cn(m.id === member?.id && "text-foreground")}
               >
                 {m.name}
               </Button>
@@ -362,6 +347,31 @@ export default function Composer() {
           </button>
         )}
       </div>
+
+      {/* Research direction: a hint to the member, never a filter on the result. */}
+      {member && (
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-1 text-xs text-muted-foreground">
+          <span className="me-1">مجال بحثك</span>
+          <select
+            value={member.focusArea ?? ""}
+            onChange={(e) =>
+              void setFocus((e.target.value || null) as NewsletterCategory | null)
+            }
+            aria-label="مجال بحثك"
+            className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-4 outline-none transition-colors duration-200 hover:text-foreground"
+          >
+            <option value="">بلا مجال محدد</option>
+            {NEWSLETTER_CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {CATEGORY_LABELS[c]}
+              </option>
+            ))}
+          </select>
+          <span className="w-full text-center opacity-70">
+            اتجاه بحث فقط — أرسل أي شيء مفيد تجده خارجه.
+          </span>
+        </div>
+      )}
     </section>
   );
 }

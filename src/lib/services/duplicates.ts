@@ -1,7 +1,7 @@
-import { SCORING } from "@/lib/config/scoring";
-import type { Contribution } from "@/lib/db/schema";
+import { DUPLICATES } from "@/lib/config/rules";
+import type { Contribution, DuplicateFinding } from "@/lib/db/schema";
+import { effectiveStatus } from "@/lib/db/schema";
 import { sameResource, similarity, truncate } from "@/lib/util/text";
-import { computeFinalScore } from "./scoring";
 
 export interface DuplicateCandidate {
   contribution: Contribution;
@@ -10,16 +10,19 @@ export interface DuplicateCandidate {
 }
 
 /**
- * Cheap local pass that finds prior submissions covering the same thing.
- * The AI makes the final call — this just narrows what it has to read.
+ * Cheap local pass that narrows the field before the evaluator reads it.
+ * Signals: normalised URL, title similarity and body-text similarity. The
+ * evaluator makes the actual call — including the "same topic, new value"
+ * case, which text similarity alone cannot see.
  */
 export function findDuplicateCandidates(
-  input: { title: string; url: string; description: string },
+  input: { title: string; url: string; description: string; memberReason: string },
   existing: Contribution[],
-  limit = 5,
+  limit = DUPLICATES.maxCandidates,
 ): DuplicateCandidate[] {
   const needle = `${input.title} ${input.description}`;
   return existing
+    .filter((c) => !c.removed && effectiveStatus(c) !== "rejected")
     .map((c) => {
       const sameUrl = sameResource(input.url, c.url);
       const textScore = similarity(needle, `${c.title} ${c.description}`);
@@ -30,40 +33,53 @@ export function findDuplicateCandidates(
         : Math.max(textScore, titleScore * 0.9);
       return { contribution: c, score, sameUrl };
     })
-    .filter(
-      (c) => c.sameUrl || c.score >= SCORING.duplicateSimilarityThreshold * 0.6,
-    )
+    .filter((c) => c.sameUrl || c.score >= DUPLICATES.candidateThreshold)
     .sort((a, b) => b.score - a.score)
     .slice(0, limit);
 }
 
+/** The compared-against list stored on every evaluation, for the admin view. */
+export function candidateMatches(
+  candidates: DuplicateCandidate[],
+): DuplicateFinding["matches"] {
+  return candidates.map((c) => ({
+    id: c.contribution.id,
+    title: truncate(c.contribution.title, 120),
+    memberName: c.contribution.memberName,
+    score: Math.round(c.score * 100) / 100,
+  }));
+}
+
 /**
- * Re-applies duplicate status when an identical source turns out to already
- * exist at save time. Two people pasting the same link within the same second
- * would otherwise both read an empty history and both be scored as original.
+ * Re-applies the duplicate outcome when an identical source turns out to
+ * already exist at save time. Two people pasting the same link within the same
+ * second would otherwise both read an empty history and both be counted.
+ *
+ * Only the duplicate fields change: the classification, audience and extracted
+ * content of this submission stay exactly as evaluated.
  */
 export function applyLateDuplicate(
   c: Contribution,
   earlier: Contribution,
 ): Contribution {
-  if (c.evaluation.duplicate === "duplicate") return c;
+  if (!c.evaluation || c.evaluation.duplicate.outcome === "duplicate") return c;
 
-  const evaluation = { ...c.evaluation, breakdown: { ...c.evaluation.breakdown } };
-  evaluation.duplicate = "duplicate";
-  evaluation.duplicateOfId = earlier.id;
-  evaluation.duplicateReason = `The same source was submitted by ${earlier.memberName} moments earlier ("${truncate(
-    earlier.title,
-    70,
-  )}").`;
+  const evaluation = {
+    ...c.evaluation,
+    status: "duplicate" as const,
+    duplicate: {
+      ...c.evaluation.duplicate,
+      outcome: "duplicate" as const,
+      ofId: earlier.id,
+      confidence: 1,
+      reason: `أرسل ${earlier.memberName} المصدر نفسه قبل لحظات ("${truncate(
+        earlier.title,
+        70,
+      )}").`,
+    },
+    summaryForMember:
+      "وصلت مساهمة بالمصدر نفسه قبل مساهمتك بلحظات، لذا سُجّلت هذه كمكرر.",
+  };
 
-  const { rawScore, finalScore, penalties } = computeFinalScore(
-    evaluation.breakdown,
-    evaluation.verified,
-    "duplicate",
-  );
-  evaluation.rawScore = rawScore;
-  evaluation.finalScore = finalScore;
-  evaluation.evidence = [...evaluation.evidence, ...penalties];
-
-  return { ...c, evaluation };
+  return { ...c, status: "duplicate", evaluation };
 }

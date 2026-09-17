@@ -11,7 +11,7 @@ import { useCurrentUser } from "./CurrentUser";
 const NAV = [
   { href: "/dashboard", label: "الرئيسية" },
   { href: "/leaderboard", label: "المتصدرون" },
-  { href: "/feed", label: "كل الاكتشافات" },
+  { href: "/feed", label: "كل المساهمات" },
   { href: "/admin", label: "الإدارة" },
 ];
 
@@ -143,7 +143,7 @@ export default function Header() {
           <MemberPicker />
           {!bare && (
             <Button asChild size="sm" className="ms-1">
-              <Link href="/">اكتشاف جديد</Link>
+              <Link href="/">مساهمة جديدة</Link>
             </Button>
           )}
         </div>

@@ -1,6 +1,17 @@
 import { getStore, getDeployStore, type Store } from "@netlify/blobs";
 import { randomUUID } from "crypto";
-import type { Contribution, Database, Member } from "./schema";
+import { POINTS } from "@/lib/config/rules";
+import {
+  NEWSLETTER_CATEGORIES,
+  type Contribution,
+  type ContributionStatus,
+  type Database,
+  type Evaluation,
+  type Member,
+  type NewsletterCategory,
+  type PointsAward,
+} from "./schema";
+import { cycleKey, monthKey, weekKey } from "@/lib/util/date";
 
 /**
  * Netlify Blobs–backed store. Everything the rest of the app needs goes
@@ -16,16 +27,30 @@ import type { Contribution, Database, Member } from "./schema";
 const STORE_NAME = "rased-db";
 const DB_KEY = "db.json";
 
+/**
+ * Seed roster. The team is nine people; the names here are the ones the app
+ * shipped with, and the rest are added from /admin (or via RASED_TEAM, a
+ * comma-separated list, so a fresh deploy starts with the real roster).
+ */
 const DEFAULT_MEMBERS = ["Nawal", "Abdullah", "Reem", "Abdulaziz", "Mukhtar", "Yara"];
+
+function seedNames(): string[] {
+  const configured = (process.env.RASED_TEAM || "")
+    .split(",")
+    .map((n) => n.trim())
+    .filter(Boolean);
+  return configured.length > 0 ? configured : DEFAULT_MEMBERS;
+}
 
 function seedDatabase(): Database {
   const now = new Date().toISOString();
   return {
-    members: DEFAULT_MEMBERS.map((name) => ({
+    members: seedNames().map((name) => ({
       id: randomUUID(),
       name,
       createdAt: now,
       active: true,
+      focusArea: null,
     })),
     contributions: [],
   };
@@ -49,14 +74,196 @@ let writeChain: Promise<unknown> = Promise.resolve();
  */
 let seeding: Promise<Database> | null = null;
 
+// ---------------------------------------------------------------------------
+// Migration — records written before the contribution engine existed
+// ---------------------------------------------------------------------------
+
+interface LegacyEvaluation {
+  finalScore?: number;
+  duplicate?: string;
+  duplicateOfId?: string | null;
+  duplicateReason?: string | null;
+  reason?: string;
+  evidence?: string[];
+  verified?: string;
+  originalDate?: string | null;
+  resolvedSource?: string | null;
+  engine?: "ai" | "heuristic";
+  model?: string | null;
+}
+
+/**
+ * Old rows stored a single 0-100 score as the member's points. That number is
+ * an editorial judgement, not a point, so it is carried over as the editorial
+ * score and the member's points are recomputed under the new flat rule.
+ */
+function migrateContribution(raw: Record<string, unknown>): Contribution {
+  if (raw.points && raw.status) return raw as unknown as Contribution;
+
+  const legacy = (raw.evaluation ?? {}) as LegacyEvaluation;
+  const createdAt = String(raw.createdAt ?? new Date().toISOString());
+  const dup =
+    legacy.duplicate === "duplicate"
+      ? "duplicate"
+      : legacy.duplicate === "partial"
+        ? "same_topic_new_value"
+        : "unique";
+  const status: ContributionStatus =
+    dup === "duplicate"
+      ? "duplicate"
+      : dup === "same_topic_new_value"
+        ? "accepted_with_new_angle"
+        : "accepted";
+
+  const evaluation: Evaluation | null = raw.evaluation
+    ? {
+        status: status as Exclude<ContributionStatus, "pending">,
+        rejectionReason: null,
+        eligibility: {
+          aiRelated: true,
+          specificInformation: true,
+          usableSource: true,
+          understandableFromSource: true,
+          memberExplainedWhy: Boolean(String(raw.whyUseful ?? "").trim()),
+          usefulKnowledge: true,
+        },
+        classification: {
+          primary: "important_news",
+          secondary: [],
+          reason: "مُرحَّلة من النسخة السابقة قبل وجود التصنيف التلقائي.",
+        },
+        audience: { tags: ["general_users"], reason: "" },
+        difficulty: { level: "not_applicable", prerequisites: [] },
+        duplicate: {
+          outcome: dup,
+          ofId: legacy.duplicateOfId ?? null,
+          confidence: dup === "unique" ? 0 : 0.8,
+          reason: legacy.duplicateReason ?? "",
+          matches: [],
+        },
+        verification: {
+          status:
+            legacy.verified === "verified"
+              ? "verified"
+              : legacy.verified === "partial"
+                ? "partially_verified"
+                : "not_independently_verified",
+          evidence: legacy.evidence ?? [],
+          resolvedSource: legacy.resolvedSource ?? null,
+          originalDate: legacy.originalDate ?? null,
+        },
+        extracted: {
+          title: String(raw.title ?? "") || null,
+          source: null,
+          sourceUrl: String(raw.url ?? "") || null,
+          publicationDate: legacy.originalDate ?? null,
+          entity: null,
+          keyPoints: [],
+          capabilities: [],
+          practicalValue: null,
+          links: [],
+        },
+        aiInterpretation: "",
+        aiSummary: String(raw.description ?? ""),
+        editorial: {
+          score: Number(legacy.finalScore ?? 0),
+          rawScore: Number(legacy.finalScore ?? 0),
+          breakdown: {
+            aiRelevance: 0,
+            significance: 0,
+            usefulness: 0,
+            recency: 0,
+            sourceCredibility: 0,
+            audienceFit: 0,
+            uniqueness: 0,
+            newsletterValue: 0,
+          },
+          notes: ["قيمة تحريرية مُرحَّلة من نظام التقييم السابق (0-100)."],
+        },
+        summaryForMember: legacy.reason ?? "",
+        engine: legacy.engine ?? "heuristic",
+        model: legacy.model ?? null,
+        evaluatedAt: createdAt,
+      }
+    : null;
+
+  const points: PointsAward = {
+    // Recomputed on read is not possible without the whole cycle, so the flat
+    // rule is applied here and the cap is enforced by the migration pass below.
+    awarded: status === "duplicate" ? 0 : POINTS.perValidContribution,
+    reason: status === "duplicate" ? "duplicate" : "valid_contribution",
+    cycleKey: cycleKey(createdAt),
+    cycleTotalBefore: 0,
+  };
+
+  return {
+    id: String(raw.id ?? randomUUID()),
+    memberId: String(raw.memberId ?? ""),
+    memberName: String(raw.memberName ?? ""),
+    title: String(raw.title ?? ""),
+    url: String(raw.url ?? ""),
+    description: String(raw.description ?? ""),
+    memberReason: String(raw.whyUseful ?? ""),
+    note: "",
+    focusArea: null,
+    createdAt,
+    cycleKey: cycleKey(createdAt),
+    weekKey: String(raw.weekKey ?? weekKey(createdAt)),
+    monthKey: String(raw.monthKey ?? monthKey(createdAt)),
+    status,
+    evaluation,
+    points,
+    evaluationError: null,
+    evaluationAttempts: 1,
+    adminOverride: null,
+    removed: Boolean(raw.removed),
+  };
+}
+
+/** Re-applies the per-cycle cap across migrated rows, oldest first. */
+function enforceCapAcrossHistory(contributions: Contribution[]): void {
+  const totals = new Map<string, number>();
+  const chronological = [...contributions].sort((a, b) =>
+    a.createdAt.localeCompare(b.createdAt),
+  );
+  for (const c of chronological) {
+    if (c.removed || c.points.awarded === 0) continue;
+    const key = `${c.memberId}:${c.cycleKey}`;
+    const before = totals.get(key) ?? 0;
+    c.points.cycleTotalBefore = before;
+    if (before >= POINTS.maxPerCycle) {
+      c.points.awarded = 0;
+      c.points.reason = "cycle_cap_reached";
+    } else {
+      totals.set(key, before + c.points.awarded);
+    }
+  }
+}
+
+function migrateMember(raw: Record<string, unknown>): Member {
+  const focus = String(raw.focusArea ?? "");
+  return {
+    id: String(raw.id ?? randomUUID()),
+    name: String(raw.name ?? ""),
+    createdAt: String(raw.createdAt ?? new Date().toISOString()),
+    active: raw.active !== false,
+    focusArea:
+      (NEWSLETTER_CATEGORIES.find((c) => c === focus) as NewsletterCategory) ??
+      null,
+  };
+}
+
 async function readRaw(): Promise<Database> {
   const store = getDbStore();
   const parsed = await store.get(DB_KEY, { type: "json" });
   if (parsed) {
-    return {
-      members: parsed.members ?? [],
-      contributions: parsed.contributions ?? [],
-    };
+    const members = (parsed.members ?? []).map(migrateMember);
+    const contributions = (parsed.contributions ?? []).map(migrateContribution);
+    const needsMigration = (parsed.contributions ?? []).some(
+      (c: Record<string, unknown>) => !c.points || !c.status,
+    );
+    if (needsMigration) enforceCapAcrossHistory(contributions);
+    return { members, contributions };
   }
   if (!seeding) {
     seeding = (async () => {
@@ -129,6 +336,7 @@ export async function addMember(name: string): Promise<Member> {
       name: clean,
       createdAt: new Date().toISOString(),
       active: true,
+      focusArea: null,
     };
     db.members.push(member);
     return member;
@@ -137,7 +345,7 @@ export async function addMember(name: string): Promise<Member> {
 
 export async function updateMember(
   id: string,
-  patch: Partial<Pick<Member, "name" | "active">>,
+  patch: Partial<Pick<Member, "name" | "active" | "focusArea">>,
 ): Promise<Member | null> {
   return mutate((db) => {
     const member = db.members.find((m) => m.id === id);
@@ -149,6 +357,7 @@ export async function updateMember(
       }
     }
     if (patch.active != null) member.active = patch.active;
+    if (patch.focusArea !== undefined) member.focusArea = patch.focusArea;
     return member;
   });
 }
@@ -184,13 +393,6 @@ export async function getContribution(id: string): Promise<Contribution | null> 
   return db.contributions.find((c) => c.id === id) ?? null;
 }
 
-export async function saveContribution(c: Contribution): Promise<Contribution> {
-  return mutate((db) => {
-    db.contributions.push(c);
-    return c;
-  });
-}
-
 export async function updateContribution(
   id: string,
   patch: Partial<Contribution>,
@@ -207,21 +409,85 @@ export function newId(): string {
   return randomUUID();
 }
 
+// ----- the one write that has to be atomic ---------------------------------
+
+export interface AwardContext {
+  /** Points the member already holds in this cycle, read under the lock. */
+  cycleTotalBefore: number;
+  /** An earlier contribution with the same source, if one slipped in. */
+  collision: Contribution | null;
+}
+
 /**
- * Saves a contribution, re-checking under the write lock whether an identical
- * source was stored in the meantime. `onCollision` decides what to do about it.
+ * Saves an evaluated contribution and decides its points in the same locked
+ * read-modify-write.
+ *
+ * Both halves have to happen together: the per-cycle cap and the duplicate
+ * check are both reads of the live database, and two submissions evaluated
+ * concurrently would otherwise both see stale state and both be counted.
  */
-export async function saveContributionGuarded(
-  c: Contribution,
+export async function saveWithAward(
+  contribution: Contribution,
   isSameSource: (a: Contribution, b: Contribution) => boolean,
-  onCollision: (c: Contribution, earlier: Contribution) => Contribution,
+  decide: (c: Contribution, ctx: AwardContext) => Contribution,
 ): Promise<Contribution> {
   return mutate((db) => {
-    const earlier = db.contributions.find(
-      (x) => !x.removed && x.id !== c.id && isSameSource(x, c),
-    );
-    const final = earlier ? onCollision(c, earlier) : c;
+    const collision =
+      db.contributions.find(
+        (x) =>
+          !x.removed &&
+          x.id !== contribution.id &&
+          isSameSource(x, contribution),
+      ) ?? null;
+
+    const cycleTotalBefore = db.contributions
+      .filter(
+        (c) =>
+          !c.removed &&
+          c.memberId === contribution.memberId &&
+          c.cycleKey === contribution.cycleKey,
+      )
+      .reduce(
+        (sum, c) => sum + (c.adminOverride?.points ?? c.points.awarded),
+        0,
+      );
+
+    const final = decide(contribution, { cycleTotalBefore, collision });
     db.contributions.push(final);
     return final;
+  });
+}
+
+/** Same deal for a retry: the row already exists, so it is replaced in place. */
+export async function replaceWithAward(
+  id: string,
+  decide: (current: Contribution, ctx: AwardContext) => Contribution,
+): Promise<Contribution | null> {
+  return mutate((db) => {
+    const idx = db.contributions.findIndex((c) => c.id === id);
+    if (idx === -1) return null;
+    const current = db.contributions[idx];
+
+    const collision =
+      db.contributions.find(
+        (x) => !x.removed && x.id !== id && x.url === current.url,
+      ) ?? null;
+
+    const cycleTotalBefore = db.contributions
+      .filter(
+        (c) =>
+          !c.removed &&
+          c.id !== id &&
+          c.memberId === current.memberId &&
+          c.cycleKey === current.cycleKey,
+      )
+      .reduce(
+        (sum, c) => sum + (c.adminOverride?.points ?? c.points.awarded),
+        0,
+      );
+
+    const updated = decide(current, { cycleTotalBefore, collision });
+    db.contributions[idx] = updated;
+    return updated;
   });
 }

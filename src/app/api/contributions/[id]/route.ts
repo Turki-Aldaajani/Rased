@@ -1,5 +1,13 @@
 import { NextResponse } from "next/server";
-import type { DuplicateStatus } from "@/lib/db/schema";
+import { POINTS } from "@/lib/config/rules";
+import {
+  CONTRIBUTION_STATUSES,
+  DUPLICATE_OUTCOMES,
+  NEWSLETTER_CATEGORIES,
+  type ContributionStatus,
+  type DuplicateOutcome,
+  type NewsletterCategory,
+} from "@/lib/db/schema";
 import { getContribution, updateContribution } from "@/lib/db/store";
 import { requireAdmin } from "@/lib/services/admin";
 import { clamp } from "@/lib/util/text";
@@ -17,7 +25,11 @@ export async function GET(_req: Request, { params }: Ctx) {
   return NextResponse.json({ contribution });
 }
 
-/** Admin override — the AI is the default, a human has the last word. */
+/**
+ * Admin correction. The evaluation is never final: a human can change the
+ * status, the points, the category and the duplicate call, and can restore
+ * anything that was rejected or removed.
+ */
 export async function PATCH(req: Request, { params }: Ctx) {
   const denied = requireAdmin(req);
   if (denied) return denied;
@@ -29,8 +41,10 @@ export async function PATCH(req: Request, { params }: Ctx) {
   }
 
   const body = (await req.json().catch(() => ({}))) as {
-    score?: number | null;
-    duplicate?: DuplicateStatus | null;
+    status?: string | null;
+    points?: number | null;
+    primaryCategory?: string | null;
+    duplicateOutcome?: string | null;
     note?: string;
     removed?: boolean;
     clear?: boolean;
@@ -44,19 +58,32 @@ export async function PATCH(req: Request, { params }: Ctx) {
     return NextResponse.json({ contribution: updated });
   }
 
-  const score =
-    body.score == null || Number.isNaN(Number(body.score))
-      ? (current.adminOverride?.score ?? null)
-      : clamp(Math.round(Number(body.score)), 0, 100);
+  const status = pick(body.status, CONTRIBUTION_STATUSES) as
+    | ContributionStatus
+    | null;
+  const primaryCategory = pick(
+    body.primaryCategory,
+    NEWSLETTER_CATEGORIES,
+  ) as NewsletterCategory | null;
+  const duplicateOutcome = pick(
+    body.duplicateOutcome,
+    DUPLICATE_OUTCOMES,
+  ) as DuplicateOutcome | null;
 
-  const duplicate =
-    body.duplicate ?? current.adminOverride?.duplicate ?? null;
+  const points =
+    body.points == null || Number.isNaN(Number(body.points))
+      ? (current.adminOverride?.points ?? null)
+      : clamp(Math.round(Number(body.points)), 0, POINTS.maxPerCycle);
 
   const updated = await updateContribution(id, {
     removed: body.removed ?? current.removed,
     adminOverride: {
-      score,
-      duplicate,
+      status: status ?? current.adminOverride?.status ?? null,
+      points,
+      primaryCategory:
+        primaryCategory ?? current.adminOverride?.primaryCategory ?? null,
+      duplicateOutcome:
+        duplicateOutcome ?? current.adminOverride?.duplicateOutcome ?? null,
       note: (body.note ?? current.adminOverride?.note ?? "").trim(),
       at: new Date().toISOString(),
     },
@@ -75,4 +102,9 @@ export async function DELETE(req: Request, { params }: Ctx) {
     return NextResponse.json({ error: "غير موجود." }, { status: 404 });
   }
   return NextResponse.json({ ok: true });
+}
+
+function pick(value: unknown, allowed: readonly string[]): string | null {
+  const v = String(value ?? "").trim();
+  return allowed.includes(v) ? v : null;
 }

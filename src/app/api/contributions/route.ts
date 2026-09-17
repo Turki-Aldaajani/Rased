@@ -1,21 +1,17 @@
 import { NextResponse } from "next/server";
+import { ACCEPTANCE } from "@/lib/config/rules";
 import {
-  CONTRIBUTION_TYPES,
-  type Contribution,
-  type ContributionType,
+  NEWSLETTER_CATEGORIES,
+  effectiveStatus,
+  type NewsletterCategory,
 } from "@/lib/db/schema";
 import {
   getMember,
   listAllContributions,
   listContributions,
-  newId,
-  saveContributionGuarded,
 } from "@/lib/db/store";
-import { applyLateDuplicate } from "@/lib/services/duplicates";
-import { evaluateContribution } from "@/lib/services/evaluate";
-import { autoLabel } from "@/lib/services/title";
-import { monthKey, weekKey } from "@/lib/util/date";
-import { sameResource } from "@/lib/util/text";
+import { submitContribution } from "@/lib/services/submit";
+import { meaningfulWordCount } from "@/lib/util/text";
 
 export const dynamic = "force-dynamic";
 // Web verification plus an AI evaluation can take a while.
@@ -24,12 +20,21 @@ export const maxDuration = 120;
 export async function GET(req: Request) {
   const params = new URL(req.url).searchParams;
   const memberId = params.get("memberId");
+  const cycle = params.get("cycle");
+  const status = params.get("status");
   const includeRemoved = params.get("all") === "1";
+
   let contributions = includeRemoved
     ? await listAllContributions()
     : await listContributions();
   if (memberId) {
     contributions = contributions.filter((c) => c.memberId === memberId);
+  }
+  if (cycle) {
+    contributions = contributions.filter((c) => c.cycleKey === cycle);
+  }
+  if (status) {
+    contributions = contributions.filter((c) => effectiveStatus(c) === status);
   }
   return NextResponse.json({ contributions });
 }
@@ -38,9 +43,10 @@ interface SubmitBody {
   memberId?: string;
   title?: string;
   url?: string;
-  description?: string;
-  whyUseful?: string;
-  type?: string;
+  /** The member's answer to "why do you think this is important?". */
+  memberReason?: string;
+  note?: string;
+  focusArea?: string;
 }
 
 export async function POST(req: Request) {
@@ -48,8 +54,8 @@ export async function POST(req: Request) {
 
   const memberId = (body.memberId ?? "").trim();
   const url = (body.url ?? "").trim();
-  const description = (body.description ?? "").trim();
-  const whyUseful = (body.whyUseful ?? "").trim();
+  const memberReason = (body.memberReason ?? "").trim();
+  const note = (body.note ?? "").trim();
 
   if (!memberId) {
     return NextResponse.json(
@@ -72,6 +78,15 @@ export async function POST(req: Request) {
       { status: 400 },
     );
   }
+  // Asked for up front rather than rejected after an evaluation: the member's
+  // own reason is part of the contribution, not an optional extra.
+  if (meaningfulWordCount(memberReason) < ACCEPTANCE.minReasonWords) {
+    return NextResponse.json(
+      { error: "اكتب سببًا محددًا لأهمية هذا المحتوى — جملة قصيرة تكفي." },
+      { status: 400 },
+    );
+  }
+
   const member = await getMember(memberId);
   if (!member) {
     return NextResponse.json(
@@ -80,61 +95,26 @@ export async function POST(req: Request) {
     );
   }
 
-  // Title and type are optional: the composer normally has them already from
-  // /api/title, and anything else gets named here instead of asking the member.
-  let title = (body.title ?? "").trim();
-  let type = (body.type ?? "") as ContributionType;
-  if (!title || !CONTRIBUTION_TYPES.includes(type)) {
-    const label = await autoLabel(url, whyUseful || description);
-    if (!title) title = label.title;
-    if (!CONTRIBUTION_TYPES.includes(type)) type = label.type;
-  }
+  const focusArea =
+    (NEWSLETTER_CATEGORIES.find(
+      (c) => c === (body.focusArea ?? "").trim(),
+    ) as NewsletterCategory) ??
+    member.focusArea ??
+    null;
 
   const existing = await listContributions();
 
-  let result;
-  try {
-    result = await evaluateContribution(
-      { title, url, description, whyUseful, type, memberName: member.name },
-      existing,
-    );
-  } catch (err) {
-    return NextResponse.json(
-      {
-        error: `فشل التقييم: ${(err as Error)?.message ?? "خطأ غير معروف"}`,
-      },
-      { status: 502 },
-    );
-  }
-
-  const now = new Date();
-  const contribution: Contribution = {
-    id: newId(),
-    memberId: member.id,
-    memberName: member.name,
-    title,
-    url,
-    description,
-    whyUseful,
-    type,
-    createdAt: now.toISOString(),
-    weekKey: weekKey(now),
-    monthKey: monthKey(now),
-    evaluation: result.evaluation,
-    adminOverride: null,
-    removed: false,
-  };
-
-  // Guarded save: catches the case where someone submitted the same link while
-  // this one was still being evaluated.
-  const saved = await saveContributionGuarded(
-    contribution,
-    (a, b) => sameResource(a.url, b.url),
-    applyLateDuplicate,
+  const { contribution, notices } = await submitContribution(
+    {
+      member,
+      url,
+      title: (body.title ?? "").trim(),
+      memberReason,
+      note,
+      focusArea,
+    },
+    existing,
   );
 
-  return NextResponse.json(
-    { contribution: saved, notices: result.notices },
-    { status: 201 },
-  );
+  return NextResponse.json({ contribution, notices }, { status: 201 });
 }

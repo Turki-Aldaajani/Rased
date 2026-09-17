@@ -1,30 +1,114 @@
-# 🎯 Rased
+# 🎯 Rased — رصد
 
-An internal, gamified knowledge-sharing game for an AI team.
+The internal contribution and knowledge system of the Enjaz Club AI Team.
 
-A team member finds something useful in AI — a model release, a tool, a paper, a
-technique — and pastes the link. The system names it, opens the source, verifies
-the claim on the web, works out when it was *actually* published, checks whether
-someone already submitted it, scores it out of 100, and updates the leaderboard.
+A member finds something useful in AI — a model release, a tool, a paper, a
+technique — pastes the link and says why it matters. Rasad reads the source,
+checks the claim, works out when it was *actually* published, decides whether
+someone already submitted it, classifies it into the newsletter's six sections,
+and awards the member **one point** if the contribution is valid.
 
 This is an **MVP prototype**, not a production system.
 
 ---
 
+## The one rule everything else follows
+
+**A contribution point and an editorial score are different things.**
+
+| | Contribution point | Editorial score |
+|---|---|---|
+| Who it is about | the member | the content |
+| Range | 0 or 1 | 0–100 |
+| Depends on importance? | **never** | yes |
+| Used for | the leaderboard | ordering the newsletter |
+
+A major frontier-model announcement and a beginner's learning resource are both
+worth exactly **+1** if both are valid. The first may be worth far more to the
+newsletter, and that shows up in the editorial score — never in someone's
+standing. Rasad is not here to decide who the better team member is.
+
+The points engine (`src/lib/services/points.ts`) reads three things and nothing
+else: is the contribution valid, is it a duplicate, and how many points does the
+member already hold this cycle. It cannot see the category, the source or the
+editorial score.
+
+---
+
+## How a submission is judged
+
+**1. The acceptance floor.** A contribution earns its point when all of these
+hold: it is about AI or the team's scope; it carries a specific, understandable
+piece of information; the URL is usable; the content can be understood from the
+source; the member explained why it matters; it offers some real knowledge; and
+it is not a substantial duplicate.
+
+Nothing is rejected for being *less important*, from a smaller company,
+beginner-level, or in a less prestigious category.
+
+**2. Duplicates — three outcomes.**
+
+| Outcome | Meaning | Point |
+|---|---|---|
+| `unique` | nothing earlier covers it | +1 |
+| `same_topic_new_value` | related to an earlier find, but this member adds a test, comparison or use case | +1 |
+| `duplicate` | substantially the same, nothing new | 0, still stored |
+
+"OpenAI released Model X" and "I tested Model X on my project and compared it
+with Y" are two contributions, not one.
+
+**3. Points and the cycle cap.** Each valid contribution is +1, up to **3 points
+per newsletter cycle** (two weeks). Past the cap, submissions are still
+evaluated, classified and kept for the newsletter — they just stop moving the
+board. That cap is the anti-spam mechanism; nothing else blocks submitting.
+
+**4. Classification.** Every accepted contribution gets a primary newsletter
+category and any secondary ones, plus the audiences it serves and — for
+learning material — a difficulty and prerequisites. The member never picks any
+of this.
+
+| Category | What belongs in it |
+|---|---|
+| `important_news` | AI news the team should know about |
+| `new_models` | a newly released or updated model |
+| `new_tools` | a genuinely new tool or product |
+| `other_tools` | a useful tool that is not new |
+| `learn_this_week` | tutorials, courses, papers, explainers |
+| `social_trends` | what the AI community is discussing |
+
+A member may pick **one research direction** under the composer. It is a hint
+about where to look, never a restriction and never the final category.
+
+**5. Verification, honestly.** The member is responsible for checking the source
+first. Rasad reports exactly what it could confirm: `verified`,
+`partially_verified`, or `not_independently_verified`. It never claims a check
+it did not perform. A page that blocks our reader (403) is not the same as a
+dead link (404) — the first is marked unverified, the second is rejected.
+
+**6. The member's words are kept.** `memberReason` is stored verbatim and never
+overwritten. The evaluator's reading of it is stored separately as
+`aiInterpretation`.
+
+**7. Nothing is ever lost.** If the evaluator cannot be reached, the submission
+is stored as `pending` with the error attached, earns nothing, and can be
+retried from the result page or the host area. The point is awarded when the
+evaluation eventually succeeds.
+
+---
+
 ## The home page is one box
 
-Opening the app shows a single composer: paste a link, press Enter. Nothing
-else competes for attention on first sight.
+Opening the app shows a single composer: paste a link, say why it matters,
+send.
 
 - **No title to write.** The pasted link is read server-side and named by an LLM
-  call (`/api/title`) — headline, contribution type and a one-line summary — and
-  the result appears as an editable card under the input. Click the title to
-  change it, or the type pill to re-classify it.
-- **Your take is optional and folded away.** "Add your take" opens the one field
-  that earns personal points; skipping it costs those points, not the submission.
-- **Everything else is a click away, not in the way.** The dashboard, leaderboard,
-  feed, profiles and host area live on their own pages, reachable from the quiet
-  row below the composer and from the header on every page except the home page.
+  call (`/api/title`), and the result appears as an editable card under the
+  input. Click the title to change it.
+- **No category to pick.** Rasad classifies the content itself.
+- **One field the member writes:** "لماذا ترى أن هذا مهم؟". It is required — it
+  is part of the contribution, not an optional extra.
+- **Everything else is a click away, not in the way.** The dashboard,
+  leaderboard, feed, profiles and host area live on their own pages.
 
 Old `/submit` links redirect to the composer — there is one way in.
 
@@ -41,8 +125,10 @@ npx netlify dev                # http://localhost:8888
 The database is Netlify Blobs, so run it through the Netlify CLI — `npm run
 dev` starts Next.js but has no blobs store to talk to.
 
-The team (Nawal, Abdullah, Reem, Abdulaziz, Mukhtar, Yara) is seeded
-automatically on first run. Pick your name and start hunting.
+The team is seeded automatically on first run. The AI team has nine members;
+the default seed is the six names the app shipped with, so add the rest from
+`/admin` — or set `RASED_TEAM` to a comma-separated roster before the first run
+and they are all created for you. Pick your name and start hunting.
 
 ### Turning on real AI evaluation
 
@@ -56,63 +142,90 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 That switches on Claude with the server-side `web_search` and `web_fetch` tools:
 it actually goes and reads the source, finds the original announcement, checks
-the release date, and reasons about duplicates. Each result page tells you which
-engine scored it.
+the release date, reasons about duplicates, classifies the content and extracts
+the key points. Each result page tells you which engine judged it.
+
+Without a key, the offline evaluator runs the same pipeline from page metadata
+and keyword signals. It never reports anything as `verified`, because it has not
+verified anything. With a key configured, a failed API call does **not** fall
+back to the heuristic — the submission is stored `pending` and waits for a
+retry, so a point is never awarded on an evaluation that did not happen.
 
 ---
 
 ## Test the main flow in 2 minutes
 
 1. Pick **Nawal** under the composer.
-2. Paste a genuinely new AI model release (the official announcement page). The
-   title, type and summary fill themselves in a moment later.
-3. Open **Add your take** and write something specific, then press the ↑ button.
-4. You land on the result page: verification status, original publication date,
-   duplicate status, the six-part score breakdown, and a plain-language
-   explanation.
-5. Switch to **Abdullah** and submit the same news. It comes back marked
-   **Duplicate** with a fraction of the points and a link to Nawal's original.
-6. Submit it a third time as **Reem** but add real extra value ("I tested it on
-   X and it did Y") — that scores **Partially duplicate** instead, with partial
-   credit.
-7. Check the **Leaderboard**: weekly board, monthly champion, contributor of the
-   week.
+2. Paste an official AI model announcement. The title and summary fill
+   themselves in a moment later.
+3. Write why it matters — a specific sentence is enough — and press **أرسل**.
+4. You land on the result page: **+1**, the newsletter category it was filed
+   under, the status, and one line saying why. Below that: your own words, the
+   classification, what was extracted from the source, the verification, the
+   duplicate check, and — clearly separated — the editorial score.
+5. Switch to **Abdullah** and submit the same link. It comes back **مكررة** with
+   **0** points and a link to Nawal's original.
+6. Submit a related link as **Reem** with a real tested angle ("جربت… وقارنت…").
+   It comes back **مقبولة بزاوية جديدة** with a full **+1**.
+7. Submit two more as Nawal, then a fourth. The fourth is still accepted,
+   classified and stored — with **0** points and "بلغت الحد الأقصى".
+8. Check the **leaderboard**: points only, capped at 3, with past cycles kept.
 
 ---
 
 ## Scoring
 
-Every submission is scored out of 100 across six dimensions:
+### Member points — what the leaderboard is made of
 
-| Dimension | Max | What it measures |
-|---|---|---|
-| Importance | 25 | How much it matters to an AI-focused student/team |
-| Recency | 20 | Age from the **original** publication date, not your discovery date |
-| Practical usefulness | 20 | Value for projects, study, programming, data, research |
-| Category relevance | 15 | Fit with the declared type and the team's AI focus |
-| Source reliability | 10 | Official site / docs / paper beats tech press beats unknown blog |
-| Personal contribution | 10 | Your own insight in "Why is this useful?" |
+| Rule | Value |
+|---|---|
+| A valid, non-duplicate contribution | **+1** |
+| Maximum per member per cycle | **3** |
+| Cycle length | **14 days**, from a fixed Monday anchor |
+| A duplicate | 0 (still stored, still available to the newsletter) |
+| A rejected submission | 0 |
+| A pending one | 0 until the evaluation succeeds |
 
-Then two deterministic multipliers are applied:
+Points are decided in `src/lib/services/points.ts` and awarded inside the same
+locked write as the save, so two submissions evaluated concurrently cannot both
+slip past the cap.
 
-- **Duplicate** — a duplicate keeps 20% of its points, a partial duplicate 50%.
-- **Verification** — an unverifiable source keeps 60%, partially verified 85%.
+### Editorial score — what the newsletter is ordered by
 
-The AI only supplies the six sub-scores and its findings. Everything after that
-(the recency band, the multipliers, the final number) is computed in
-`src/lib/services/scoring.ts`, so the same inputs always give the same score.
+A separate 0–100, weighted across eight dimensions and configurable in
+`src/lib/config/rules.ts`:
+
+| Dimension | Weight |
+|---|---|
+| Significance | 18 |
+| Practical usefulness | 16 |
+| Recency (from the **original** publication date) | 14 |
+| AI relevance | 12 |
+| Source credibility | 12 |
+| Audience fit | 10 |
+| Uniqueness | 10 |
+| Newsletter value | 8 |
+
+Two deterministic multipliers follow: a duplicate keeps 40% of its editorial
+value and a new angle 85%; an unverified source keeps 75%, a partially verified
+one 90%. The evaluator supplies 0–10 judgements per dimension and nothing else —
+the scaling, the recency band and the multipliers are computed in
+`src/lib/services/editorial.ts`, so the same inputs always give the same number.
+
+**This score never touches member points.**
 
 ### Anti-spam
 
-You can submit as much as you like, but only your **best 3 finds each week**
-count toward the weekly ranking, and only your **best 3 weeks** count toward the
-monthly one. Everything else stays visible in your history.
+The cycle cap is the whole mechanism. Submit as much as you like: past three
+points everything is still read, classified and kept for the newsletter, it
+simply stops moving the board.
 
 ### Changing the rules
 
-All tunable numbers live in one file: **`src/lib/config/scoring.ts`** — point
-allocations, duplicate/verification multipliers, recency bands, the trusted and
-reputable domain lists, and the best-N limits. Edit, restart, done.
+All tunable numbers live in one file: **`src/lib/config/rules.ts`** — the point
+value and cap, the cycle length and anchor, the editorial weights and
+multipliers, the recency bands, the duplicate thresholds, the acceptance floor,
+and the trusted/reputable/social domain lists. Edit, restart, done.
 
 ---
 
@@ -120,13 +233,15 @@ reputable domain lists, and the best-N limits. Edit, restart, done.
 
 `/admin`, unlocked with `ADMIN_PASSCODE` from `.env.local` (default `rased`).
 
-- Add, rename and remove team members
-- See every submission, including removed ones
-- Override any score, with a public note explaining why
-- Change duplicate status, remove or restore a submission
-- Reset a submission back to the AI's original score
+- Add, rename, remove and restore team members
+- See every submission, including removed and rejected ones
+- Change the status, the points, the newsletter category and the duplicate call
+- See exactly which earlier submissions a duplicate was compared against
+- Retry an evaluation that failed
+- Remove or restore a submission, or reset it back to Rasad's own verdict
 
-Automatic scoring is the default; the host has the final word.
+Every correction carries a public note. Automatic evaluation is the default and
+none of it is irreversible — the host has the final word on all of it.
 
 ---
 
@@ -141,6 +256,7 @@ Automatic scoring is the default; the host has the final word.
 | `WEB_SEARCH_PROVIDER` | `anthropic` | `anthropic` \| `tavily` \| `brave` \| `serper` \| `none` |
 | `TAVILY_API_KEY` / `BRAVE_API_KEY` / `SERPER_API_KEY` | *(empty)* | Only for the matching provider |
 | `ADMIN_PASSCODE` | `rased` | Unlocks `/admin` |
+| `RASED_TEAM` | *(empty)* | Comma-separated roster used to seed the team on first run |
 
 `anthropic` is the recommended search provider: search runs inside the model
 call via Claude's server-side `web_search` / `web_fetch` tools, so there is no
@@ -157,71 +273,87 @@ whose results are handed to the model.
 src/
   app/
     page.tsx                 The composer — the whole home page
-    dashboard/               Champions, your stats, recent finds
+    dashboard/               Cycle standings, your stats, newsletter buckets
     submit/                  Redirects to the composer (legacy links)
-    result/[id]/             Evaluation result page
-    leaderboard/             Weekly + monthly boards
-    feed/                    All finds, grouped by week
-    profile/[id]/            Member profile + history
+    result/[id]/             What happened to one contribution
+    leaderboard/             Cycle board + every past cycle
+    feed/                    Everything, grouped by cycle
+    profile/[id]/            Member profile + cycle-by-cycle record
     admin/                   Host area
     api/
-      title/                 ← names a pasted link (auto title, type, summary)
-      contributions/         Submit + list (title/type optional, named server-side)
+      title/                 ← names a pasted link (auto title + summary)
+      contributions/         Submit + list
+      contributions/[id]/    Read + admin correction
+      contributions/[id]/retry   Re-run a failed evaluation
       members/ summary/ admin/auth/
   lib/
-    config/scoring.ts        ← all tunable scoring rules
+    config/rules.ts          ← every tunable rule, points and editorial both
     db/
-      schema.ts              Types
-      store.ts               ← swap this file to move off JSON to Supabase/Postgres
+      schema.ts              Types + the effective-value accessors
+      store.ts               ← swap this file to move off Blobs to Postgres
     services/
       fetch-source.ts        Opens the URL, extracts title/description/date
       title.ts               ← auto-naming: LLM call + metadata fallback
       web-search.ts          Pluggable search providers
       duplicates.ts          Local similarity pass over earlier submissions
       prompt.ts              System prompt + structured-output tool schema
-      evaluate.ts            AI evaluation + offline heuristic fallback
-      scoring.ts             Deterministic final-score maths
-      leaderboard.ts         Weekly/monthly aggregation, best-N rules
+      evaluate.ts            AI evaluation + offline heuristic, and the
+                             deterministic status derivation
+      points.ts              ← member points. Flat, capped, category-blind
+      editorial.ts           ← editorial value. Never touches points
+      leaderboard.ts         Cycle standings + historical cycles
+      submit.ts              The submission pipeline, shared with retry
       admin.ts               Passcode gate
   components/
     Composer.tsx             ← the one input the app is built around
-    QuietNav.tsx             The secondary links under the composer
-    Header.tsx               Full nav everywhere except the home page
-    ui.tsx  CurrentUser.tsx  YourStats.tsx
-data/db.json                 The database (created on first run)
+    RetryEvaluation.tsx      Retry button for a pending submission
+    contribution.tsx         Category/status/points presentation
+    QuietNav.tsx  Header.tsx  CurrentUser.tsx  YourStats.tsx
 ```
 
 The layers are deliberately separate: swapping the database means rewriting
-`db/store.ts` only; changing scoring means editing `config/scoring.ts` only;
-changing the evaluator means touching `services/evaluate.ts` only.
+`db/store.ts` only; changing the rules means editing `config/rules.ts` only;
+changing the evaluator means touching `services/evaluate.ts` only. And the two
+currencies never meet: `points.ts` does not import anything from `editorial.ts`.
+
+Records written by the previous version (a single 0–100 score used as the
+member's points) are migrated on read: that number becomes the editorial score,
+and points are recomputed under the flat rule with the cycle cap applied in
+chronological order.
 
 ### How a link gets named
 
 `POST /api/title` → `services/title.ts`: the page is fetched server-side, and its
 metadata (title, description, date, text excerpt) goes to Claude with
 `output_config: { effort: "low", format: { type: "json_schema", … } }`, which
-returns `{ title, type, summary }` as validated JSON. With no key — or on any
-error, bad JSON, or refusal — it falls back to the page's own `og:title`, then to
-the URL slug, and guesses the type from the domain and keywords. The composer
-never blocks on it: whatever the member does not have when they submit,
-`/api/contributions` names for them.
+returns `{ title, summary }` as validated JSON. With no key — or on any error,
+bad JSON, or refusal — it falls back to the page's own `og:title`, then to the
+URL slug. The composer never blocks on it: whatever the member does not have
+when they submit, `/api/contributions` names for them.
 
 ### How an evaluation actually runs
 
 1. `fetch-source.ts` opens the submitted URL server-side and pulls the page
    title, description, publication date (meta tags / JSON-LD / `<time>`) and a
    text excerpt.
-2. `duplicates.ts` finds earlier submissions covering the same thing, by URL
-   match and token similarity.
-3. `evaluate.ts` sends all of that to Claude along with the rubric. Claude
-   researches with `web_search` / `web_fetch` and returns the six sub-scores plus
-   its findings through a strict tool schema.
-4. `scoring.ts` recomputes recency from the resolved original date, applies the
-   duplicate and verification multipliers, and produces the final score.
+2. `duplicates.ts` finds earlier submissions covering the same thing, by
+   normalised URL and token similarity, and keeps the full comparison list.
+3. `evaluate.ts` sends all of that to Claude with the rubric. Claude researches
+   with `web_search` / `web_fetch` and returns, through a strict tool schema:
+   the six eligibility flags, the duplicate outcome and confidence, the
+   categories, the audiences, the difficulty, the extracted facts, its reading
+   of the member's reason, and eight 0–10 editorial judgements.
+4. The server derives the **status** from the eligibility flags and the
+   duplicate outcome, recomputes recency from the resolved original date, and
+   scales the editorial score.
+5. `store.ts` saves the row and awards the point in one locked write, after
+   re-checking for a same-source collision and re-reading the member's cycle
+   total.
 
-If the AI call fails or no key is set, step 3 falls back to a heuristic
-evaluator (domain reputation, keyword signals, date extraction, local
-similarity) so the app is always usable.
+With no key, step 3 runs the offline heuristic instead — domain reputation,
+keyword signals, date extraction, local similarity — and never claims to have
+verified anything. With a key present, a failed call skips steps 4–5 and stores
+the submission as `pending` for retry.
 
 ---
 
@@ -234,8 +366,8 @@ through the Netlify CLI, which provides a blobs sandbox:
 npx netlify dev        # http://localhost:8888
 ```
 
-Deleting `.netlify/blobs/` resets the local database; the members are re-seeded
-on the next request.
+Deleting `.netlify/blobs-serve/` resets the local database; the members are
+re-seeded on the next request.
 
 ---
 
@@ -302,6 +434,7 @@ The type stack is `"Thmanyah", "IBM Plex Sans Arabic", …` — if the Thmanyah
 brand font is installed locally it is used automatically, otherwise IBM Plex
 Sans Arabic loads as a close fallback that covers both Arabic and Latin.
 
-The interface copy is currently English; all strings live in the page
-components, so switching to Arabic is a copy pass plus `dir="rtl"` on `<html>`
-in `src/app/layout.tsx`.
+The interface is Arabic and right-to-left (`dir="rtl"` on `<html>` in
+`src/app/layout.tsx`). All copy lives in the page components, and the Arabic
+count-agreement helpers are in `src/lib/util/ar.ts` — use them rather than
+interpolating a bare number next to a noun.

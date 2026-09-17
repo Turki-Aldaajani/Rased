@@ -1,40 +1,48 @@
-import { SCORING } from "@/lib/config/scoring";
+import { POINTS } from "@/lib/config/rules";
 import {
+  editorialScore,
+  effectiveCategory,
   effectiveDuplicate,
-  effectiveScore,
+  effectivePoints,
+  effectiveStatus,
   type Contribution,
   type Member,
+  type NewsletterCategory,
 } from "@/lib/db/schema";
-import { monthKey, weekKey, weeksInMonth } from "@/lib/util/date";
+import { cycleKey, cycleKeysSince } from "@/lib/util/date";
+
+/**
+ * Standings are built from member points only.
+ *
+ * Not from the editorial score, not from how many links someone pasted, and
+ * not from which newsletter category they landed in. Rasad is not here to
+ * decide who is the better team member.
+ */
 
 export interface LeaderboardRow {
   memberId: string;
   memberName: string;
   points: number;
-  contributions: number;
-  /** How many of those actually counted toward the points. */
+  /** Everything they sent this cycle, counted or not. */
+  submissions: number;
+  /** Submissions that earned a point. */
   counted: number;
-  bestContribution: Contribution | null;
+  /** Valid submissions that earned nothing because the cap was already full. */
+  overCap: number;
+  atCap: boolean;
   rank: number;
-}
-
-function bestN(list: Contribution[], n: number): Contribution[] {
-  return [...list]
-    .sort((a, b) => effectiveScore(b) - effectiveScore(a))
-    .slice(0, n);
 }
 
 function rank(rows: Omit<LeaderboardRow, "rank">[]): LeaderboardRow[] {
   const sorted = [...rows].sort(
     (a, b) =>
       b.points - a.points ||
-      b.contributions - a.contributions ||
+      // A tie on points is a genuine tie; name order only keeps it stable.
       a.memberName.localeCompare(b.memberName),
   );
   let lastPoints: number | null = null;
   let lastRank = 0;
   return sorted.map((row, i) => {
-    // Equal scores share a rank, which matters for ties at the top.
     const r = row.points === lastPoints ? lastRank : i + 1;
     lastPoints = row.points;
     lastRank = r;
@@ -42,88 +50,56 @@ function rank(rows: Omit<LeaderboardRow, "rank">[]): LeaderboardRow[] {
   });
 }
 
-/**
- * Weekly board: only each member's best N contributions of that week count,
- * which is what stops someone farming points by submitting a dozen links.
- */
-export function weeklyLeaderboard(
+export function cycleLeaderboard(
   members: Member[],
   contributions: Contribution[],
-  week: string,
+  cycle: string,
 ): LeaderboardRow[] {
-  const live = contributions.filter((c) => !c.removed && c.weekKey === week);
+  const live = contributions.filter((c) => !c.removed && c.cycleKey === cycle);
   const rows = members.map((m) => {
     const mine = live.filter((c) => c.memberId === m.id);
-    const counting = bestN(mine, SCORING.bestContributionsPerWeek);
+    const points = mine.reduce((sum, c) => sum + effectivePoints(c), 0);
+    const counted = mine.filter((c) => effectivePoints(c) > 0).length;
+    const overCap = mine.filter(
+      (c) => c.points.reason === "cycle_cap_reached",
+    ).length;
     return {
       memberId: m.id,
       memberName: m.name,
-      points: counting.reduce((sum, c) => sum + effectiveScore(c), 0),
-      contributions: mine.length,
-      counted: counting.length,
-      bestContribution: counting[0] ?? null,
+      points,
+      submissions: mine.length,
+      counted,
+      overCap,
+      atCap: points >= POINTS.maxPerCycle,
     };
   });
   return rank(rows);
 }
 
-/** Points a single member earned in one week, under the best-N rule. */
-export function weeklyPointsFor(
-  memberId: string,
-  contributions: Contribution[],
-  week: string,
-): number {
-  const mine = contributions.filter(
-    (c) => !c.removed && c.memberId === memberId && c.weekKey === week,
+/** All cycles that have data, newest first — the historical record. */
+export function knownCycles(contributions: Contribution[]): string[] {
+  const earliest = contributions.reduce<string | null>(
+    (min, c) => (min === null || c.createdAt < min ? c.createdAt : min),
+    null,
   );
-  return bestN(mine, SCORING.bestContributionsPerWeek).reduce(
-    (sum, c) => sum + effectiveScore(c),
-    0,
-  );
-}
-
-/**
- * Monthly board: accumulated weekly performance, counting each member's best
- * weeks rather than every submission.
- */
-export function monthlyLeaderboard(
-  members: Member[],
-  contributions: Contribution[],
-  month: string,
-): LeaderboardRow[] {
-  const weeks = weeksInMonth(month);
-  const inMonth = contributions.filter(
-    (c) => !c.removed && c.monthKey === month,
-  );
-  const rows = members.map((m) => {
-    const weekTotals = weeks
-      .map((w) => weeklyPointsFor(m.id, contributions, w))
-      .sort((a, b) => b - a)
-      .slice(0, SCORING.bestWeeksPerMonth);
-    const mine = inMonth.filter((c) => c.memberId === m.id);
-    return {
-      memberId: m.id,
-      memberName: m.name,
-      points: weekTotals.reduce((a, b) => a + b, 0),
-      contributions: mine.length,
-      counted: weekTotals.filter((t) => t > 0).length,
-      bestContribution: bestN(mine, 1)[0] ?? null,
-    };
-  });
-  return rank(rows);
+  const keys = cycleKeysSince(earliest);
+  const current = cycleKey(new Date());
+  return keys.includes(current) ? keys : [current, ...keys];
 }
 
 export interface MemberStats {
   member: Member;
+  cycle: string;
+  cyclePoints: number;
+  cycleRank: number | null;
+  cycleSubmissions: number;
+  atCap: boolean;
+  pointsLeft: number;
   totalPoints: number;
-  weeklyPoints: number;
-  monthlyPoints: number;
-  weeklyRank: number | null;
-  monthlyRank: number | null;
-  contributionCount: number;
-  weeklyCount: number;
-  bestContribution: Contribution | null;
-  history: Contribution[];
+  totalSubmissions: number;
+  /** Cycle-by-cycle record, newest first. */
+  history: { cycle: string; points: number; submissions: number }[];
+  recent: Contribution[];
 }
 
 export function memberStats(
@@ -132,44 +108,59 @@ export function memberStats(
   contributions: Contribution[],
   now = new Date(),
 ): MemberStats {
-  const week = weekKey(now);
-  const month = monthKey(now);
+  const cycle = cycleKey(now);
   const mine = contributions.filter(
     (c) => !c.removed && c.memberId === member.id,
   );
-  const weekRows = weeklyLeaderboard(members, contributions, week);
-  const monthRows = monthlyLeaderboard(members, contributions, month);
-  const weekRow = weekRows.find((r) => r.memberId === member.id);
-  const monthRow = monthRows.find((r) => r.memberId === member.id);
+  const rows = cycleLeaderboard(members, contributions, cycle);
+  const row = rows.find((r) => r.memberId === member.id);
+  const cyclePoints = row?.points ?? 0;
+
+  const history = knownCycles(mine)
+    .map((key) => {
+      const inCycle = mine.filter((c) => c.cycleKey === key);
+      return {
+        cycle: key,
+        points: inCycle.reduce((sum, c) => sum + effectivePoints(c), 0),
+        submissions: inCycle.length,
+      };
+    })
+    .filter((h) => h.submissions > 0 || h.cycle === cycle);
 
   return {
     member,
-    totalPoints: mine.reduce((sum, c) => sum + effectiveScore(c), 0),
-    weeklyPoints: weekRow?.points ?? 0,
-    monthlyPoints: monthRow?.points ?? 0,
-    weeklyRank: weekRow?.rank ?? null,
-    monthlyRank: monthRow?.rank ?? null,
-    contributionCount: mine.length,
-    weeklyCount: mine.filter((c) => c.weekKey === week).length,
-    bestContribution: bestN(mine, 1)[0] ?? null,
-    history: mine,
+    cycle,
+    cyclePoints,
+    cycleRank: row && row.points > 0 ? row.rank : null,
+    cycleSubmissions: mine.filter((c) => c.cycleKey === cycle).length,
+    atCap: cyclePoints >= POINTS.maxPerCycle,
+    pointsLeft: Math.max(0, POINTS.maxPerCycle - cyclePoints),
+    totalPoints: mine.reduce((sum, c) => sum + effectivePoints(c), 0),
+    totalSubmissions: mine.length,
+    history,
+    recent: mine.slice(0, 5),
   };
 }
 
 export interface TeamSummary {
-  week: string;
-  month: string;
-  weekly: LeaderboardRow[];
-  monthly: LeaderboardRow[];
-  contributorOfTheWeek: LeaderboardRow | null;
-  monthlyChampion: LeaderboardRow | null;
+  cycle: string;
+  board: LeaderboardRow[];
+  leader: LeaderboardRow | null;
   recent: Contribution[];
+  /** What the newsletter engine has to work with, per section. */
+  categories: {
+    category: NewsletterCategory;
+    count: number;
+    topEditorial: Contribution | null;
+  }[];
   totals: {
-    contributions: number;
-    thisWeek: number;
-    originals: number;
+    submissions: number;
+    thisCycle: number;
+    accepted: number;
     duplicates: number;
-    averageScore: number;
+    rejected: number;
+    pending: number;
+    points: number;
   };
 }
 
@@ -178,31 +169,51 @@ export function teamSummary(
   contributions: Contribution[],
   now = new Date(),
 ): TeamSummary {
-  const week = weekKey(now);
-  const month = monthKey(now);
+  const cycle = cycleKey(now);
   const live = contributions.filter((c) => !c.removed);
-  const weekly = weeklyLeaderboard(members, contributions, week);
-  const monthly = monthlyLeaderboard(members, contributions, month);
+  const board = cycleLeaderboard(members, contributions, cycle);
+  const inCycle = live.filter((c) => c.cycleKey === cycle);
 
-  const totalScore = live.reduce((sum, c) => sum + effectiveScore(c), 0);
+  const categories = (
+    [
+      "important_news",
+      "new_models",
+      "new_tools",
+      "other_tools",
+      "learn_this_week",
+      "social_trends",
+    ] as NewsletterCategory[]
+  ).map((category) => {
+    const items = inCycle
+      .filter(
+        (c) =>
+          effectiveCategory(c) === category &&
+          effectiveStatus(c) !== "rejected" &&
+          effectiveStatus(c) !== "pending",
+      )
+      .sort((a, b) => editorialScore(b) - editorialScore(a));
+    return { category, count: items.length, topEditorial: items[0] ?? null };
+  });
 
   return {
-    week,
-    month,
-    weekly,
-    monthly,
-    contributorOfTheWeek: weekly.find((r) => r.points > 0) ?? null,
-    monthlyChampion: monthly.find((r) => r.points > 0) ?? null,
+    cycle,
+    board,
+    leader: board.find((r) => r.points > 0) ?? null,
     recent: [...live]
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, 8),
+    categories,
     totals: {
-      contributions: live.length,
-      thisWeek: live.filter((c) => c.weekKey === week).length,
-      originals: live.filter((c) => effectiveDuplicate(c) === "original").length,
+      submissions: live.length,
+      thisCycle: inCycle.length,
+      accepted: live.filter((c) =>
+        ["accepted", "accepted_with_new_angle"].includes(effectiveStatus(c)),
+      ).length,
       duplicates: live.filter((c) => effectiveDuplicate(c) === "duplicate")
         .length,
-      averageScore: live.length ? Math.round(totalScore / live.length) : 0,
+      rejected: live.filter((c) => effectiveStatus(c) === "rejected").length,
+      pending: live.filter((c) => effectiveStatus(c) === "pending").length,
+      points: inCycle.reduce((sum, c) => sum + effectivePoints(c), 0),
     },
   };
 }
