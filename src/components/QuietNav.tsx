@@ -2,22 +2,23 @@
 
 import { LayoutDashboard, List, Settings, Trophy, User } from "lucide-react";
 import Link from "next/link";
-import { findsCount } from "@/lib/util/ar";
+import { contributionsCount, daysCount } from "@/lib/util/ar";
+import { daysLeftInCycle } from "@/lib/util/date";
 import { useCurrentUser } from "./CurrentUser";
 
 /**
  * The only thing on the home page besides the composer, and it sits well below
  * it: everything here is somewhere you go *after* submitting, not before.
  */
-export default function QuietNav({ thisWeek }: { thisWeek: number }) {
+export default function QuietNav({ thisCycle }: { thisCycle: number }) {
   const { member } = useCurrentUser();
 
   const items = [
     { href: "/dashboard", label: "الرئيسية", Icon: LayoutDashboard },
     { href: "/leaderboard", label: "المتصدرون", Icon: Trophy },
-    { href: "/feed", label: "كل الاكتشافات", Icon: List },
+    { href: "/feed", label: "كل المساهمات", Icon: List },
     member
-      ? { href: `/profile/${member.id}`, label: "اكتشافاتك", Icon: User }
+      ? { href: `/profile/${member.id}`, label: "مساهماتك", Icon: User }
       : { href: "/admin", label: "الإدارة", Icon: Settings },
   ];
 
@@ -37,9 +38,9 @@ export default function QuietNav({ thisWeek }: { thisWeek: number }) {
       </div>
 
       <p className="mt-5 text-center text-xs text-muted-foreground">
-        {thisWeek === 0
-          ? "لا توجد اكتشافات هذا الأسبوع بعد."
-          : `${findsCount(thisWeek)} هذا الأسبوع.`}
+        {thisCycle === 0
+          ? `لا توجد مساهمات في هذه الدورة بعد · بقي ${daysCount(daysLeftInCycle())}`
+          : `${contributionsCount(thisCycle)} في هذه الدورة · بقي ${daysCount(daysLeftInCycle())}`}
       </p>
     </div>
   );

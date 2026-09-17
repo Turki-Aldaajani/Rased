@@ -49,8 +49,8 @@ export default function HeroScene({ scene = DEFAULT_SCENE }: { scene?: string })
             </h2>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
               رابطك يُفتح ويُقرأ، ويُتحقق منه على الإنترنت، ويُؤرَّخ بإعلانه
-              الأصلي — لا بوقت اكتشافك له — ويُقارَن بكل اكتشاف سابق قبل أن
-              يُحتسب تقييمه.
+              الأصلي — لا بوقت اكتشافك له — ويُصنَّف على أقسام النشرة، ويُقارَن
+              بكل مساهمة سابقة قبل أن تُحتسب نقطتك.
             </p>
           </div>
 

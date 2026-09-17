@@ -14,9 +14,6 @@ export function arPlural(
   return many;
 }
 
-export function findsCount(n: number): string {
-  return arPlural(n, ["اكتشاف واحد", "اكتشافان", `${n} اكتشافات`, `${n} اكتشافًا`]);
-}
 
 export function contributionsCount(n: number): string {
   return arPlural(n, ["مساهمة واحدة", "مساهمتان", `${n} مساهمات`, `${n} مساهمة`]);
@@ -24,6 +21,10 @@ export function contributionsCount(n: number): string {
 
 export function pointsCount(n: number): string {
   return arPlural(n, ["نقطة واحدة", "نقطتان", `${n} نقاط`, `${n} نقطة`]);
+}
+
+export function daysCount(n: number): string {
+  return arPlural(n, ["يوم واحد", "يومان", `${n} أيام`, `${n} يومًا`]);
 }
 
 export function membersCount(n: number): string {

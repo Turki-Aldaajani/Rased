@@ -1,15 +1,17 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ContributionRow, ScoreRing, typeLabel } from "@/components/contribution";
+import {
+  ContributionRow,
+  categoryLabel,
+} from "@/components/contribution";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { SCORING } from "@/lib/config/scoring";
-import { effectiveScore } from "@/lib/db/schema";
+import { POINTS } from "@/lib/config/rules";
 import { getMember, listContributions, listMembers } from "@/lib/db/store";
 import { memberStats } from "@/lib/services/leaderboard";
-import { contributionsCount, membersCount } from "@/lib/util/ar";
-import { weekKey } from "@/lib/util/date";
+import { contributionsCount, membersCount, pointsCount } from "@/lib/util/ar";
+import { cycleKey, cycleLabel } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
 
@@ -25,29 +27,39 @@ export default async function ProfilePage({ params }: Props) {
     listContributions(),
   ]);
   const stats = memberStats(member, members, contributions);
-  const thisWeek = weekKey(new Date());
+  const thisCycle = cycleKey(new Date());
+  const mine = contributions.filter(
+    (c) => c.memberId === member.id && !c.removed,
+  );
 
   const tiles = [
-    { label: "إجمالي النقاط", value: stats.totalPoints, sub: "كل الأوقات" },
     {
-      label: "نقاط الأسبوع",
-      value: stats.weeklyPoints,
-      sub: `أفضل ${SCORING.bestContributionsPerWeek} اكتشافات`,
+      label: "نقاط الدورة",
+      value: `${stats.cyclePoints}/${POINTS.maxPerCycle}`,
+      sub:
+        stats.pointsLeft > 0
+          ? `بقيت ${pointsCount(stats.pointsLeft)}`
+          : "بلغ الحد الأقصى",
     },
     {
-      label: "نقاط الشهر",
-      value: stats.monthlyPoints,
-      sub: `أفضل ${SCORING.bestWeeksPerMonth} أسابيع`,
-    },
-    {
-      label: "ترتيب الأسبوع",
-      value: stats.weeklyPoints > 0 ? (stats.weeklyRank ?? "—") : "—",
+      label: "ترتيب الدورة",
+      value: stats.cycleRank ?? "—",
       sub: `من أصل ${membersCount(members.length)}`,
     },
     {
-      label: "المساهمات",
-      value: stats.contributionCount,
-      sub: `${stats.weeklyCount} هذا الأسبوع`,
+      label: "مساهمات الدورة",
+      value: stats.cycleSubmissions,
+      sub: "كلها محفوظة",
+    },
+    {
+      label: "إجمالي النقاط",
+      value: stats.totalPoints,
+      sub: "كل الدورات",
+    },
+    {
+      label: "إجمالي المساهمات",
+      value: stats.totalSubmissions,
+      sub: "منذ البداية",
     },
   ];
 
@@ -66,13 +78,12 @@ export default async function ProfilePage({ params }: Props) {
             {member.name}
           </h1>
           <p className="mt-0.5 text-sm text-muted-foreground">
-            {contributionsCount(stats.contributionCount)} ·{" "}
-            {stats.totalPoints} نقطة في كل الأوقات
+            {contributionsCount(stats.totalSubmissions)} ·{" "}
+            {pointsCount(stats.totalPoints)} في كل الدورات
+            {member.focusArea &&
+              ` · مجال البحث: ${categoryLabel(member.focusArea)}`}
           </p>
         </div>
-        {stats.bestContribution && (
-          <ScoreRing score={effectiveScore(stats.bestContribution)} size={56} />
-        )}
       </Card>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
@@ -87,28 +98,40 @@ export default async function ProfilePage({ params }: Props) {
         ))}
       </div>
 
-      {stats.bestContribution && (
-        <Card className="p-5">
-          <h2 className="text-sm font-semibold text-foreground">
-            أفضل مساهمة
-          </h2>
-          <Link
-            href={`/result/${stats.bestContribution.id}`}
-            className="mt-3 flex items-start gap-3"
-          >
-            <span className="w-8 shrink-0 text-end text-sm font-semibold tabular-nums text-foreground">
-              {effectiveScore(stats.bestContribution)}
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm text-foreground">
-                {stats.bestContribution.title}
-              </span>
-              <span className="mt-0.5 block text-xs text-muted-foreground">
-                {typeLabel(stats.bestContribution.type)} ·{" "}
-                {stats.bestContribution.evaluation.reason}
-              </span>
-            </span>
-          </Link>
+      {/* Cycle-by-cycle record — old cycles are preserved, never overwritten. */}
+      {stats.history.length > 0 && (
+        <Card className="overflow-hidden">
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="text-sm font-semibold text-foreground">
+              سجل الدورات
+            </h2>
+          </div>
+          <ul className="divide-y divide-border">
+            {stats.history.map((h) => (
+              <li
+                key={h.cycle}
+                className="flex items-center gap-4 px-5 py-3 text-sm"
+              >
+                <span className="min-w-0 flex-1 text-foreground">
+                  {cycleLabel(h.cycle)}
+                  {h.cycle === thisCycle && (
+                    <span className="ms-2 text-xs text-muted-foreground">
+                      الحالية
+                    </span>
+                  )}
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {contributionsCount(h.submissions)}
+                </span>
+                <span className="w-12 text-end font-semibold tabular-nums text-foreground">
+                  {h.points}
+                  <span className="text-xs text-muted-foreground">
+                    /{POINTS.maxPerCycle}
+                  </span>
+                </span>
+              </li>
+            ))}
+          </ul>
         </Card>
       )}
 
@@ -116,25 +139,17 @@ export default async function ProfilePage({ params }: Props) {
         <div className="border-b border-border px-5 py-4">
           <h2 className="text-sm font-semibold text-foreground">السجل</h2>
           <p className="text-xs text-muted-foreground">
-            كل شيء يُحتسب في السجل؛ فقط أفضل{" "}
-            {SCORING.bestContributionsPerWeek} من كل أسبوع تُحتسب في الترتيب.
+            كل شيء يبقى هنا، حتى ما لم تُحتسب له نقطة.
           </p>
         </div>
         <div className="p-2">
-          {stats.history.length === 0 ? (
+          {mine.length === 0 ? (
             <p className="px-3 py-6 text-sm text-muted-foreground">
               لا توجد مساهمات بعد.
             </p>
           ) : (
-            stats.history.map((c) => (
-              <div key={c.id} className="relative">
-                <ContributionRow contribution={c} showMember={false} />
-                {c.weekKey === thisWeek && (
-                  <span className="pointer-events-none absolute end-3 top-3.5 text-xs text-muted-foreground">
-                    هذا الأسبوع
-                  </span>
-                )}
-              </div>
+            mine.map((c) => (
+              <ContributionRow key={c.id} contribution={c} showMember={false} />
             ))
           )}
         </div>

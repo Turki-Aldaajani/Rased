@@ -1,71 +1,23 @@
 import Link from "next/link";
 import YourStats from "@/components/YourStats";
-import { ContributionRow } from "@/components/contribution";
+import { ContributionRow, categoryLabel } from "@/components/contribution";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { effectiveScore, type Contribution } from "@/lib/db/schema";
+import { POINTS } from "@/lib/config/rules";
+import { editorialScore, type Contribution } from "@/lib/db/schema";
 import { listContributions, listMembers } from "@/lib/db/store";
 import { teamSummary, type LeaderboardRow } from "@/lib/services/leaderboard";
-import { findsCount, pointsCount } from "@/lib/util/ar";
-import { monthLabel, weekLabel } from "@/lib/util/date";
+import { contributionsCount, daysCount, pointsCount } from "@/lib/util/ar";
+import { cycleLabel, daysLeftInCycle } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
 
-function LeaderCard({
-  label,
-  period,
-  row,
-  emptyText,
-}: {
-  label: string;
-  period: string;
-  row: LeaderboardRow | null;
-  emptyText: string;
-}) {
-  return (
-    <Card className="p-5">
-      <p className="text-xs text-muted-foreground">{label}</p>
-      {row ? (
-        <>
-          <p className="mt-2 text-lg font-semibold text-foreground">
-            {row.memberName}
-          </p>
-          <p className="mt-0.5 text-xs text-muted-foreground">
-            {pointsCount(row.points)} · {findsCount(row.contributions)} ·{" "}
-            {period}
-          </p>
-          {row.bestContribution && (
-            <Link
-              href={`/result/${row.bestContribution.id}`}
-              className="mt-4 flex items-start gap-3 border-t border-border pt-3 transition-colors duration-200 hover:text-foreground"
-            >
-              <span className="text-sm font-semibold tabular-nums text-foreground">
-                {effectiveScore(row.bestContribution)}
-              </span>
-              <span className="min-w-0">
-                <span className="block text-xs text-muted-foreground">
-                  أفضل اكتشاف
-                </span>
-                <span className="block truncate text-sm text-foreground">
-                  {row.bestContribution.title}
-                </span>
-              </span>
-            </Link>
-          )}
-        </>
-      ) : (
-        <p className="mt-2 text-sm text-muted-foreground">{emptyText}</p>
-      )}
-    </Card>
-  );
-}
-
-function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
+function BoardList({ rows }: { rows: LeaderboardRow[] }) {
   const scored = rows.filter((r) => r.points > 0);
   if (scored.length === 0) {
     return (
       <p className="px-5 py-6 text-sm text-muted-foreground">
-        لا توجد نقاط بعد هذا الأسبوع.
+        لا توجد نقاط في هذه الدورة بعد.
       </p>
     );
   }
@@ -85,11 +37,15 @@ function LeaderboardList({ rows }: { rows: LeaderboardRow[] }) {
                 {row.memberName}
               </span>
               <span className="block text-xs text-muted-foreground">
-                احتُسب {row.counted} من {row.contributions}
+                {contributionsCount(row.submissions)}
+                {row.atCap && " · بلغ الحد"}
               </span>
             </span>
             <span className="text-sm font-semibold tabular-nums text-foreground">
               {row.points}
+              <span className="text-xs text-muted-foreground">
+                /{POINTS.maxPerCycle}
+              </span>
             </span>
           </Link>
         </li>
@@ -111,13 +67,14 @@ export default async function DashboardPage() {
   for (const m of members) {
     const mine = contributions.filter((c) => c.memberId === m.id);
     totals[m.id] = {
-      points: mine.reduce((s, c) => s + effectiveScore(c), 0),
+      points: mine.reduce(
+        (s, c) => s + (c.adminOverride?.points ?? c.points.awarded),
+        0,
+      ),
       count: mine.length,
     };
     latest[m.id] = mine.slice(0, 3);
   }
-
-  const top = summary.weekly.filter((r) => r.points > 0)[0] ?? null;
 
   return (
     <div className="space-y-8">
@@ -126,61 +83,124 @@ export default async function DashboardPage() {
           الرئيسية
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          {weekLabel(summary.week)} · {findsCount(summary.totals.thisWeek)}{" "}
-          حتى الآن
+          دورة {cycleLabel(summary.cycle)} · بقي {daysCount(daysLeftInCycle())} ·{" "}
+          {contributionsCount(summary.totals.thisCycle)} حتى الآن
         </p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <LeaderCard
-          label="مساهم الأسبوع"
-          period={weekLabel(summary.week)}
-          row={top}
-          emptyText="لم يحصل أحد على نقاط بعد هذا الأسبوع."
-        />
-        <LeaderCard
-          label="بطل الشهر"
-          period={monthLabel(summary.month)}
-          row={summary.monthlyChampion}
-          emptyText="يبدأ سباق الشهر مع أول اكتشاف يُقيَّم."
-        />
+      <div className="grid gap-4 sm:grid-cols-3">
+        <Card className="p-5">
+          <p className="text-xs text-muted-foreground">متصدر الدورة</p>
+          {summary.leader ? (
+            <>
+              <p className="mt-2 text-lg font-semibold text-foreground">
+                {summary.leader.memberName}
+              </p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {pointsCount(summary.leader.points)} ·{" "}
+                {contributionsCount(summary.leader.submissions)}
+              </p>
+            </>
+          ) : (
+            <p className="mt-2 text-sm text-muted-foreground">
+              لم يحصل أحد على نقاط بعد.
+            </p>
+          )}
+        </Card>
+        <Card className="p-5">
+          <p className="text-xs text-muted-foreground">نقاط الفريق</p>
+          <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
+            {summary.totals.points}
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">في هذه الدورة</p>
+        </Card>
+        <Card className="p-5">
+          <p className="text-xs text-muted-foreground">حالة المساهمات</p>
+          <p className="mt-2 text-sm text-foreground">
+            {summary.totals.accepted} مقبولة
+          </p>
+          <p className="mt-0.5 text-xs text-muted-foreground">
+            {summary.totals.duplicates} مكررة · {summary.totals.rejected} مرفوضة
+            {summary.totals.pending > 0 &&
+              ` · ${summary.totals.pending} بانتظار التقييم`}
+          </p>
+        </Card>
       </div>
 
       <YourStats
-        weekly={summary.weekly}
-        monthly={summary.monthly}
+        board={summary.board}
         totals={totals}
         latest={latest}
+        cycle={summary.cycle}
       />
+
+      {/* What the newsletter has to work with — editorial, not points. */}
+      <Card className="overflow-hidden">
+        <div className="border-b border-border px-5 py-4">
+          <h2 className="text-sm font-semibold text-foreground">
+            جاهز للنشرة
+          </h2>
+          <p className="text-xs text-muted-foreground">
+            محتوى هذه الدورة موزّعًا على أقسام النشرة، مرتّبًا بالقيمة التحريرية
+            — لا علاقة له بنقاط الأعضاء.
+          </p>
+        </div>
+        <ul className="divide-y divide-border">
+          {summary.categories.map((row) => (
+            <li
+              key={row.category}
+              className="flex flex-wrap items-center gap-3 px-5 py-3"
+            >
+              <span className="w-40 shrink-0 text-sm text-foreground">
+                {categoryLabel(row.category)}
+              </span>
+              <span className="w-16 shrink-0 text-xs tabular-nums text-muted-foreground">
+                {row.count}
+              </span>
+              {row.topEditorial ? (
+                <Link
+                  href={`/result/${row.topEditorial.id}`}
+                  className="min-w-0 flex-1 truncate text-xs text-muted-foreground transition-colors duration-200 hover:text-foreground"
+                >
+                  {row.topEditorial.title} · تحريريًا{" "}
+                  {editorialScore(row.topEditorial)}
+                </Link>
+              ) : (
+                <span className="min-w-0 flex-1 text-xs text-muted-foreground">
+                  لا يوجد محتوى بعد
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </Card>
 
       <div className="grid gap-4 lg:grid-cols-5">
         <Card className="overflow-hidden lg:col-span-2">
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-foreground">
-                متصدرو الأسبوع
+                ترتيب الدورة
               </h2>
               <p className="text-xs text-muted-foreground">
-                أفضل 3 اكتشافات لكل شخص
+                نقطة لكل مساهمة صحيحة
               </p>
             </div>
             <Button asChild variant="ghost" size="sm">
               <Link href="/leaderboard">الكل</Link>
             </Button>
           </div>
-          <LeaderboardList rows={summary.weekly} />
+          <BoardList rows={summary.board} />
         </Card>
 
         <Card className="overflow-hidden lg:col-span-3">
           <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
             <div>
               <h2 className="text-sm font-semibold text-foreground">
-                أحدث الاكتشافات
+                أحدث المساهمات
               </h2>
               <p className="text-xs text-muted-foreground">
-                {summary.totals.contributions} إجمالًا ·{" "}
-                {summary.totals.originals} أصلي ·{" "}
-                {summary.totals.duplicates} مكرر
+                {summary.totals.submissions} إجمالًا
               </p>
             </div>
             <Button asChild variant="ghost" size="sm">
@@ -192,10 +212,10 @@ export default async function DashboardPage() {
               <div className="px-3 py-10 text-center">
                 <p className="text-sm text-foreground">لا توجد مساهمات بعد</p>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  وجدت شيئًا مثيرًا للاهتمام في الذكاء الاصطناعي هذا الأسبوع؟
+                  وجدت شيئًا مفيدًا في الذكاء الاصطناعي هذه الدورة؟
                 </p>
                 <Button asChild size="sm" className="mt-4">
-                  <Link href="/">أضف الأول</Link>
+                  <Link href="/">أضف الأولى</Link>
                 </Button>
               </div>
             ) : (

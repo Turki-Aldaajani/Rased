@@ -1,83 +1,118 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import type {
+  Audience,
   Contribution,
-  ContributionType,
-  DuplicateStatus,
+  ContributionStatus,
+  Difficulty,
+  DuplicateOutcome,
+  NewsletterCategory,
   VerificationStatus,
 } from "@/lib/db/schema";
-import { effectiveDuplicate, effectiveScore } from "@/lib/db/schema";
+import {
+  editorialScore,
+  effectiveCategory,
+  effectivePoints,
+  effectiveStatus,
+} from "@/lib/db/schema";
 import { relativeTime } from "@/lib/util/date";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-export const TYPE_LABELS: Record<ContributionType, string> = {
-  "AI News": "أخبار الذكاء الاصطناعي",
-  "AI Tool": "أداة ذكاء اصطناعي",
-  "Research / Paper": "بحث / ورقة علمية",
-  Project: "مشروع",
-  "AI Use Case": "حالة استخدام",
-  "Learning Resource": "مصدر تعليمي",
-  Other: "أخرى",
+export const CATEGORY_LABELS: Record<NewsletterCategory, string> = {
+  important_news: "أخبار مهمة",
+  new_models: "نماذج جديدة",
+  new_tools: "أدوات جديدة",
+  other_tools: "أدوات أخرى",
+  learn_this_week: "تعلّم هذا الأسبوع",
+  social_trends: "ترندات السوشال",
 };
 
-export function typeLabel(type: string): string {
-  return TYPE_LABELS[type as ContributionType] ?? type;
+export const CATEGORY_HINTS: Record<NewsletterCategory, string> = {
+  important_news: "أخبار الذكاء الاصطناعي التي يجب أن يعرفها الفريق",
+  new_models: "إطلاق أو تحديث نموذج",
+  new_tools: "أداة أو منتج جديد فعلًا",
+  other_tools: "أداة مفيدة ليست جديدة، أو تحديث مهم",
+  learn_this_week: "شروحات ودورات وأوراق وكل ما يُتعلَّم منه",
+  social_trends: "ما يتحدث عنه مجتمع الذكاء الاصطناعي",
+};
+
+export function categoryLabel(c: NewsletterCategory | null): string {
+  return c ? CATEGORY_LABELS[c] : "بلا تصنيف";
 }
 
-export function ScoreRing({
-  score,
-  size = 64,
-  label = "نقطة",
-}: {
-  score: number;
-  size?: number;
-  label?: string;
-}) {
-  const stroke = size < 60 ? 3 : 4;
-  const r = (size - stroke) / 2;
-  const circumference = 2 * Math.PI * r;
-  const filled = Math.max(0, Math.min(100, score)) / 100;
+export const AUDIENCE_LABELS: Record<Audience, string> = {
+  beginners: "المبتدئون",
+  university_students: "طلاب الجامعة",
+  developers: "المطورون",
+  ai_engineers: "مهندسو الذكاء الاصطناعي",
+  data_scientists: "علماء البيانات",
+  researchers: "الباحثون",
+  designers: "المصممون",
+  entrepreneurs: "رواد الأعمال",
+  content_creators: "صنّاع المحتوى",
+  general_users: "المستخدم العام",
+};
 
-  return (
-    <div
-      className="relative shrink-0"
-      style={{ width: size, height: size }}
-      aria-label={`${score} من 100 ${label}`}
-    >
-      <svg width={size} height={size} className="-rotate-90">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          strokeWidth={stroke}
-          stroke="var(--border)"
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={r}
-          fill="none"
-          strokeWidth={stroke}
-          stroke="var(--primary)"
-          strokeLinecap="round"
-          strokeDasharray={circumference}
-          strokeDashoffset={circumference * (1 - filled)}
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center">
-        <span
-          className="font-semibold leading-none tabular-nums text-foreground"
-          style={{ fontSize: size * 0.3 }}
-        >
-          {score}
-        </span>
-      </div>
-    </div>
-  );
-}
+export const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  beginner: "مبتدئ",
+  intermediate: "متوسط",
+  advanced: "متقدم",
+  not_applicable: "لا ينطبق",
+};
+
+export const STATUS_META: Record<
+  ContributionStatus,
+  { text: string; color: string; hint: string }
+> = {
+  accepted: {
+    text: "مقبولة",
+    color: "var(--success)",
+    hint: "مساهمة صحيحة وجديدة",
+  },
+  accepted_with_new_angle: {
+    text: "مقبولة بزاوية جديدة",
+    color: "var(--success)",
+    hint: "موضوع معروف، لكن المساهمة تضيف قيمة جديدة",
+  },
+  duplicate: {
+    text: "مكررة",
+    color: "var(--warning)",
+    hint: "سبق إرسال المحتوى نفسه",
+  },
+  rejected: {
+    text: "مرفوضة",
+    color: "var(--destructive)",
+    hint: "لم تستوفِ الحد الأدنى للقبول",
+  },
+  pending: {
+    text: "بانتظار التقييم",
+    color: "var(--info)",
+    hint: "تعذّر الوصول إلى المقيّم — المساهمة محفوظة ويمكن إعادة المحاولة",
+  },
+};
+
+export const DUPLICATE_META: Record<
+  DuplicateOutcome,
+  { text: string; color: string }
+> = {
+  unique: { text: "فريدة", color: "var(--success)" },
+  same_topic_new_value: { text: "نفس الموضوع بقيمة جديدة", color: "var(--warning)" },
+  duplicate: { text: "مكررة", color: "var(--destructive)" },
+};
+
+export const VERIFICATION_META: Record<
+  VerificationStatus,
+  { text: string; color: string }
+> = {
+  verified: { text: "تم التحقق", color: "var(--success)" },
+  partially_verified: { text: "تحقق جزئي", color: "var(--warning)" },
+  not_independently_verified: {
+    text: "لم يُتحقق منه بشكل مستقل",
+    color: "var(--muted-foreground)",
+  },
+};
 
 /**
  * A status dot plus quiet text. The state colour appears on the dot only —
@@ -93,14 +128,24 @@ function StatusDot({ color }: { color: string }) {
   );
 }
 
-const VERIFICATION_META: Record<
-  VerificationStatus,
-  { text: string; color: string }
-> = {
-  verified: { text: "موثّق", color: "var(--success)" },
-  partial: { text: "موثّق جزئيًا", color: "var(--warning)" },
-  unverified: { text: "غير موثّق", color: "var(--destructive)" },
-};
+export function StatusBadge({
+  status,
+  compact = false,
+}: {
+  status: ContributionStatus;
+  compact?: boolean;
+}) {
+  const meta = STATUS_META[status];
+  return (
+    <span
+      className="inline-flex items-center gap-1.5 text-xs text-muted-foreground"
+      title={meta.hint}
+    >
+      <StatusDot color={meta.color} />
+      {!compact && meta.text}
+    </span>
+  );
+}
 
 export function VerificationBadge({
   status,
@@ -121,25 +166,16 @@ export function VerificationBadge({
   );
 }
 
-export const DUPLICATE_META: Record<
-  DuplicateStatus,
-  { text: string; color: string }
-> = {
-  original: { text: "أصلي", color: "var(--success)" },
-  partial: { text: "تكرار جزئي", color: "var(--warning)" },
-  duplicate: { text: "تكرار", color: "var(--destructive)" },
-};
-
-/** "Original" is the norm, so it says nothing unless asked to. */
+/** "Unique" is the norm, so it says nothing unless asked to. */
 export function DuplicateBadge({
-  status,
+  outcome,
   always = false,
 }: {
-  status: DuplicateStatus;
+  outcome: DuplicateOutcome;
   always?: boolean;
 }) {
-  if (status === "original" && !always) return null;
-  const meta = DUPLICATE_META[status];
+  if (outcome === "unique" && !always) return null;
+  const meta = DUPLICATE_META[outcome];
   return (
     <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
       <StatusDot color={meta.color} />
@@ -148,8 +184,70 @@ export function DuplicateBadge({
   );
 }
 
-export function TypePill({ type }: { type: string }) {
-  return <Badge>{typeLabel(type)}</Badge>;
+export function CategoryPill({
+  category,
+}: {
+  category: NewsletterCategory | null;
+}) {
+  return <Badge>{categoryLabel(category)}</Badge>;
+}
+
+/**
+ * The member-facing number. Always 0 or 1 — a contribution point, never the
+ * editorial score, which lives in its own clearly-labelled place.
+ */
+export function PointsBadge({
+  points,
+  size = "md",
+}: {
+  points: number;
+  size?: "sm" | "md" | "lg";
+}) {
+  const earned = points > 0;
+  const dim = size === "lg" ? 64 : size === "sm" ? 32 : 44;
+  return (
+    <div
+      className="flex shrink-0 items-center justify-center rounded-full border"
+      style={{
+        width: dim,
+        height: dim,
+        borderColor: earned ? "var(--primary)" : "var(--border)",
+        color: earned ? "var(--primary)" : "var(--muted-foreground)",
+      }}
+      aria-label={earned ? `نقطة واحدة` : "بلا نقاط"}
+    >
+      <span
+        className="font-semibold leading-none tabular-nums"
+        style={{ fontSize: dim * 0.32 }}
+      >
+        {earned ? `+${points}` : "0"}
+      </span>
+    </div>
+  );
+}
+
+/**
+ * Editorial value, for the newsletter. Rendered as a quiet meter rather than
+ * a score ring on purpose: it must never read like the member's points.
+ */
+export function EditorialMeter({
+  score,
+  className,
+}: {
+  score: number;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-32", className)}>
+      <div className="flex items-baseline justify-between gap-3 text-xs text-muted-foreground">
+        <span>القيمة التحريرية</span>
+        <span className="tabular-nums">{score}/100</span>
+      </div>
+      <div className="meter mt-1.5">
+        <span style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
+      </div>
+    </div>
+  );
 }
 
 export function EmptyState({
@@ -180,8 +278,9 @@ export function ContributionRow({
   showMember?: boolean;
   className?: string;
 }) {
-  const score = effectiveScore(contribution);
-  const dup = effectiveDuplicate(contribution);
+  const points = effectivePoints(contribution);
+  const status = effectiveStatus(contribution);
+  const category = effectiveCategory(contribution);
 
   return (
     <Link
@@ -191,8 +290,11 @@ export function ContributionRow({
         className,
       )}
     >
-      <span className="w-8 shrink-0 pt-0.5 text-end text-sm font-semibold tabular-nums text-foreground">
-        {score}
+      <span
+        className="w-8 shrink-0 pt-0.5 text-end text-sm font-semibold tabular-nums"
+        style={{ color: points > 0 ? "var(--primary)" : "var(--muted-foreground)" }}
+      >
+        {points > 0 ? `+${points}` : "—"}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm text-foreground">
@@ -202,13 +304,16 @@ export function ContributionRow({
           {showMember && (
             <span className="text-foreground">{contribution.memberName}</span>
           )}
-          <span>{typeLabel(contribution.type)}</span>
+          <span>{categoryLabel(category)}</span>
           <span aria-hidden>·</span>
           <span>{relativeTime(contribution.createdAt)}</span>
-          {dup !== "original" && <DuplicateBadge status={dup} />}
-          {contribution.adminOverride?.score != null && (
-            <span>بتعديل من المضيف</span>
+          <StatusBadge status={status} />
+          {contribution.evaluation && (
+            <span title="القيمة التحريرية للنشرة — ليست نقاط العضو">
+              تحريريًا {editorialScore(contribution)}
+            </span>
           )}
+          {contribution.adminOverride && <span>بتعديل من المضيف</span>}
         </span>
       </span>
     </Link>

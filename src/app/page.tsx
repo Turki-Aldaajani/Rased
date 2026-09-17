@@ -2,7 +2,7 @@ import Composer from "@/components/Composer";
 import HeroScene from "@/components/HeroScene";
 import QuietNav from "@/components/QuietNav";
 import { listContributions } from "@/lib/db/store";
-import { weekKey } from "@/lib/util/date";
+import { cycleKey } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
 
@@ -12,14 +12,14 @@ export const dynamic = "force-dynamic";
  */
 export default async function HomePage() {
   const contributions = await listContributions();
-  const week = weekKey(new Date());
-  const thisWeek = contributions.filter((c) => c.weekKey === week).length;
+  const cycle = cycleKey(new Date());
+  const thisCycle = contributions.filter((c) => c.cycleKey === cycle).length;
 
   return (
     <div className="py-16 sm:py-24">
       <Composer />
       <HeroScene />
-      <QuietNav thisWeek={thisWeek} />
+      <QuietNav thisCycle={thisCycle} />
     </div>
   );
 }

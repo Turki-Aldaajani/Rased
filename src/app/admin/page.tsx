@@ -4,24 +4,35 @@ import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useCurrentUser } from "@/components/CurrentUser";
 import {
-  DUPLICATE_META,
+  CATEGORY_LABELS,
   DuplicateBadge,
-  typeLabel,
+  STATUS_META,
+  StatusBadge,
   VerificationBadge,
+  categoryLabel,
 } from "@/components/contribution";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { POINTS } from "@/lib/config/rules";
 import {
+  CONTRIBUTION_STATUSES,
+  DUPLICATE_OUTCOMES,
+  NEWSLETTER_CATEGORIES,
+  editorialScore,
+  effectiveCategory,
   effectiveDuplicate,
-  effectiveScore,
+  effectivePoints,
+  effectiveStatus,
   type Contribution,
-  type DuplicateStatus,
+  type ContributionStatus,
+  type DuplicateOutcome,
   type Member,
+  type NewsletterCategory,
 } from "@/lib/db/schema";
-import { contributionsCount } from "@/lib/util/ar";
-import { formatDate } from "@/lib/util/date";
+import { contributionsCount, membersCount } from "@/lib/util/ar";
+import { cycleLabel, formatDate } from "@/lib/util/date";
 import { cn } from "@/lib/utils";
 
 const PASS_KEY = "rased:admin";
@@ -164,6 +175,7 @@ export default function AdminPage() {
 
   const active = members.filter((m) => m.active);
   const inactive = members.filter((m) => !m.active);
+  const pending = contributions.filter((c) => effectiveStatus(c) === "pending");
 
   return (
     <div className="space-y-8">
@@ -173,7 +185,7 @@ export default function AdminPage() {
             منطقة المضيف
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            التقييم التلقائي هو الافتراضي — ولك الكلمة الأخيرة.
+            التقييم التلقائي هو الافتراضي — ولك الكلمة الأخيرة في كل شيء.
           </p>
         </div>
         <Button asChild variant="outline" size="sm" className="ms-auto">
@@ -187,9 +199,47 @@ export default function AdminPage() {
         </p>
       )}
 
+      {pending.length > 0 && (
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold text-foreground">
+            بانتظار إعادة التقييم
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {contributionsCount(pending.length)} لم يكتمل تقييمها — محفوظة بلا
+            نقاط حتى تنجح إعادة المحاولة.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {pending.map((c) => (
+              <li key={c.id} className="flex flex-wrap items-center gap-2">
+                <Link
+                  href={`/result/${c.id}`}
+                  className="min-w-0 flex-1 truncate text-sm text-foreground hover:underline"
+                >
+                  {c.title}
+                </Link>
+                <span className="text-xs text-muted-foreground">
+                  {c.memberName}
+                </span>
+                <Button
+                  size="sm"
+                  disabled={busy}
+                  onClick={() => send(`/api/contributions/${c.id}/retry`, "POST")}
+                >
+                  أعد التقييم
+                </Button>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {/* Team members */}
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-foreground">أعضاء الفريق</h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {membersCount(active.length)} نشط — فريق الذكاء الاصطناعي تسعة أعضاء،
+          أضف من ينقص.
+        </p>
         <form
           className="mt-4 flex gap-2"
           onSubmit={async (e) => {
@@ -260,8 +310,8 @@ export default function AdminPage() {
             كل المساهمات
           </h2>
           <p className="text-xs text-muted-foreground">
-            {contributions.length} إجمالًا · عدّل التقييم إذا أخطأ التقييم
-            التلقائي
+            {contributions.length} إجمالًا · صحّح الحالة أو التصنيف أو النقاط إذا
+            أخطأ التقييم التلقائي
           </p>
         </div>
         {contributions.length === 0 ? (
@@ -337,6 +387,7 @@ function MemberRow({
           <span className="text-sm text-foreground">{member.name}</span>
           <span className="text-xs text-muted-foreground">
             {contributionsCount(count)}
+            {member.focusArea && ` · ${categoryLabel(member.focusArea)}`}
           </span>
           <span className="ms-auto flex gap-1">
             <Button asChild variant="ghost" size="sm">
@@ -371,20 +422,31 @@ function AdminContributionRow({
   send: (url: string, method: string, body?: unknown) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
-  const [score, setScore] = useState(String(effectiveScore(c)));
-  const [duplicate, setDuplicate] = useState<DuplicateStatus>(
+  const [status, setStatus] = useState<ContributionStatus>(effectiveStatus(c));
+  const [points, setPoints] = useState(String(effectivePoints(c)));
+  const [category, setCategory] = useState<NewsletterCategory | "">(
+    effectiveCategory(c) ?? "",
+  );
+  const [duplicate, setDuplicate] = useState<DuplicateOutcome>(
     effectiveDuplicate(c),
   );
   const [note, setNote] = useState(c.adminOverride?.note ?? "");
 
-  const current = effectiveScore(c);
-  const overridden = c.adminOverride?.score != null;
+  const overridden = Boolean(c.adminOverride);
 
   return (
     <li className={cn(c.removed && "opacity-50")}>
       <div className="flex flex-wrap items-center gap-3 px-5 py-3">
-        <span className="w-8 shrink-0 text-end text-sm font-semibold tabular-nums text-foreground">
-          {current}
+        <span
+          className="w-8 shrink-0 text-end text-sm font-semibold tabular-nums"
+          style={{
+            color:
+              effectivePoints(c) > 0
+                ? "var(--primary)"
+                : "var(--muted-foreground)",
+          }}
+        >
+          {effectivePoints(c) > 0 ? `+${effectivePoints(c)}` : "—"}
         </span>
         <div className="min-w-0 flex-1">
           <Link
@@ -395,22 +457,20 @@ function AdminContributionRow({
           </Link>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2 text-xs text-muted-foreground">
             <span className="text-foreground">{c.memberName}</span>
-            <span>{typeLabel(c.type)}</span>
+            <span>{categoryLabel(effectiveCategory(c))}</span>
             <span>{formatDate(c.createdAt)}</span>
-            {c.removed && <span>مُزال</span>}
-            {overridden && (
-              <span>عُدِّل من {c.evaluation.finalScore}</span>
-            )}
+            <span>{cycleLabel(c.cycleKey)}</span>
+            <span>تحريريًا {editorialScore(c)}</span>
+            {c.removed && <span>مُزالة</span>}
+            {overridden && <span>معدّلة</span>}
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-3">
-          <VerificationBadge status={c.evaluation.verified} compact />
-          <DuplicateBadge status={effectiveDuplicate(c)} />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setOpen((v) => !v)}
-          >
+          {c.evaluation && (
+            <VerificationBadge status={c.evaluation.verification.status} compact />
+          )}
+          <StatusBadge status={effectiveStatus(c)} />
+          <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
             {open ? "إغلاق" : "تعديل"}
           </Button>
         </div>
@@ -418,17 +478,54 @@ function AdminContributionRow({
 
       {open && (
         <div className="border-t border-border bg-muted px-5 py-4">
-          <div className="grid gap-3 sm:grid-cols-3">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
-              <Label htmlFor={`score-${c.id}`}>التقييم (0–100)</Label>
+              <Label htmlFor={`status-${c.id}`}>الحالة</Label>
+              <select
+                id={`status-${c.id}`}
+                className={SELECT_CLASS}
+                value={status}
+                onChange={(e) =>
+                  setStatus(e.target.value as ContributionStatus)
+                }
+              >
+                {CONTRIBUTION_STATUSES.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_META[s].text}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <Label htmlFor={`points-${c.id}`}>
+                النقاط (0–{POINTS.maxPerCycle})
+              </Label>
               <Input
-                id={`score-${c.id}`}
+                id={`points-${c.id}`}
                 type="number"
                 min={0}
-                max={100}
-                value={score}
-                onChange={(e) => setScore(e.target.value)}
+                max={POINTS.maxPerCycle}
+                value={points}
+                onChange={(e) => setPoints(e.target.value)}
               />
+            </div>
+            <div>
+              <Label htmlFor={`cat-${c.id}`}>التصنيف</Label>
+              <select
+                id={`cat-${c.id}`}
+                className={SELECT_CLASS}
+                value={category}
+                onChange={(e) =>
+                  setCategory(e.target.value as NewsletterCategory)
+                }
+              >
+                <option value="">بلا تغيير</option>
+                {NEWSLETTER_CATEGORIES.map((k) => (
+                  <option key={k} value={k}>
+                    {CATEGORY_LABELS[k]}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <Label htmlFor={`dup-${c.id}`}>حالة التكرار</Label>
@@ -437,17 +534,21 @@ function AdminContributionRow({
                 className={SELECT_CLASS}
                 value={duplicate}
                 onChange={(e) =>
-                  setDuplicate(e.target.value as DuplicateStatus)
+                  setDuplicate(e.target.value as DuplicateOutcome)
                 }
               >
-                <option value="original">{DUPLICATE_META.original.text}</option>
-                <option value="partial">{DUPLICATE_META.partial.text}</option>
-                <option value="duplicate">
-                  {DUPLICATE_META.duplicate.text}
-                </option>
+                {DUPLICATE_OUTCOMES.map((d) => (
+                  <option key={d} value={d}>
+                    {d === "unique"
+                      ? "فريدة"
+                      : d === "same_topic_new_value"
+                        ? "نفس الموضوع بقيمة جديدة"
+                        : "مكررة"}
+                  </option>
+                ))}
               </select>
             </div>
-            <div>
+            <div className="sm:col-span-2 lg:col-span-4">
               <Label htmlFor={`note-${c.id}`}>ملاحظة (تظهر للجميع)</Label>
               <Input
                 id={`note-${c.id}`}
@@ -465,8 +566,10 @@ function AdminContributionRow({
               disabled={busy}
               onClick={async () => {
                 const ok = await send(`/api/contributions/${c.id}`, "PATCH", {
-                  score: Number(score),
-                  duplicate,
+                  status,
+                  points: Number(points),
+                  primaryCategory: category || null,
+                  duplicateOutcome: duplicate,
                   note,
                 });
                 if (ok) setOpen(false);
@@ -483,7 +586,19 @@ function AdminContributionRow({
                   send(`/api/contributions/${c.id}`, "PATCH", { clear: true })
                 }
               >
-                إعادة إلى تقييم الذكاء الاصطناعي ({c.evaluation.finalScore})
+                إعادة إلى تقييم رصد
+              </Button>
+            )}
+            {effectiveStatus(c) === "pending" && (
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={busy}
+                onClick={() =>
+                  send(`/api/contributions/${c.id}/retry`, "POST")
+                }
+              >
+                إعادة التقييم
               </Button>
             )}
             <Button
@@ -504,9 +619,44 @@ function AdminContributionRow({
             </Button>
           </div>
 
-          <p className="mt-3 text-xs text-muted-foreground">
-            تحليل الذكاء الاصطناعي: {c.evaluation.reason}
-          </p>
+          {c.evaluation && (
+            <div className="mt-4 space-y-2 border-t border-border pt-3 text-xs text-muted-foreground">
+              <p>تقييم رصد: {c.evaluation.summaryForMember}</p>
+              <p className="flex flex-wrap items-center gap-2">
+                <DuplicateBadge
+                  outcome={c.evaluation.duplicate.outcome}
+                  always
+                />
+                {c.evaluation.duplicate.reason}
+              </p>
+              {c.evaluation.duplicate.matches.length > 0 && (
+                <div>
+                  <p>المساهمات التي قورنت بها:</p>
+                  <ul className="mt-1 space-y-0.5">
+                    {c.evaluation.duplicate.matches.map((m) => (
+                      <li key={m.id}>
+                        <Link
+                          href={`/result/${m.id}`}
+                          className="hover:text-foreground hover:underline"
+                        >
+                          {Math.round(m.score * 100)}٪ — {m.title} (
+                          {m.memberName})
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+              {c.evaluation.rejectionReason && (
+                <p>سبب الرفض: {c.evaluation.rejectionReason}</p>
+              )}
+            </div>
+          )}
+          {c.evaluationError && (
+            <p className="mt-3 text-xs" style={{ color: "var(--destructive)" }}>
+              خطأ التقييم: {c.evaluationError}
+            </p>
+          )}
         </div>
       )}
     </li>
