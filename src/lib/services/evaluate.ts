@@ -1,4 +1,3 @@
-import Anthropic from "@anthropic-ai/sdk";
 import { ACCEPTANCE, DUPLICATES } from "@/lib/config/rules";
 import {
   AUDIENCES,
@@ -21,6 +20,7 @@ import {
   type DuplicateCandidate,
 } from "./duplicates";
 import { configuredProvider, providerIsInline, webSearch } from "./web-search";
+import { getAIClient, providerKeyName } from "@/lib/ai/provider";
 import {
   computeEditorial,
   domainTier,
@@ -29,9 +29,6 @@ import {
   scaleBreakdown,
 } from "./editorial";
 import {
-  buildUserPrompt,
-  EVALUATION_TOOL,
-  SYSTEM_PROMPT,
   type EvaluationInput,
   type EvaluationToolInput,
 } from "./prompt";
@@ -47,16 +44,9 @@ export interface EvaluationOutcome {
   error: string | null;
 }
 
-const MODEL = process.env.RASED_MODEL || "claude-opus-5";
-const EFFORT = (process.env.RASED_EFFORT || "medium") as
-  | "low"
-  | "medium"
-  | "high"
-  | "xhigh"
-  | "max";
-
+/** True when the selected provider has the key it needs. */
 export function aiEnabled(): boolean {
-  return Boolean(process.env.ANTHROPIC_API_KEY);
+  return getAIClient().enabled();
 }
 
 /**
@@ -71,19 +61,38 @@ export async function evaluateContribution(
   existing: Contribution[],
 ): Promise<EvaluationOutcome> {
   const notices: string[] = [];
+  const client = getAIClient();
+
+  // The standalone search is skipped only when the model does the searching
+  // itself. A provider that cannot browse always needs the separate pass.
+  const searchIsInline =
+    client.canBrowse && providerIsInline(configuredProvider());
 
   const [snapshot, hits] = await Promise.all([
     fetchSource(input.url),
-    providerIsInline(configuredProvider())
+    searchIsInline
       ? Promise.resolve([])
       : webSearch(`${input.title} ${hostname(input.url)}`.trim()),
   ]);
 
   const candidates = findDuplicateCandidates(input, existing);
 
-  if (aiEnabled()) {
+  if (client.enabled()) {
     try {
-      const evaluation = await evaluateWithAi(input, snapshot, candidates, hits);
+      const toolInput = await client.evaluate(input, snapshot, candidates, hits);
+      const evaluation = buildEvaluation(
+        toolInput,
+        input,
+        snapshot,
+        candidates,
+        "ai",
+        client.model,
+      );
+      if (!client.canBrowse && hits.length === 0) {
+        notices.push(
+          `لا يملك ${client.model} تصفّحًا للإنترنت، فاعتمد التقييم على نص الصفحة وحده دون تحقق مستقل.`,
+        );
+      }
       return { evaluation, candidates, notices, error: null };
     } catch (err) {
       // §22: never lose the submission. The caller stores it pending.
@@ -100,7 +109,7 @@ export async function evaluateContribution(
   }
 
   notices.push(
-    "وضع غير متصل: لم يُضبط ANTHROPIC_API_KEY، فتم التقييم بالخوارزمية المدمجة. لم يجرِ أي تحقق مستقل من المصدر.",
+    `وضع غير متصل: لم يُضبط ${providerKeyName(client.name)}، فتم التقييم بالخوارزمية المدمجة. لم يجرِ أي تحقق مستقل من المصدر.`,
   );
   return {
     evaluation: evaluateHeuristically(input, snapshot, candidates),
@@ -172,70 +181,8 @@ function localEligibility(
 }
 
 // ---------------------------------------------------------------------------
-// AI evaluator
+// Turning a provider's answer into an Evaluation
 // ---------------------------------------------------------------------------
-
-function serverTools(): Anthropic.ToolUnion[] {
-  if (!providerIsInline(configuredProvider())) return [];
-  return [
-    { type: "web_search_20260209", name: "web_search", max_uses: 6 },
-    { type: "web_fetch_20260209", name: "web_fetch", max_uses: 4 },
-  ] as Anthropic.ToolUnion[];
-}
-
-async function evaluateWithAi(
-  input: EvaluationInput,
-  snapshot: SourceSnapshot,
-  candidates: DuplicateCandidate[],
-  hits: Awaited<ReturnType<typeof webSearch>>,
-): Promise<Evaluation> {
-  const client = new Anthropic();
-  const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: buildUserPrompt(input, snapshot, candidates, hits) },
-  ];
-
-  let toolInput: EvaluationToolInput | null = null;
-
-  // Server tools resolve inside the request, so this normally runs once.
-  // The extra turns exist for pause_turn and for nudging a missing tool call.
-  for (let turn = 0; turn < 4 && !toolInput; turn++) {
-    const response = await client.messages.create({
-      model: MODEL,
-      max_tokens: 16000,
-      system: SYSTEM_PROMPT,
-      thinking: { type: "adaptive" },
-      output_config: { effort: EFFORT },
-      tools: [...serverTools(), EVALUATION_TOOL as Anthropic.ToolUnion],
-      tool_choice: { type: "auto" },
-      messages,
-    });
-
-    for (const block of response.content) {
-      if (block.type === "tool_use" && block.name === EVALUATION_TOOL.name) {
-        toolInput = block.input as EvaluationToolInput;
-      }
-    }
-    if (toolInput) break;
-
-    messages.push({ role: "assistant", content: response.content });
-
-    if (response.stop_reason === "pause_turn") continue;
-    if (response.stop_reason === "refusal") {
-      throw new Error("رفض المقيّم تقييم هذه المساهمة.");
-    }
-    messages.push({
-      role: "user",
-      content:
-        "Now call the submit_evaluation tool with your final evaluation. Do not reply with plain text.",
-    });
-  }
-
-  if (!toolInput) {
-    throw new Error("لم يُعِد المقيّم نتيجة منظَّمة.");
-  }
-
-  return buildEvaluation(toolInput, input, snapshot, candidates, "ai", MODEL);
-}
 
 function buildEvaluation(
   t: EvaluationToolInput,
