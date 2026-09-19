@@ -22,7 +22,9 @@
  *   netlify   NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID   (production blobs)
  *   postgres  DATABASE_URL (or POSTGRES_URL)
  *
- * Both are read from .env.local / .env when present.
+ * Read from .env.migrate, then .env.local, then .env. Prefer .env.migrate: it is
+ * git-ignored and Next never loads it, whereas a DATABASE_URL in .env.local makes
+ * `next dev` pick Postgres and write to that database.
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -53,7 +55,7 @@ function parseArgs(argv) {
 
 /** Loads .env.local then .env, without overwriting what is already set. */
 function loadEnvFiles() {
-  for (const name of [".env.local", ".env"]) {
+  for (const name of [".env.migrate", ".env.local", ".env"]) {
     const path = resolve(process.cwd(), name);
     if (!existsSync(path)) continue;
     for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {

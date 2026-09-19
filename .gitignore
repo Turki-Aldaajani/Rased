@@ -3,6 +3,7 @@ node_modules
 out
 .env
 .env.local
+.env.migrate
 data/db.json
 *.tsbuildinfo
 next-env.d.ts
