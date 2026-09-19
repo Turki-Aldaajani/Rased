@@ -229,6 +229,87 @@ and the trusted/reputable/social domain lists. Edit, restart, done.
 
 ---
 
+## The newsletter engine
+
+Every two weeks the cycle's contributions become an issue of the team's
+newsletter — the same newsletter as
+[Issue&nbsp;#1](https://turki-aldaajani.github.io/Rased/newsletter/01/index.html),
+in the same design, and never published without a human approving it.
+
+```
+contributions → selection → AI draft → fact check → human review → publish
+```
+
+**1. Selection (`lib/newsletter/select.ts`).** Rules only, no model. It takes
+the cycle's accepted contributions, drops repeated URLs, ignores anything below
+the editorial floor, fills each of the six sections from its own category
+strongest-first, keeps one event to one item, prefers a second company over a
+second item from the same one, and lets an empty section borrow an overflow
+item that genuinely belongs to it through a secondary category. Every dropped
+contribution is kept with the reason it was dropped.
+
+This module cannot see member points — it imports the editorial score and
+nothing else. What a member earns and what gets published are decided
+separately, on purpose.
+
+**2. Writing (`lib/newsletter/generate.ts`).** Each section is written in one
+call that returns **JSON, never HTML**, and only ever prose: links, contributors,
+audiences, difficulty and scores come from the contribution and the model cannot
+change them. The prompt gives it the source data and one rule above all — write
+only what that data supports, and list anything it could not support instead of
+guessing. A name it invents for an author or a platform is dropped unless the
+source text contains it.
+
+With no API key, or when a call fails, the item is assembled directly from the
+contribution's own stored fields. Nothing is invented that way either; it just
+reads roughly, so every such item carries a review flag.
+
+**3. Fact check (`lib/newsletter/validate.ts`).** Mechanical checks against the
+contribution: every number in the written text must appear in the source data
+(this is what catches invented benchmarks, prices and dates), the link must be
+one the evaluation knows, a "new" tool or model older than 90 days is flagged, an
+unverified source is flagged, and so is a missing "why it matters". Flags do not
+block editing — but a draft with open warnings cannot be published until an
+editor says they have read them.
+
+**4. Review (`/admin/newsletter`).** The cycle dashboard shows how many
+contributions there are, how the six sections are covered, what was selected,
+what was left out and why, and who contributed. From a draft an editor can edit
+any text, reorder items, move an item to another section, remove it, add one
+back from the cycle, regenerate a single item, a section or the whole draft, fix
+links, preview the real page, and publish.
+
+**5. Publishing (`lib/newsletter/publish.ts`).** The public newsletter is GitHub
+Pages serving `main:/docs`, so publishing writes `docs/newsletter/NN/index.html`
+— through the GitHub API when deployed (`NEWSLETTER_GITHUB_TOKEN`), or straight
+into the checkout in development. The archive page at `docs/newsletter/index.html`
+is regenerated with it.
+
+**Issues are immutable.** A folder that already exists is never overwritten
+unless this system published it and an editor explicitly asks to re-publish;
+Issue #1's own folder is reserved and cannot be written at all. A published
+issue cannot be regenerated or deleted, and editing one takes a deliberate
+confirmation.
+
+### The design is Issue #1's, not a new one
+
+`npm run newsletter:theme` extracts the stylesheet, SVG icons, hero, table of
+contents and reading-progress script out of `docs/newsletter/01/index.html` into
+`lib/newsletter/theme.generated.ts`. The renderer builds the same four card
+families Issue #1 uses — story, tool, learn, social — so a generated issue uses
+only classes Issue #1 already defines. Issue #1's own file is read, never
+written.
+
+Sections keep their names and anchors from Issue #1 (`أهم الأخبار` / `#top-news`,
+`جديد النماذج` / `#models`, …), and `lib/newsletter/sections.ts` is the single
+place they are defined — the app's own category labels read from it, so the two
+can never drift.
+
+A section with nothing in it is left out of the issue and its table of contents
+rather than filled. Nothing is invented to fill a section.
+
+---
+
 ## Admin / host area
 
 `/admin`, unlocked with `ADMIN_PASSCODE` from `.env.local` (default `rased`).
@@ -239,6 +320,7 @@ and the trusted/reputable/social domain lists. Edit, restart, done.
 - See exactly which earlier submissions a duplicate was compared against
 - Retry an evaluation that failed
 - Remove or restore a submission, or reset it back to Rasad's own verdict
+- Build, review and publish the newsletter at `/admin/newsletter`
 
 Every correction carries a public note. Automatic evaluation is the default and
 none of it is irreversible — the host has the final word on all of it.
@@ -257,6 +339,13 @@ none of it is irreversible — the host has the final word on all of it.
 | `TAVILY_API_KEY` / `BRAVE_API_KEY` / `SERPER_API_KEY` | *(empty)* | Only for the matching provider |
 | `ADMIN_PASSCODE` | `rased` | Unlocks `/admin` |
 | `RASED_TEAM` | *(empty)* | Comma-separated roster used to seed the team on first run |
+| `RASED_NEWSLETTER_EFFORT` | *(RASED_EFFORT)* | Effort for newsletter writing only |
+| `NEWSLETTER_PUBLISH_TARGET` | *(auto)* | `github` \| `filesystem`. Defaults to `github` when a token is set, `filesystem` in development |
+| `NEWSLETTER_GITHUB_TOKEN` | *(empty)* | Token with content write access — required to publish from the deployed app |
+| `NEWSLETTER_GITHUB_REPO` | `Turki-Aldaajani/Rased` | Repository that GitHub Pages serves |
+| `NEWSLETTER_GITHUB_BRANCH` | `main` | Branch to commit published issues to |
+| `NEWSLETTER_GITHUB_DIR` | `docs/newsletter` | Directory Pages publishes from |
+| `NEWSLETTER_PUBLISH_DIR` | `docs/newsletter` | Where the `filesystem` target writes |
 
 `anthropic` is the recommended search provider: search runs inside the model
 call via Claude's server-side `web_search` / `web_fetch` tools, so there is no
@@ -280,11 +369,16 @@ src/
     feed/                    Everything, grouped by cycle
     profile/[id]/            Member profile + cycle-by-cycle record
     admin/                   Host area
+    admin/newsletter/        Cycle dashboard, drafts, the editor
     api/
       title/                 ← names a pasted link (auto title + summary)
       contributions/         Submit + list
       contributions/[id]/    Read + admin correction
       contributions/[id]/retry   Re-run a failed evaluation
+      newsletters/           List issues + generate a draft
+      newsletters/overview/  Cycle stats and the selection plan
+      newsletters/[id]/      Read, save, delete a draft
+      newsletters/[id]/{regenerate,items,preview,publish}/
       members/ summary/ admin/auth/
   lib/
     config/rules.ts          ← every tunable rule, points and editorial both
@@ -304,11 +398,25 @@ src/
       leaderboard.ts         Cycle standings + historical cycles
       submit.ts              The submission pipeline, shared with retry
       admin.ts               Passcode gate
+    newsletter/
+      sections.ts            ← the six sections, named as Issue #1 names them
+      select.ts              Steps 1–5: what makes the issue, and where
+      generate.ts            Step 6: the model writes JSON, never HTML
+      validate.ts            Step 7: every number checked against the source
+      render.ts              Step 8: Issue #1's markup, from structured data
+      service.ts             Draft, regenerate, edit, preview, publish
+      publish.ts             GitHub Pages / local filesystem targets
+      theme.generated.ts     ← extracted from Issue #1 (npm run newsletter:theme)
+      compose.ts  format.ts  legacy.ts  types.ts  http.ts
   components/
     Composer.tsx             ← the one input the app is built around
     RetryEvaluation.tsx      Retry button for a pending submission
     contribution.tsx         Category/status/points presentation
+    admin/                   Passcode gate + session hook
     QuietNav.tsx  Header.tsx  CurrentUser.tsx  YourStats.tsx
+scripts/
+  sync-newsletter-theme.mjs  Issue #1's CSS/icons/script → theme.generated.ts
+docs/newsletter/             What GitHub Pages serves (01/ is hand-written)
 ```
 
 The layers are deliberately separate: swapping the database means rewriting

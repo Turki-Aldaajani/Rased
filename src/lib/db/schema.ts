@@ -9,6 +9,7 @@
  */
 
 import type { EditorialDimension } from "@/lib/config/rules";
+import type { NewsletterIssue } from "@/lib/newsletter/types";
 
 // ---------------------------------------------------------------------------
 // Vocabularies
@@ -270,6 +271,8 @@ export interface Contribution {
 export interface Database {
   members: Member[];
   contributions: Contribution[];
+  /** Newsletter issues — drafts and published — as structured data. */
+  newsletters: NewsletterIssue[];
 }
 
 // ---------------------------------------------------------------------------

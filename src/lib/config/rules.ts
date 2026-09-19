@@ -189,3 +189,43 @@ export const SOCIAL_DOMAINS = [
   "threads.net",
   "mastodon.social",
 ] as const;
+
+// ---------------------------------------------------------------------------
+// Newsletter engine — reads the editorial score, never member points
+// ---------------------------------------------------------------------------
+
+export const NEWSLETTER = {
+  /**
+   * Most items per section. Issue #1 ran 5 / 2 / 3 / 2 / 3 / 2; the caps sit
+   * just above that so one busy category cannot swallow the issue.
+   */
+  sectionLimits: {
+    top_news: 5,
+    models: 3,
+    new_tools: 3,
+    other_tools: 3,
+    learn: 3,
+    social: 2,
+  },
+
+  /** Editorial score below which a contribution is not considered for the issue. */
+  minEditorialScore: 30,
+
+  /**
+   * Two selected items whose titles are at least this similar (0..1) are
+   * treated as the same event, and only the stronger one is kept.
+   */
+  sameEventSimilarity: 0.5,
+
+  /** Prefer different companies: at most this many items per entity per section on the first pass. */
+  maxPerEntityPerSection: 1,
+
+  /** A "new" model or tool older than this is flagged for review before publishing. */
+  staleForNewDays: 90,
+
+  /** Public address of the published archive (GitHub Pages serves main:/docs). */
+  publicBaseUrl: "https://turki-aldaajani.github.io/Rased/newsletter",
+
+  /** Shared social-preview image, published with Issue #1 and never changed. */
+  ogImage: "01/og-injaz.png",
+} as const;

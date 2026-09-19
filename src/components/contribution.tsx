@@ -15,19 +15,18 @@ import {
   effectivePoints,
   effectiveStatus,
 } from "@/lib/db/schema";
+import { SECTION_TITLE_BY_CATEGORY } from "@/lib/newsletter/sections";
 import { relativeTime } from "@/lib/util/date";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 
-export const CATEGORY_LABELS: Record<NewsletterCategory, string> = {
-  important_news: "أخبار مهمة",
-  new_models: "نماذج جديدة",
-  new_tools: "أدوات جديدة",
-  other_tools: "أدوات أخرى",
-  learn_this_week: "تعلّم هذا الأسبوع",
-  social_trends: "ترندات السوشال",
-};
+/**
+ * The newsletter's own section names, taken from Issue #1 via
+ * `lib/newsletter/sections.ts` so the app and the published page always agree.
+ */
+export const CATEGORY_LABELS: Record<NewsletterCategory, string> =
+  SECTION_TITLE_BY_CATEGORY;
 
 export const CATEGORY_HINTS: Record<NewsletterCategory, string> = {
   important_news: "أخبار الذكاء الاصطناعي التي يجب أن يعرفها الفريق",

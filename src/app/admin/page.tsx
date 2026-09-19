@@ -188,9 +188,14 @@ export default function AdminPage() {
             التقييم التلقائي هو الافتراضي — ولك الكلمة الأخيرة في كل شيء.
           </p>
         </div>
-        <Button asChild variant="outline" size="sm" className="ms-auto">
-          <Link href="/leaderboard">عرض الترتيب</Link>
-        </Button>
+        <div className="ms-auto flex gap-2">
+          <Button asChild size="sm">
+            <Link href="/admin/newsletter">النشرة</Link>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <Link href="/leaderboard">عرض الترتيب</Link>
+          </Button>
+        </div>
       </div>
 
       {message && (

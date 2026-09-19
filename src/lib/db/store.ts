@@ -12,6 +12,7 @@ import {
   type PointsAward,
 } from "./schema";
 import { cycleKey, monthKey, weekKey } from "@/lib/util/date";
+import type { NewsletterIssue } from "@/lib/newsletter/types";
 
 /**
  * Netlify Blobs–backed store. Everything the rest of the app needs goes
@@ -53,6 +54,7 @@ function seedDatabase(): Database {
       focusArea: null,
     })),
     contributions: [],
+    newsletters: [],
   };
 }
 
@@ -263,7 +265,11 @@ async function readRaw(): Promise<Database> {
       (c: Record<string, unknown>) => !c.points || !c.status,
     );
     if (needsMigration) enforceCapAcrossHistory(contributions);
-    return { members, contributions };
+    return {
+      members,
+      contributions,
+      newsletters: (parsed.newsletters ?? []) as NewsletterIssue[],
+    };
   }
   if (!seeding) {
     seeding = (async () => {
@@ -489,5 +495,59 @@ export async function replaceWithAward(
     const updated = decide(current, { cycleTotalBefore, collision });
     db.contributions[idx] = updated;
     return updated;
+  });
+}
+
+// ----- newsletter issues ---------------------------------------------------
+
+export async function listIssues(): Promise<NewsletterIssue[]> {
+  const db = await readRaw();
+  return [...db.newsletters].sort((a, b) => b.number - a.number);
+}
+
+export async function getIssue(id: string): Promise<NewsletterIssue | null> {
+  const db = await readRaw();
+  return db.newsletters.find((n) => n.id === id) ?? null;
+}
+
+/**
+ * Replaces one issue under the write lock. `fn` receives the stored issue and
+ * the whole database (read-only for anything else) and returns the new issue,
+ * or throws to leave everything untouched.
+ */
+export async function updateIssue(
+  id: string,
+  fn: (current: NewsletterIssue, db: Database) => NewsletterIssue | Promise<NewsletterIssue>,
+): Promise<NewsletterIssue | null> {
+  return mutate(async (db) => {
+    const idx = db.newsletters.findIndex((n) => n.id === id);
+    if (idx === -1) return null;
+    const next = await fn(db.newsletters[idx], db);
+    db.newsletters[idx] = { ...next, id, updatedAt: new Date().toISOString() };
+    return db.newsletters[idx];
+  });
+}
+
+/** Adds an issue; `fn` may refuse (throw) after looking at the others. */
+export async function insertIssue(
+  fn: (db: Database) => NewsletterIssue,
+): Promise<NewsletterIssue> {
+  return mutate((db) => {
+    const issue = fn(db);
+    db.newsletters.push(issue);
+    return issue;
+  });
+}
+
+export async function deleteIssue(
+  id: string,
+  guard: (issue: NewsletterIssue) => void,
+): Promise<boolean> {
+  return mutate((db) => {
+    const issue = db.newsletters.find((n) => n.id === id);
+    if (!issue) return false;
+    guard(issue);
+    db.newsletters = db.newsletters.filter((n) => n.id !== id);
+    return true;
   });
 }
