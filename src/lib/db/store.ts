@@ -1,4 +1,3 @@
-import { getStore, getDeployStore, type Store } from "@netlify/blobs";
 import { randomUUID } from "crypto";
 import { POINTS } from "@/lib/config/rules";
 import {
@@ -13,20 +12,45 @@ import {
 } from "./schema";
 import { cycleKey, monthKey, weekKey } from "@/lib/util/date";
 import type { NewsletterIssue } from "@/lib/newsletter/types";
+import { netlifyDriver } from "./netlify-blobs";
+import { postgresDriver } from "./postgres";
+import type { StorageProvider, StoreDriver, StoredDocument } from "./types";
 
 /**
- * Netlify Blobs–backed store. Everything the rest of the app needs goes
- * through these functions, so swapping in Supabase/Postgres later is a
- * single-file job.
+ * The store's public surface. Everything the rest of the app needs goes
+ * through these functions; which backend actually holds the bytes is decided
+ * by STORAGE_PROVIDER and lives behind `StoreDriver`.
  *
- * Netlify's serverless/edge functions run on a read-only filesystem, so a
- * local JSON file (the previous implementation) throws on every write in
- * production. Blobs give us the same "one JSON blob = the whole db" model
- * without touching disk.
+ * Seeding, migration of old rows and the per-cycle cap all sit here, above
+ * the driver line, so every backend inherits them identically — a driver only
+ * ever moves one JSON document around. See ./types.ts.
  */
 
-const STORE_NAME = "rased-db";
-const DB_KEY = "db.json";
+/**
+ * Which backend to talk to. Same switch as AI_PROVIDER: the Netlify path
+ * stays live so the app is still deployable there and the two can be
+ * compared side by side.
+ */
+function resolveProvider(): StorageProvider {
+  const configured = (process.env.STORAGE_PROVIDER || "").trim().toLowerCase();
+  if (configured === "postgres") return "postgres";
+  if (configured === "netlify") return "netlify";
+  if (configured) {
+    throw new Error(
+      `STORAGE_PROVIDER غير معروف: "${configured}". القيم المقبولة: netlify | postgres.`,
+    );
+  }
+  // Unset: a connection string is an unambiguous signal, and it keeps the
+  // Vercel setup one variable shorter. Netlify stays the fallback so existing
+  // deployments are unaffected by this file.
+  return process.env.DATABASE_URL || process.env.POSTGRES_URL
+    ? "postgres"
+    : "netlify";
+}
+
+function driver(): StoreDriver {
+  return resolveProvider() === "postgres" ? postgresDriver : netlifyDriver;
+}
 
 /**
  * Seed roster. The team is nine people; the names here are the ones the app
@@ -59,15 +83,13 @@ function seedDatabase(): Database {
 }
 
 /**
- * Global store in production (persists across deploys), deploy-scoped store
- * everywhere else (previews/branches don't pollute production data).
+ * Serialises writes inside one process.
+ *
+ * A cheap first line of defence, not the real guarantee: on serverless every
+ * request can land on a different instance, where this chain does nothing.
+ * Cross-instance exclusion is the driver's job — `postgres` takes an advisory
+ * lock for the whole of `transact`, `netlify` has none.
  */
-function getDbStore(): Store {
-  const isProd = process.env.CONTEXT === "production";
-  return isProd ? getStore({ name: STORE_NAME, consistency: "strong" }) : getDeployStore({ name: STORE_NAME, consistency: "strong" });
-}
-
-/** Serialise writes so two concurrent submissions can't clobber each other. */
 let writeChain: Promise<unknown> = Promise.resolve();
 
 /**
@@ -255,39 +277,43 @@ function migrateMember(raw: Record<string, unknown>): Member {
   };
 }
 
+/**
+ * Turns a stored document into a live `Database`, migrating rows written
+ * before the contribution engine existed. Every backend goes through here,
+ * so none of them has to know what a contribution looks like.
+ */
+function hydrate(parsed: StoredDocument): Database {
+  const members = (parsed.members ?? []).map(migrateMember);
+  const contributions = (parsed.contributions ?? []).map(migrateContribution);
+  const needsMigration = (parsed.contributions ?? []).some(
+    (c) => !c.points || !c.status,
+  );
+  if (needsMigration) enforceCapAcrossHistory(contributions);
+  return {
+    members,
+    contributions,
+    newsletters: (parsed.newsletters ?? []) as NewsletterIssue[],
+  };
+}
+
 async function readRaw(): Promise<Database> {
-  const store = getDbStore();
-  const parsed = await store.get(DB_KEY, { type: "json" });
-  if (parsed) {
-    const members = (parsed.members ?? []).map(migrateMember);
-    const contributions = (parsed.contributions ?? []).map(migrateContribution);
-    const needsMigration = (parsed.contributions ?? []).some(
-      (c: Record<string, unknown>) => !c.points || !c.status,
-    );
-    if (needsMigration) enforceCapAcrossHistory(contributions);
-    return {
-      members,
-      contributions,
-      newsletters: (parsed.newsletters ?? []) as NewsletterIssue[],
-    };
-  }
+  const parsed = await driver().read();
+  if (parsed) return hydrate(parsed);
   if (!seeding) {
-    seeding = (async () => {
-      const seeded = seedDatabase();
-      await writeRaw(seeded);
-      return seeded;
-    })();
-    // Clear once settled, so deleting the blob later re-seeds properly.
-    void seeding.finally(() => {
-      seeding = null;
+    // Seeding goes through `transact`, not a bare write: on postgres that
+    // takes the lock and re-checks, so an instance that lost the race adopts
+    // the roster the winner just wrote instead of overwriting it.
+    const attempt = driver().transact<Database>(async (raw) => {
+      const db = raw ? hydrate(raw) : seedDatabase();
+      return [db, db];
+    });
+    seeding = attempt;
+    // Clear once settled, so deleting the database later re-seeds properly.
+    void attempt.finally(() => {
+      if (seeding === attempt) seeding = null;
     });
   }
   return seeding;
-}
-
-async function writeRaw(db: Database): Promise<void> {
-  const store = getDbStore();
-  await store.setJSON(DB_KEY, db);
 }
 
 export async function readDb(): Promise<Database> {
@@ -296,12 +322,12 @@ export async function readDb(): Promise<Database> {
 
 /** Read-modify-write under a lock. The mutator may return a value to pass out. */
 export async function mutate<T>(fn: (db: Database) => T | Promise<T>): Promise<T> {
-  const run = async (): Promise<T> => {
-    const db = await readRaw();
-    const result = await fn(db);
-    await writeRaw(db);
-    return result;
-  };
+  const run = (): Promise<T> =>
+    driver().transact<T>(async (raw) => {
+      const db = raw ? hydrate(raw) : seedDatabase();
+      const result = await fn(db);
+      return [db, result];
+    });
   const next = writeChain.then(run, run);
   // Keep the chain alive even if this operation rejects.
   writeChain = next.catch(() => undefined);

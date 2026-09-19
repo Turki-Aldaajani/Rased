@@ -1,7 +1,12 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ["@anthropic-ai/sdk"],
+  /**
+   * `pg` optionally requires the native `pg-native` binding at runtime, which
+   * webpack cannot resolve at build time. Keeping it external leaves the
+   * require in place, where it fails softly and falls back to the JS driver.
+   */
+  serverExternalPackages: ["@anthropic-ai/sdk", "pg"],
 
   /**
    * The Spline runtime references Draco decoder assets that it fetches from a
