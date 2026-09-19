@@ -6,7 +6,8 @@
     "dev": "next dev -p 3000",
     "build": "next build",
     "start": "next start -p 3000",
-    "newsletter:theme": "node scripts/sync-newsletter-theme.mjs"
+    "newsletter:theme": "node scripts/sync-newsletter-theme.mjs",
+    "store:migrate": "node scripts/migrate-store.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.124.0",
@@ -19,6 +20,7 @@
     "framer-motion": "^13.2.0",
     "lucide-react": "^1.43.0",
     "next": "^15.5.4",
+    "pg": "^8.23.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "tailwind-merge": "^3.6.0"
@@ -26,6 +28,7 @@
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
     "@types/node": "^24.5.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "postcss": "^8.5.6",
