@@ -4,6 +4,7 @@ out
 .env
 .env.local
 .env.migrate
+rased-backup*.json
 data/db.json
 *.tsbuildinfo
 next-env.d.ts
