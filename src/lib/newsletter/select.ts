@@ -28,7 +28,7 @@ export interface Placement {
 
 export interface SelectionPlan {
   cycleKey: string;
-  /** Accepted, evaluated, not removed — everything the engine may consider. */
+  /** Accepted, evaluated, not removed, everything the engine may consider. */
   eligible: Contribution[];
   placements: Placement[];
   unused: UnusedContribution[];
@@ -38,7 +38,7 @@ export interface SelectionPlan {
 
 const EARNING = ["accepted", "accepted_with_new_angle"];
 
-/** STEP 1 — accepted contributions of the cycle that have an evaluation. */
+/** STEP 1, accepted contributions of the cycle that have an evaluation. */
 export function eligibleFor(
   contributions: Contribution[],
   cycleKey: string,
@@ -102,7 +102,7 @@ export function planIssue(
   ) as Record<NewsletterCategory, number>;
   for (const c of eligible) coverage[effectiveCategory(c)!]++;
 
-  // STEP 2 — exact duplicates: one item per source URL, the strongest one.
+  // STEP 2, exact duplicates: one item per source URL, the strongest one.
   const byStrength = [...eligible].sort(rank);
   const distinct: Contribution[] = [];
   for (const c of byStrength) {
@@ -116,7 +116,7 @@ export function planIssue(
     }
   }
 
-  // STEP 4 — below the editorial floor, the item is not considered at all.
+  // STEP 4, below the editorial floor, the item is not considered at all.
   const considered = distinct.filter((c) => {
     if (editorialScore(c) >= NEWSLETTER.minEditorialScore) return true;
     unused.push(
@@ -138,7 +138,7 @@ export function planIssue(
   const clashWithPlaced = (c: Contribution) =>
     placed().find((p) => sameEvent(p, c)) ?? null;
 
-  // STEP 3 + 5 — group by primary category and fill each section, strongest
+  // STEP 3 + 5, group by primary category and fill each section, strongest
   // first, one event once, different companies before repeats.
   for (const def of SECTIONS) {
     const group = considered
@@ -180,7 +180,7 @@ export function planIssue(
     }
   }
 
-  // Balance — an empty or thin section may take an overflow item whose
+  // Balance, an empty or thin section may take an overflow item whose
   // secondary categories say it belongs there too. Never the same item twice.
   for (const c of overflow.sort(rank)) {
     const secondary = c.evaluation?.classification.secondary ?? [];

@@ -21,7 +21,7 @@ export const POINTS = {
 
   /**
    * Submissions past the cap are still stored, still classified and still
-   * available to the newsletter engine — they just stop moving the board.
+   * available to the newsletter engine, they just stop moving the board.
    */
   keepEvaluatingAfterCap: true,
 } as const;
@@ -34,7 +34,7 @@ export const CYCLE = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Editorial value — newsletter prioritisation only, never member points
+// Editorial value, newsletter prioritisation only, never member points
 // ---------------------------------------------------------------------------
 
 export const EDITORIAL = {
@@ -62,14 +62,14 @@ export const EDITORIAL = {
     { maxAgeDays: Infinity, fraction: 0.1, labelAr: "أقدم من عام" },
   ],
 
-  /** Applied to the editorial score only — a duplicate is worth less to the newsletter. */
+  /** Applied to the editorial score only, a duplicate is worth less to the newsletter. */
   duplicateMultiplier: {
     unique: 1,
     same_topic_new_value: 0.85,
     duplicate: 0.4,
   },
 
-  /** Applied to the editorial score only — unconfirmed content is riskier to publish. */
+  /** Applied to the editorial score only, unconfirmed content is riskier to publish. */
   verificationMultiplier: {
     verified: 1,
     partially_verified: 0.9,
@@ -109,7 +109,7 @@ export const DUPLICATES = {
 } as const;
 
 // ---------------------------------------------------------------------------
-// Acceptance — the floor a contribution has to clear to earn its point
+// Acceptance, the floor a contribution has to clear to earn its point
 // ---------------------------------------------------------------------------
 
 export const ACCEPTANCE = {
@@ -160,7 +160,7 @@ export const TRUSTED_DOMAINS = [
   "cloud.google.com",
 ] as const;
 
-/** Reputable secondary coverage — good, but not the primary source. */
+/** Reputable secondary coverage, good, but not the primary source. */
 export const REPUTABLE_DOMAINS = [
   "techcrunch.com",
   "theverge.com",
@@ -177,7 +177,7 @@ export const REPUTABLE_DOMAINS = [
   "towardsdatascience.com",
 ] as const;
 
-/** Platforms whose content is social-first — a signal for social_trends. */
+/** Platforms whose content is social-first, a signal for social_trends. */
 export const SOCIAL_DOMAINS = [
   "x.com",
   "twitter.com",
@@ -191,7 +191,7 @@ export const SOCIAL_DOMAINS = [
 ] as const;
 
 // ---------------------------------------------------------------------------
-// Newsletter engine — reads the editorial score, never member points
+// Newsletter engine, reads the editorial score, never member points
 // ---------------------------------------------------------------------------
 
 export const NEWSLETTER = {

@@ -58,7 +58,7 @@ export function truncate(s: string, n: number): string {
   return s.length <= n ? s : s.slice(0, n - 1).trimEnd() + "…";
 }
 
-/** Counts words that carry meaning — used to judge effort in "why useful". */
+/** Counts words that carry meaning, used to judge effort in "why useful". */
 export function meaningfulWordCount(s: string): number {
   return tokenize(s).length;
 }

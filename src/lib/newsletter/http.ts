@@ -5,7 +5,7 @@ import { NewsletterError } from "./service";
 
 /**
  * Every newsletter endpoint is for editors only, and every failure comes back
- * as a clear JSON error — nothing is half-written on the way out.
+ * as a clear JSON error, nothing is half-written on the way out.
  */
 export async function adminRoute(
   req: Request,

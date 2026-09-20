@@ -117,7 +117,8 @@ export function composeFromSource(
     headline: c.title,
     kicker: sectionId === "top_news" ? "الخبر الأهم" : "",
     paragraphs: body.length > 0 ? body : [c.description].filter(Boolean),
-    // The member's own reason, verbatim — never a reason they did not give.
+    // The member's own text, verbatim. This is what the newsletter prints:
+    // no model rewrites it, in this path or the AI one.
     whyItMatters: c.memberReason,
     chip: def.kind === "tool" ? audienceChip(audience) : "",
     fitLabel: def.defaults.fitLabel,

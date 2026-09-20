@@ -6,13 +6,16 @@ import { sectionById, type SectionId } from "./sections";
 import type { NewsletterIssue, NewsletterItem, ReviewFlag } from "./types";
 
 /**
- * Pipeline step 7 — check what was written against what the contribution
+ * Pipeline step 7, check what was written against what the contribution
  * actually says.
  *
  * These checks are mechanical and deliberately suspicious. They do not block
  * anything on their own: they put a flag in front of the editor, and a draft
  * with open warnings cannot be published until someone acknowledges them.
  */
+
+/** Below this, the member wrote too little to publish without a look. */
+const MIN_MEMBER_TEXT = 10;
 
 const DIGIT_MAP: Record<string, string> = {
   "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4",
@@ -147,8 +150,16 @@ export function validateItem(
   if (item.paragraphs.every((p) => !p.trim())) {
     warn("missing_body", "لا يوجد نص يشرح العنصر.");
   }
-  if (!item.whyItMatters.trim()) {
-    warn("missing_why", "لا يوجد «لماذا يهمك؟» — أضفه من سبب العضو.");
+  const why = item.whyItMatters.trim();
+  if (!why) {
+    warn("missing_why", "لا يوجد «لماذا يهمك؟»، والعضو لم يكتب نصًا.");
+  } else if (why.length < MIN_MEMBER_TEXT) {
+    // Printed as it is, either way. The flag is for the editor, and flags
+    // never reach the published page.
+    warn(
+      "short_member_text",
+      `نص العضو قصير جدًا (${why.length} حرفًا). يظهر في النشرة كما كتبه، فراجعه يدويًا قبل النشر.`,
+    );
   }
 
   if (e?.verification.status === "not_independently_verified") {
@@ -172,7 +183,7 @@ export function validateItem(
   ) {
     warn(
       "not_new",
-      `نُشر قبل أكثر من ${NEWSLETTER.staleForNewDays} يومًا — قد لا يصح تقديمه كجديد.`,
+      `نُشر قبل أكثر من ${NEWSLETTER.staleForNewDays} يومًا، قد لا يصح تقديمه كجديد.`,
     );
   }
 
@@ -190,7 +201,7 @@ export function validateItem(
   if (item.writtenBy === "source") {
     info(
       "assembled_from_source",
-      "النص مجمّع مباشرة من بيانات المساهمة دون صياغة — راجع الأسلوب.",
+      "النص مجمّع مباشرة من بيانات المساهمة دون صياغة، راجع الأسلوب.",
     );
   }
 

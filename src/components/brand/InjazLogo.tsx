@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 
 /**
- * The Injaz mark — the arch of the identity, drawn from the point of the
+ * The Injaz mark, the arch of the identity, drawn from the point of the
  * letter zay. These are the same two paths the newsletter draws behind its
  * hero (`.arch` in Issue #1), so the app and the published issues carry one
  * logo and not two drawings of it.

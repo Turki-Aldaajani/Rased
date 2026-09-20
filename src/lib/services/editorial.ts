@@ -15,7 +15,7 @@ import { clamp } from "@/lib/util/text";
 import { daysBetween } from "@/lib/util/date";
 
 /**
- * Editorial value maths — deterministic, and deliberately isolated from the
+ * Editorial value maths, deterministic, and deliberately isolated from the
  * points engine. The evaluator supplies raw 0..10 judgements per dimension;
  * everything after that happens here, so the same inputs always produce the
  * same number, and changing the weights changes only this file's inputs.
@@ -62,15 +62,15 @@ export function computeEditorial(
   if (dupMult < 1) {
     notes.push(
       duplicate === "duplicate"
-        ? `محتوى مكرر — قيمته التحريرية للنشرة ${Math.round(dupMult * 100)}٪.`
-        : `نفس الموضوع بزاوية جديدة — قيمته التحريرية ${Math.round(dupMult * 100)}٪.`,
+        ? `محتوى مكرر، قيمته التحريرية للنشرة ${Math.round(dupMult * 100)}٪.`
+        : `نفس الموضوع بزاوية جديدة، قيمته التحريرية ${Math.round(dupMult * 100)}٪.`,
     );
   }
   if (verMult < 1) {
     notes.push(
       verification === "not_independently_verified"
-        ? `لم يُتحقق منه بشكل مستقل — قيمته التحريرية ${Math.round(verMult * 100)}٪.`
-        : `تحقق جزئي — قيمته التحريرية ${Math.round(verMult * 100)}٪.`,
+        ? `لم يُتحقق منه بشكل مستقل، قيمته التحريرية ${Math.round(verMult * 100)}٪.`
+        : `تحقق جزئي، قيمته التحريرية ${Math.round(verMult * 100)}٪.`,
     );
   }
 
@@ -84,7 +84,7 @@ export function computeEditorial(
 
 /** Recency judgement (0..10) from the original publication date. */
 export function recencyJudgement(originalDate: string | null): number {
-  if (!originalDate) return 4; // unknown date — conservative, not zero
+  if (!originalDate) return 4; // unknown date, conservative, not zero
   const d = new Date(originalDate);
   if (Number.isNaN(d.getTime())) return 4;
   const age = daysBetween(d, new Date());

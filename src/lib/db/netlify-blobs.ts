@@ -3,7 +3,7 @@ import type { Database } from "./schema";
 import type { StoreDriver, StoredDocument } from "./types";
 
 /**
- * Netlify Blobs — the original backend, kept working so the app can still be
+ * Netlify Blobs, the original backend, kept working so the app can still be
  * deployed to Netlify.
  *
  * Netlify's serverless/edge functions run on a read-only filesystem, so a

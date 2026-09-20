@@ -4,8 +4,8 @@
  * Supabase/Postgres later without touching the services above it.
  *
  * The model keeps two things apart on purpose:
- *   points     — what the MEMBER earned. Flat, capped, category-blind.
- *   editorial  — what the CONTENT is worth to the newsletter. Never points.
+ *   points    , what the MEMBER earned. Flat, capped, category-blind.
+ *   editorial , what the CONTENT is worth to the newsletter. Never points.
  */
 
 import type { EditorialDimension } from "@/lib/config/rules";
@@ -53,7 +53,7 @@ export type Difficulty = (typeof DIFFICULTIES)[number];
 
 /**
  * What happened to a submission.
- * "pending" means the evaluator could not be reached — the submission is kept
+ * "pending" means the evaluator could not be reached, the submission is kept
  * and can be retried, and it earns nothing until the evaluation succeeds.
  * "blocked_source" means the source refused our automated read (HTTP 403 and
  * its kin). Retrying would fail the same way, so it waits for a host to decide
@@ -70,7 +70,7 @@ export const CONTRIBUTION_STATUSES = [
 
 export type ContributionStatus = (typeof CONTRIBUTION_STATUSES)[number];
 
-/** The statuses an evaluation can end in — the two above have no evaluation. */
+/** The statuses an evaluation can end in, the two above have no evaluation. */
 export type EvaluatedStatus = Exclude<
   ContributionStatus,
   "pending" | "blocked_source"
@@ -120,7 +120,7 @@ export interface Member {
   name: string;
   createdAt: string; // ISO
   active: boolean;
-  /** Research direction the member picked. A hint only — never a restriction. */
+  /** Research direction the member picked. A hint only, never a restriction. */
   focusArea: NewsletterCategory | null;
 }
 
@@ -149,14 +149,14 @@ export interface DuplicateFinding {
   outcome: DuplicateOutcome;
   /** Contribution this overlaps with, when there is one. */
   ofId: string | null;
-  /** 0..1 — how sure the evaluator is about that match. */
+  /** 0..1, how sure the evaluator is about that match. */
   confidence: number;
   reason: string;
   /** Every prior submission that was compared, strongest first. */
   matches: { id: string; title: string; memberName: string; score: number }[];
 }
 
-/** Facts pulled out of the source. Anything missing stays null — never invented. */
+/** Facts pulled out of the source. Anything missing stays null, never invented. */
 export interface ExtractedContent {
   title: string | null;
   source: string | null;
@@ -252,8 +252,8 @@ export interface Contribution {
   /** The research direction the member was working in. A hint, not a category. */
   focusArea: NewsletterCategory | null;
 
-  createdAt: string; // ISO — when it was submitted
-  cycleKey: string; // e.g. C0044 — the newsletter cycle it belongs to
+  createdAt: string; // ISO, when it was submitted
+  cycleKey: string; // e.g. C0044, the newsletter cycle it belongs to
   weekKey: string; // e.g. 2026-W37
   monthKey: string; // e.g. 2026-09
 
@@ -285,12 +285,12 @@ export interface Contribution {
 export interface Database {
   members: Member[];
   contributions: Contribution[];
-  /** Newsletter issues — drafts and published — as structured data. */
+  /** Newsletter issues, drafts and published, as structured data. */
   newsletters: NewsletterIssue[];
 }
 
 // ---------------------------------------------------------------------------
-// Effective values — an admin correction always wins over the evaluator
+// Effective values, an admin correction always wins over the evaluator
 // ---------------------------------------------------------------------------
 
 export function effectiveStatus(c: Contribution): ContributionStatus {

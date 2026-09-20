@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 /**
  * Motion is opt-in, and it is decided before the first paint: the reveal
  * classes do nothing until this puts `reveal-ready` on <html>, so a reader
- * without JavaScript — or one who asked for less motion — gets the page whole
+ * without JavaScript, or one who asked for less motion, gets the page whole
  * and still.
  */
 const MOTION_GATE = `(function(r){if('IntersectionObserver' in window&&!window.matchMedia('(prefers-reduced-motion: reduce)').matches){r.classList.add('reveal-ready')}})(document.documentElement)`;

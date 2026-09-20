@@ -23,7 +23,7 @@ import type { AIClient, LabelResult } from "./types";
  * The important difference from the Claude path: DeepSeek has no server-side
  * browsing. It receives text and answers about that text, so the app opens the
  * link itself (`fetch-content.ts`) and pastes the page in. Anything a plain
- * fetch cannot read — a PDF, a page drawn by JavaScript — is refused here with
+ * fetch cannot read, a PDF, a page drawn by JavaScript, is refused here with
  * a reason the member can act on, rather than being sent to the model as an
  * empty page for it to guess about.
  *
@@ -74,7 +74,7 @@ async function chat(
     if (!res.ok) {
       const detail = truncate((await res.text().catch(() => "")).trim(), 300);
       throw new Error(
-        `استجاب DeepSeek بـ HTTP ${res.status}${detail ? ` — ${detail}` : ""}`,
+        `استجاب DeepSeek بـ HTTP ${res.status}${detail ? `، ${detail}` : ""}`,
       );
     }
 
@@ -131,9 +131,9 @@ async function evaluate(
     SYSTEM_PROMPT,
     "",
     "## Output",
-    "You have no browsing tools in this deployment. The page text below is everything you get — the server fetched it for you. Judge only from it, the member's own words and the earlier submissions listed. Never claim a check you could not perform: if you could not confirm a claim independently, set verificationStatus to \"not_independently_verified\" and say so in the evidence.",
+    "You have no browsing tools in this deployment. The page text below is everything you get, the server fetched it for you. Judge only from it, the member's own words and the earlier submissions listed. Never claim a check you could not perform: if you could not confirm a claim independently, set verificationStatus to \"not_independently_verified\" and say so in the evidence.",
     "",
-    "Answer with a single json object and nothing else — no prose, no markdown fence. It must validate against this JSON Schema:",
+    "Answer with a single json object and nothing else, no prose, no markdown fence. It must validate against this JSON Schema:",
     schema,
   ].join("\n");
 
@@ -157,7 +157,7 @@ async function evaluate(
   );
 
   // Every field is coerced downstream in `buildEvaluation`, which is what the
-  // Claude tool output goes through too — a missing or odd field degrades the
+  // Claude tool output goes through too, a missing or odd field degrades the
   // same way for both providers instead of throwing here.
   return parseJsonObject(raw) as unknown as EvaluationToolInput;
 }

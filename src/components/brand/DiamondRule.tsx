@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /**
  * The identity's diamond motif, used the way the newsletter uses it: a quiet
- * rule between sections. Green and gold alternate, both small and both dim —
+ * rule between sections. Green and gold alternate, both small and both dim,
  * it marks a seam, it does not decorate one.
  */
 export function DiamondRule({

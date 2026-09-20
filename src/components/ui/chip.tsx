@@ -11,7 +11,7 @@ export interface ChipProps
  * A choice big enough to look like one.
  *
  * Wherever a member picks their own name or their field, it is this: a real
- * target with a real border, a hover state and a focus ring — not a word in
+ * target with a real border, a hover state and a focus ring, not a word in
  * muted text that happens to be clickable.
  */
 export function Chip({ selected, className, ...props }: ChipProps) {

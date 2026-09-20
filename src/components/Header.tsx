@@ -99,7 +99,7 @@ function MemberPicker() {
 
 export default function Header() {
   const pathname = usePathname();
-  // On the home page the composer is the interface — the header carries the
+  // On the home page the composer is the interface, the header carries the
   // name and nothing else that could compete with it.
   const bare = pathname === "/";
 
@@ -115,7 +115,7 @@ export default function Header() {
             the name, then the product it is host to. */}
         <Link
           href="/"
-          aria-label="إنجاز — رصد"
+          aria-label="إنجاز، رصد"
           className="flex items-center gap-2 text-foreground"
         >
           <InjazMark className="h-6" />

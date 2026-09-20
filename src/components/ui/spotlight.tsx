@@ -21,7 +21,7 @@ interface SpotlightProps {
  *
  * It lights the panel in the identity green rather than the usual white, so
  * the 3D card reads as part of this interface and not as a dropped-in widget.
- * Drop it inside any element — the parent is made `relative` automatically.
+ * Drop it inside any element, the parent is made `relative` automatically.
  */
 export function Spotlight({ className, size = 320 }: SpotlightProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -34,7 +34,7 @@ export function Spotlight({ className, size = 320 }: SpotlightProps) {
   const spring = { bounce: 0, damping: 28, stiffness: 260 };
   const springX = useSpring(mouseX, spring);
   const springY = useSpring(mouseY, spring);
-  // Reduced motion keeps the light — it just stops it trailing the cursor.
+  // Reduced motion keeps the light, it just stops it trailing the cursor.
   const x = reduced ? mouseX : springX;
   const y = reduced ? mouseY : springY;
   const left = useTransform(x, (v) => `${v - size / 2}px`);

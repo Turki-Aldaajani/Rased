@@ -148,7 +148,7 @@ export async function evaluateContribution(
 }
 
 // ---------------------------------------------------------------------------
-// Deterministic outcome — the evaluator judges, the server decides
+// Deterministic outcome, the evaluator judges, the server decides
 // ---------------------------------------------------------------------------
 
 /**
@@ -175,7 +175,7 @@ export function deriveStatus(
  *
  * "blocked" matters: plenty of official announcement pages refuse an unknown
  * user-agent. That says nothing about the member's contribution, so it must
- * not be treated the same as a dead link — we just cannot confirm anything.
+ * not be treated the same as a dead link, we just cannot confirm anything.
  */
 export type Reachability = "readable" | "blocked" | "broken";
 
@@ -184,7 +184,7 @@ const BLOCKING_STATUSES = [401, 402, 403, 405, 406, 409, 429, 451];
 /**
  * The statuses that mean "the server refused us": credentials wanted, access
  * forbidden, our client not acceptable, rate-limited, blocked for legal
- * reasons. A 404 or 410 is not among them — that page really is gone, and it
+ * reasons. A 404 or 410 is not among them, that page really is gone, and it
  * keeps its own handling. 5xx and network failures stay out too: those are
  * the source being down, not the source turning us away.
  */
@@ -349,7 +349,7 @@ function buildEvaluation(
 }
 
 // ---------------------------------------------------------------------------
-// Offline heuristic — keeps the whole flow testable with no API key
+// Offline heuristic, keeps the whole flow testable with no API key
 // ---------------------------------------------------------------------------
 
 /**
@@ -525,7 +525,7 @@ function evaluateHeuristically(
     reach === "readable"
       ? `تم فتح ${snapshot.domain} بنجاح (HTTP ${snapshot.status}).`
       : reach === "blocked"
-        ? `رفض المصدر قراءتنا الآلية (${snapshot.error ?? "سبب غير معروف"}) — هذا لا يعني أن الرابط خاطئ، لكنه يعني أننا لم نؤكد شيئًا منه.`
+        ? `رفض المصدر قراءتنا الآلية (${snapshot.error ?? "سبب غير معروف"})، هذا لا يعني أن الرابط خاطئ، لكنه يعني أننا لم نؤكد شيئًا منه.`
         : `الرابط لا يشير إلى صفحة موجودة: ${snapshot.error ?? "سبب غير معروف"}.`,
   ];
   if (snapshot.pageTitle) {
@@ -537,7 +537,7 @@ function evaluateHeuristically(
       : tier === "reputable"
         ? `${snapshot.domain} تغطية تقنية موثوقة، وليس المصدر الأساسي.`
         : tier === "social"
-          ? `${snapshot.domain} منصة تواصل اجتماعي — المحتوى غير رسمي.`
+          ? `${snapshot.domain} منصة تواصل اجتماعي، المحتوى غير رسمي.`
           : `${snapshot.domain || "النطاق"} ليس مصدرًا رسميًا معروفًا.`,
   );
   evidence.push("لم يجرِ تحقق مستقل من هذا الادعاء (الوضع غير المتصل).");
@@ -604,7 +604,7 @@ function evaluateHeuristically(
 /**
  * Offline classification, in priority order. A model announcement that also
  * links to its docs is still a model announcement, so the release checks run
- * before the learning check — and all of them read the headline, not the body.
+ * before the learning check, and all of them read the headline, not the body.
  */
 function guessCategory(
   label: string,
@@ -695,7 +695,7 @@ function buildHeuristicSummary(
 }
 
 // ---------------------------------------------------------------------------
-// Coercion helpers — a model can always hand back something unexpected
+// Coercion helpers, a model can always hand back something unexpected
 // ---------------------------------------------------------------------------
 
 function describeFloorFailure(e: EligibilityChecks): string {

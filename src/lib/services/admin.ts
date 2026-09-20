@@ -13,7 +13,7 @@ export function isAdmin(req: Request): boolean {
 
 /**
  * Returns a 401 response when the caller is not the admin, or null when the
- * request may proceed. Deliberately a shared passcode — this is an internal
+ * request may proceed. Deliberately a shared passcode, this is an internal
  * MVP, not an auth system.
  */
 export function requireAdmin(req: Request): NextResponse | null {

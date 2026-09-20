@@ -5,7 +5,7 @@ import { cleanTitle } from "./title-prompt";
 
 /**
  * What the composer shows the member after they paste a link.
- * Deliberately no category: the member never picks one — the evaluator
+ * Deliberately no category: the member never picks one, the evaluator
  * classifies the content itself.
  */
 export interface AutoLabel {
@@ -19,7 +19,7 @@ export interface AutoLabel {
 
 /**
  * Reads the pasted link and names it, so the member never types a title.
- * Never throws — a failure falls back to the page metadata, and past that to
+ * Never throws, a failure falls back to the page metadata, and past that to
  * the URL itself.
  */
 export async function autoLabel(
@@ -44,7 +44,7 @@ export async function autoLabel(
       engine: "ai",
     };
   } catch {
-    // Offline, rate-limited, bad JSON — the metadata title is good enough.
+    // Offline, rate-limited, bad JSON, the metadata title is good enough.
     return fallback;
   }
 }

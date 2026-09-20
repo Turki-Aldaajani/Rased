@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCurrentUser } from "./CurrentUser";
 
 /**
- * Everything here is somewhere you go *after* submitting, not before — so it
+ * Everything here is somewhere you go *after* submitting, not before, so it
  * sits below the grid, in the quietest type on the page. The cycle's numbers
  * are not repeated here; the tiles beside the composer already carry them.
  */

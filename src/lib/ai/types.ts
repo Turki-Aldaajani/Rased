@@ -17,8 +17,8 @@ export interface LabelResult {
 /**
  * The one surface the rest of the app talks to when it needs a model.
  *
- * Both implementations return exactly the shapes the app already consumes —
- * `EvaluationToolInput` for the evaluation and `LabelResult` for the title —
+ * Both implementations return exactly the shapes the app already consumes,
+ * `EvaluationToolInput` for the evaluation and `LabelResult` for the title,
  * so swapping the provider changes where the judgement comes from and nothing
  * else downstream.
  */
@@ -42,7 +42,7 @@ export interface AIClient {
     note: string,
   ): Promise<LabelResult | null>;
 
-  /** Full evaluation. Throws when the provider could not be reached — the
+  /** Full evaluation. Throws when the provider could not be reached, the
    *  caller stores the submission pending and lets the member retry. */
   evaluate(
     input: EvaluationInput,

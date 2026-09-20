@@ -97,12 +97,12 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         <p className="mt-1 max-w-xl text-sm text-muted-foreground">
           كل مساهمة صحيحة تساوي نقطة واحدة، مهما كان موضوعها، وبحد أقصى{" "}
           {pointsCount(POINTS.maxPerCycle)} لكل عضو في الدورة. الترتيب بالنقاط
-          وحدها — لا بالقيمة التحريرية ولا بعدد الروابط.
+          وحدها، لا بالقيمة التحريرية ولا بعدد الروابط.
         </p>
         <DiamondRule className="mt-5" />
       </div>
 
-      {/* Cycle history — old boards are kept, not overwritten. */}
+      {/* Cycle history, old boards are kept, not overwritten. */}
       {cycles.length > 1 && (
         <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
           {cycles.slice(0, 8).map((k) => (
@@ -150,27 +150,27 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           </h2>
           <ul className="mt-4 grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
             <li>
-              <span className="text-foreground">نقطة واحدة</span> — لكل مساهمة
+              <span className="text-foreground">نقطة واحدة</span>، لكل مساهمة
               صحيحة وغير مكررة، أيًّا كان تصنيفها.
             </li>
             <li>
-              <span className="text-foreground">{POINTS.maxPerCycle} نقاط</span> —
+              <span className="text-foreground">{POINTS.maxPerCycle} نقاط</span>،
               الحد الأقصى لكل عضو في الدورة الواحدة (أسبوعان).
             </li>
             <li>
-              <span className="text-foreground">الأهمية لا تزيد النقاط</span> —
+              <span className="text-foreground">الأهمية لا تزيد النقاط</span>،
               خبر كبير ومصدر تعليمي بسيط كلاهما نقطة واحدة.
             </li>
             <li>
-              <span className="text-foreground">بعد بلوغ الحد</span> — أرسل ما
+              <span className="text-foreground">بعد بلوغ الحد</span>، أرسل ما
               تشاء؛ المساهمات تُحفظ وقد تدخل النشرة لكنها لا تزيد ترتيبك.
             </li>
             <li>
-              <span className="text-foreground">المكرر</span> — لا نقطة، لكن
+              <span className="text-foreground">المكرر</span>، لا نقطة، لكن
               المساهمة تبقى محفوظة.
             </li>
             <li>
-              <span className="text-foreground">زاوية جديدة</span> — موضوع مطروق
+              <span className="text-foreground">زاوية جديدة</span>، موضوع مطروق
               بتجربة أو مقارنة جديدة يُحتسب مساهمة كاملة.
             </li>
           </ul>

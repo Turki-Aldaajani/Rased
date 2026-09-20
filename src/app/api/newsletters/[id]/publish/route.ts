@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 type Ctx = { params: Promise<{ id: string }> };
 
-/** The only way anything becomes public — an editor's explicit approval. */
+/** The only way anything becomes public, an editor's explicit approval. */
 export async function POST(req: Request, { params }: Ctx) {
   return adminRoute(req, async () => {
     const { id } = await params;

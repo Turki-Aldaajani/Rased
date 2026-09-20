@@ -76,7 +76,7 @@ export function cycleLeaderboard(
   return rank(rows);
 }
 
-/** All cycles that have data, newest first — the historical record. */
+/** All cycles that have data, newest first, the historical record. */
 export function knownCycles(contributions: Contribution[]): string[] {
   const earliest = contributions.reduce<string | null>(
     (min, c) => (min === null || c.createdAt < min ? c.createdAt : min),

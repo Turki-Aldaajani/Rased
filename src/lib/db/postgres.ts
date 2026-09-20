@@ -3,7 +3,7 @@ import type { Database } from "./schema";
 import type { StoreDriver, StoredDocument } from "./types";
 
 /**
- * Postgres — the whole database as one `jsonb` document in one row.
+ * Postgres, the whole database as one `jsonb` document in one row.
  *
  * The shape is deliberately the same as the blob backends: every read in the
  * app loads the entire database anyway (leaderboards, cycle totals and the
@@ -17,7 +17,7 @@ import type { StoreDriver, StoredDocument } from "./types";
  * backends the second one silently overwrites the first.
  *
  * When contributions eventually outgrow a single document, the move to proper
- * tables happens inside this same database — no second migration between
+ * tables happens inside this same database, no second migration between
  * providers.
  */
 
@@ -28,7 +28,7 @@ const ROW_ID = "db";
  * Advisory-lock key: a fixed pair of int4s ("RASD", document 1) so it cannot
  * collide with another application sharing the database.
  *
- * Transaction-scoped on purpose — it is released by COMMIT or ROLLBACK, which
+ * Transaction-scoped on purpose, it is released by COMMIT or ROLLBACK, which
  * is what PgBouncer's transaction pooling (Neon's `-pooler` endpoint, Supabase
  * port 6543) requires. A session-scoped lock would leak across pooled clients
  * and eventually deadlock the app.
@@ -49,7 +49,7 @@ function connectionString(): string {
     throw new Error(
       "STORAGE_PROVIDER=postgres يحتاج DATABASE_URL (أو POSTGRES_URL). " +
         "استخدم رابط الاتصال المجمّع (pooled/pgbouncer) من Neon أو Supabase، " +
-        "لا الرابط المباشر — الدوال بلا خادم تفتح اتصالًا لكل استدعاء.",
+        "لا الرابط المباشر، الدوال بلا خادم تفتح اتصالًا لكل استدعاء.",
     );
   }
   return url;
@@ -107,7 +107,7 @@ function ensureSchema(): Promise<void> {
       )
       .then(() => undefined);
     ready = attempt;
-    // Never cache a failed bootstrap — the next caller tries again.
+    // Never cache a failed bootstrap, the next caller tries again.
     void attempt.catch(() => {
       if (ready === attempt) ready = null;
     });
@@ -132,7 +132,7 @@ async function transact<T>(
   try {
     await client.query("BEGIN");
     // The advisory lock, not SELECT ... FOR UPDATE: on the very first write
-    // the row does not exist yet, and FOR UPDATE on no rows locks nothing —
+    // the row does not exist yet, and FOR UPDATE on no rows locks nothing,
     // which is exactly when two instances would both try to seed.
     await client.query("SELECT pg_advisory_xact_lock($1, $2)", LOCK_KEYS);
     const { rows } = await client.query<{ doc: StoredDocument }>(

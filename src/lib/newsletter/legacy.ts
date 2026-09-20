@@ -3,7 +3,7 @@ import type { LegacyIssue } from "./types";
 
 /**
  * Issue #1 was written by hand and published before the engine existed. It is
- * registered here so numbering continues from it and the archive lists it —
+ * registered here so numbering continues from it and the archive lists it,
  * and so the publisher knows its folder is taken and must never be written.
  *
  * Its items are dated 1–8 September 2026, which is cycle C0043

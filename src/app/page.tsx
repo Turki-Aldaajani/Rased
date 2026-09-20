@@ -12,8 +12,8 @@ export const dynamic = "force-dynamic";
 
 /**
  * The home page is still one action: paste a link. The grid around it holds
- * only what a member wants to know before pasting — what they have sent, how
- * long is left, who is ahead — and everything else is a click away.
+ * only what a member wants to know before pasting, what they have sent, how
+ * long is left, who is ahead, and everything else is a click away.
  */
 export default async function HomePage() {
   const [members, contributions] = await Promise.all([

@@ -5,14 +5,14 @@ import type { SourceSnapshot } from "@/lib/services/fetch-source";
  * Reading a page for a model that cannot read it itself.
  *
  * Claude opens the link through its own server-side web_fetch tool. DeepSeek
- * has no such tool — its API takes text and nothing else — so when that
+ * has no such tool, its API takes text and nothing else, so when that
  * provider is selected the app has to do the reading and hand over the words.
  *
  * Deliberately no new dependency: `fetch-source.ts` already strips a page to
  * plain text with the same regex pass, and it is the extraction the Claude
  * path has been using all along. What this module adds is a longer budget
  * (a summary needs more than the 4k excerpt), an explicit content-type gate,
- * and a plain Arabic reason when a page cannot be read — a PDF or a
+ * and a plain Arabic reason when a page cannot be read, a PDF or a
  * JavaScript-rendered app must come back as a sentence the member
  * understands, not as an unexplained failure.
  */
@@ -83,7 +83,7 @@ function htmlToText(html: string): string {
 function unreadableTypeMessage(contentType: string): string {
   const type = contentType.split(";")[0].trim().toLowerCase();
   if (type === "application/pdf") {
-    return "هذا الرابط ملف PDF، والمزوّد الحالي (DeepSeek) لا يقرأ الملفات — الصق صفحة الإعلان أو المقال بدل الملف.";
+    return "هذا الرابط ملف PDF، والمزوّد الحالي (DeepSeek) لا يقرأ الملفات، الصق صفحة الإعلان أو المقال بدل الملف.";
   }
   if (type.startsWith("image/") || type.startsWith("video/") || type.startsWith("audio/")) {
     return "هذا الرابط ملف وسائط وليس صفحة نصية، فلا يمكن قراءته.";
@@ -163,7 +163,7 @@ export async function fetchReadableContent(
       // article is drawn by JavaScript, which a plain fetch never runs.
       return fail(
         url,
-        "فُتحت الصفحة لكنها لا تحتوي نصًا قابلًا للقراءة — على الأرجح تُعرض بجافاسكربت. جرّب رابطًا مباشرًا للمقال أو للإعلان الأصلي.",
+        "فُتحت الصفحة لكنها لا تحتوي نصًا قابلًا للقراءة، على الأرجح تُعرض بجافاسكربت. جرّب رابطًا مباشرًا للمقال أو للإعلان الأصلي.",
         { finalUrl, contentType },
       );
     }

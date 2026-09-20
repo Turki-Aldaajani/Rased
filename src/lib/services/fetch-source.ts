@@ -77,7 +77,7 @@ function extractDate(html: string): string | null {
 
 /**
  * Fetches the submitted URL server-side and pulls out whatever metadata the
- * page exposes. Never throws — a failure is just a snapshot with ok: false.
+ * page exposes. Never throws, a failure is just a snapshot with ok: false.
  */
 export async function fetchSource(rawUrl: string): Promise<SourceSnapshot> {
   const base: SourceSnapshot = {

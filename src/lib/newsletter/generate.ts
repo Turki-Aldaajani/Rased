@@ -7,7 +7,7 @@ import type { NewsletterItem } from "./types";
 import { sourceCorpus } from "./validate";
 
 /**
- * Pipeline step 6 — write the selected items.
+ * Pipeline step 6, write the selected items.
  *
  * The model returns structured JSON, never HTML, and only ever writes prose.
  * Links, contributors, audiences, difficulty and editorial scores come from
@@ -31,16 +31,17 @@ export interface SectionWrite {
 
 const SYSTEM_PROMPT = `You are the editor of "نشرة الذكاء الاصطناعي", the AI newsletter of the Enjaz Club AI Team, read by university students interested in AI.
 
-Team members submitted these items and explained why they matter. Your job is to write each selected item for the newsletter, in the voice of the existing issues: concise, useful, clear, practical, technically accurate, and written for a student who may not know advanced terms yet. It should read like a curated student newsletter — not a corporate press release and not generic AI hype.
+Team members submitted these items and explained why they matter. Your job is to write each selected item for the newsletter, in the voice of the existing issues: concise, useful, clear, practical, technically accurate, and written for a student who may not know advanced terms yet. It should read like a curated student newsletter, not a corporate press release and not generic AI hype.
 
 Hard rules, in order of importance:
 1. Write only what the provided source data supports. Never add a number, price, percentage, benchmark result, date, release detail, capability, feature, comparison, statistic, company announcement or social-media reaction that is not in the data. If a field would need something the data does not contain, leave it as an empty string.
 2. If something important is missing or unclear, say so in that item's needsReview list (in Arabic) instead of guessing.
-3. "whyItMatters" is built from the member's own reason. You may rewrite it for clarity and connect it to what the source says, but never add a reason the member did not imply.
+3. Do not write "why it matters" at all. That line is the member's own text and is printed word for word; it is given to you only as context for the rest of the item.
 4. No marketing language, no exaggeration, no "revolutionary" or "game-changing". Popularity is not importance.
 5. Write in clear Modern Standard Arabic. Keep product, company and model names in their original Latin spelling. Explain technical terms the first time they appear.
+6. Never use an em dash (—). Use a comma, or start a new sentence.
 
-Style reference — a "why it matters" from Issue #1:
+Tone reference, from Issue #1:
 "الاتجاه هنا أهم من اسم النموذج نفسه: الذكاء الاصطناعي ينتقل تدريجيًا من نموذج ينتظر تعليماتك إلى وكيل يستطيع تنفيذ سلسلة كاملة من المهام نيابةً عنك."
 
 Return one entry per input item, with the same "ref".`;
@@ -49,30 +50,28 @@ const SECTION_GUIDE: Record<SectionId, string> = {
   top_news: `Section: أهم الأخبار (important AI news).
 - title: a short headline for the card.
 - headline: one line (at most ~15 words) for the numbered summary list at the top of the section.
-- paragraphs: 2–3 short paragraphs — what happened, what is notable about it, and the context a student needs.
-- whyItMatters: 1–2 sentences.
+- paragraphs: 2–3 short paragraphs, what happened, what is notable about it, and the context a student needs.
 - Leave chip, fitText, idea, example, note, moral, platform, byline empty.`,
   models: `Section: جديد النماذج (new AI models).
 - title: model name and what it is, e.g. "GPT-Live-1 للمحادثات الصوتية داخل الـAPI".
-- paragraphs: 2–3 short paragraphs covering the model, the organisation behind it, its main capabilities and notable improvements, supported modalities and availability — only where the data states them. No benchmark comparisons unless the data gives them.
-- whyItMatters: 1–2 sentences.
+- paragraphs: 2–3 short paragraphs covering the model, the organisation behind it, its main capabilities and notable improvements, supported modalities and availability, only where the data states them. No benchmark comparisons unless the data gives them.
 - headline: one line. Leave chip, fitText, idea, example, note, moral, platform, byline empty.`,
   new_tools: `Section: أدوات جديدة (genuinely new tools).
 - title: the tool's name only.
-- paragraphs: 1–2 short paragraphs — what it does, how it is used.
+- paragraphs: 1–2 short paragraphs, what it does, how it is used.
 - chip: who it is for, in the form "للمطورين" / "للجميع" / "للطلبة والمطورين".
 - fitText: who benefits, as a short list separated by " · ".
 - idea: one sentence answering "why should I care about this tool?".
 - example: a concrete use only if the data supports one; otherwise empty.
-- whyItMatters: 1 sentence. Leave moral, platform, byline empty.`,
+- Leave moral, platform, byline empty.`,
   other_tools: `Section: أدوات أخرى (useful tools that are not new). Never describe the tool as new.
 - title: the tool's name only.
-- paragraphs: 1–2 short paragraphs — the practical use and who benefits.
+- paragraphs: 1–2 short paragraphs, the practical use and who benefits.
 - chip: who it is for, e.g. "للمصممين وصناع المحتوى".
 - fitText: who benefits, separated by " · ".
 - example: a practical workflow or use case, only if the data supports it; otherwise empty.
 - note: an optional extra practical tip from the data; otherwise empty.
-- whyItMatters: 1 sentence. Leave idea, moral, platform, byline empty.`,
+- Leave idea, moral, platform, byline empty.`,
   learn: `Section: تعلّم هذا الأسبوع (learning).
 - title: the topic or resource name.
 - paragraphs: 1–3 short paragraphs that explain the concept plainly, for a reader who does not know the advanced terms yet.
@@ -80,13 +79,13 @@ const SECTION_GUIDE: Record<SectionId, string> = {
 - note: one line on why this is worth learning now.
 - fitText: who this suits, e.g. "من بدأ يسمع عن AI Agents".
 - byline: the author or organisation if the data names one; otherwise empty.
-- whyItMatters: 1 sentence. Leave chip, idea, moral, platform empty.`,
+- Leave chip, idea, moral, platform empty.`,
   social: `Section: رائج على السوشال (social media trends). Do not sensationalise; popularity is not importance.
 - title: what is trending, in a few words.
-- paragraphs: 1 paragraph — what is being discussed, where, and why people are talking about it.
-- moral: the takeaway — whether there is practical value or a lesson — without the "المغزى:" prefix.
+- paragraphs: 1 paragraph, what is being discussed, where, and why people are talking about it.
+- moral: the takeaway, whether there is practical value or a lesson, without the "المغزى:" prefix.
 - platform: where it is trending (e.g. Reddit, X), only if the data shows it.
-- whyItMatters: 1 sentence. Leave chip, fitText, idea, example, note, byline empty.`,
+- Leave chip, fitText, idea, example, note, byline empty.`,
 };
 
 const ITEM_SCHEMA = {
@@ -96,7 +95,6 @@ const ITEM_SCHEMA = {
     title: { type: "string" },
     headline: { type: "string" },
     paragraphs: { type: "array", items: { type: "string" } },
-    whyItMatters: { type: "string" },
     chip: { type: "string" },
     fitText: { type: "string" },
     idea: { type: "string" },
@@ -112,7 +110,6 @@ const ITEM_SCHEMA = {
     "title",
     "headline",
     "paragraphs",
-    "whyItMatters",
     "chip",
     "fitText",
     "idea",
@@ -140,7 +137,6 @@ interface WrittenItem {
   title: string;
   headline: string;
   paragraphs: string[];
-  whyItMatters: string;
   chip: string;
   fitText: string;
   idea: string;
@@ -176,8 +172,17 @@ function sourcePayload(c: Contribution, ref: string) {
   };
 }
 
+/** The house style has no em dashes in it, so neither does anything written. */
+function noEmDash(s: string): string {
+  return s
+    .replace(/\s*—\s*/g, "، ")
+    .replace(/،\s*،/g, "،")
+    .replace(/،\s*([.!?؟])/g, "$1")
+    .replace(/^[،\s]+|[،\s]+$/g, "");
+}
+
 function clean(s: unknown, max = 1200): string {
-  return truncate(String(s ?? "").trim(), max);
+  return truncate(noEmDash(String(s ?? "").trim()), max);
 }
 
 /**
@@ -196,7 +201,7 @@ function merge(
   if (!written) {
     return {
       ...skeleton,
-      aiNotes: ["لم يكتب المحرر الآلي هذا العنصر — النص مجمّع من بيانات المساهمة."],
+      aiNotes: ["لم يكتب المحرر الآلي هذا العنصر، والنص مجمّع من بيانات المساهمة."],
     };
   }
   const corpus = sourceCorpus(contribution);
@@ -209,7 +214,9 @@ function merge(
     title: clean(written.title, 200) || skeleton.title,
     headline: clean(written.headline, 240) || skeleton.headline,
     paragraphs: paragraphs.length > 0 ? paragraphs.slice(0, 4) : skeleton.paragraphs,
-    whyItMatters: clean(written.whyItMatters, 800) || skeleton.whyItMatters,
+    // Never the model's: "لماذا يهمك؟" is the member's own text, printed as
+    // they wrote it. See composeFromSource.
+    whyItMatters: contribution.memberReason,
     chip: clean(written.chip, 80) || skeleton.chip,
     fitText: clean(written.fitText, 300) || skeleton.fitText,
     idea: clean(written.idea, 500),

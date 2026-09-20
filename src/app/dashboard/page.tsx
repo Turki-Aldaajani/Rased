@@ -138,7 +138,7 @@ export default async function DashboardPage() {
         cycle={summary.cycle}
       />
 
-      {/* What the newsletter has to work with — editorial, not points. */}
+      {/* What the newsletter has to work with, editorial, not points. */}
       <Card className="overflow-hidden">
         <div className="border-b border-border px-5 py-4">
           <h2 className="text-sm font-semibold text-foreground">
@@ -146,7 +146,7 @@ export default async function DashboardPage() {
           </h2>
           <p className="text-xs text-muted-foreground">
             محتوى هذه الدورة موزّعًا على أقسام النشرة، مرتّبًا بالقيمة التحريرية
-            — لا علاقة له بنقاط الأعضاء.
+           ، لا علاقة له بنقاط الأعضاء.
           </p>
         </div>
         <ul className="divide-y divide-border">
