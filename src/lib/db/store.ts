@@ -5,6 +5,7 @@ import {
   type Contribution,
   type ContributionStatus,
   type Database,
+  type EvaluatedStatus,
   type Evaluation,
   type Member,
   type NewsletterCategory,
@@ -141,7 +142,7 @@ function migrateContribution(raw: Record<string, unknown>): Contribution {
 
   const evaluation: Evaluation | null = raw.evaluation
     ? {
-        status: status as Exclude<ContributionStatus, "pending">,
+        status: status as EvaluatedStatus,
         rejectionReason: null,
         eligibility: {
           aiRelated: true,

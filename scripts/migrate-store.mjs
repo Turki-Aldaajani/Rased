@@ -22,7 +22,9 @@
  *   netlify   NETLIFY_AUTH_TOKEN + NETLIFY_SITE_ID   (production blobs)
  *   postgres  DATABASE_URL (or POSTGRES_URL)
  *
- * Both are read from .env.local / .env when present.
+ * Read from .env.migrate, then .env.local, then .env. Prefer .env.migrate: it is
+ * git-ignored and Next never loads it, whereas a DATABASE_URL in .env.local makes
+ * `next dev` pick Postgres and write to that database.
  */
 
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
@@ -53,7 +55,7 @@ function parseArgs(argv) {
 
 /** Loads .env.local then .env, without overwriting what is already set. */
 function loadEnvFiles() {
-  for (const name of [".env.local", ".env"]) {
+  for (const name of [".env.migrate", ".env.local", ".env"]) {
     const path = resolve(process.cwd(), name);
     if (!existsSync(path)) continue;
     for (const line of readFileSync(path, "utf8").split(/\r?\n/)) {
@@ -89,49 +91,68 @@ function required(name, why) {
 // ---------------------------------------------------------------------------
 
 /**
- * Netlify Blobs over the REST API rather than @netlify/blobs, so the script
- * runs from a plain terminal without a linked site or `netlify dev`.
+ * Netlify Blobs through the same client the app itself uses (@netlify/blobs),
+ * given an explicit site id and token so it runs from a plain terminal without
+ * a linked site or `netlify dev`.
+ *
+ * The first version of this script spoke the REST API by hand and got two
+ * things wrong: it left out the `accept: application/json;type=signed-url`
+ * header the API requires, and it addressed the store as `rased-db` when a
+ * site store is really `site:rased-db`. The second one produced a 404, which
+ * read as "the source is empty" - the worst possible way to be wrong when the
+ * point is not to lose data. Going through the client removes that whole class
+ * of mistake, because it is exactly what production reads with.
  *
  * This reads the GLOBAL store (`getStore`), which is what production uses.
- * Deploy-scoped blobs — previews and local `netlify dev` — are a different
+ * Deploy-scoped blobs (previews and local `netlify dev`) are a different
  * namespace and are not what you want to migrate.
  */
-function netlifyEndpoint() {
+async function netlifyEndpoint() {
   const token = required(
     "NETLIFY_AUTH_TOKEN",
     "أنشئه من Netlify → User settings → Applications → Personal access tokens",
   );
-  const siteId = required(
+  const siteID = required(
     "NETLIFY_SITE_ID",
     "معرّف الموقع من Netlify → Site configuration → Site information → Site ID",
   );
-  const base = `https://api.netlify.com/api/v1/blobs/${siteId}/${STORE_NAME}`;
-  const headers = { authorization: `Bearer ${token}` };
+
+  const { getStore, listStores } = await import("@netlify/blobs");
+  const store = getStore({ name: STORE_NAME, siteID, token, consistency: "strong" });
 
   return {
-    label: `Netlify Blobs (${STORE_NAME}/${DB_KEY} @ ${siteId})`,
+    label: `Netlify Blobs (${STORE_NAME}/${DB_KEY} @ ${siteID})`,
 
     async read() {
-      // The API hands back a signed URL, then the blob is fetched from it.
-      const meta = await fetch(`${base}/${DB_KEY}`, { headers });
-      if (meta.status === 404) return null;
-      if (!meta.ok) {
-        die(`Netlify رفض الطلب: ${meta.status} ${await meta.text()}`);
+      let doc;
+      try {
+        doc = await store.get(DB_KEY, { type: "json" });
+      } catch (err) {
+        // 401/403 here almost always means a wrong token or site id, and a raw
+        // stack trace does not say so.
+        die(
+          `Netlify رفض القراءة (${err?.message ?? err}). تحقق من NETLIFY_AUTH_TOKEN ومن أن NETLIFY_SITE_ID لموقع الإنتاج.`,
+        );
       }
-      const body = await meta.json();
-      if (!body?.url) die("رد Netlify بلا رابط تنزيل — تحقق من صلاحية التوكن.");
-      const blob = await fetch(body.url);
-      if (!blob.ok) die(`تنزيل البلوب فشل: ${blob.status}`);
-      return blob.json();
+      if (doc) return doc;
+
+      // A miss is ambiguous (wrong site, wrong store name, or genuinely empty),
+      // so say which stores this site does have before anyone concludes "empty".
+      try {
+        const { stores } = await listStores({ siteID, token });
+        console.log(
+          stores.length > 0
+            ? `\n  لا يوجد "${STORE_NAME}/${DB_KEY}" لكن الموقع فيه مخازن: ${stores.join(", ")}`
+            : "\n  الموقع لا يحتوي أي مخزن عالمي — تأكد أن NETLIFY_SITE_ID لموقع الإنتاج.",
+        );
+      } catch (err) {
+        console.log(`\n  تعذّر سرد المخازن: ${err?.message ?? err}`);
+      }
+      return null;
     },
 
     async write(doc) {
-      const res = await fetch(`${base}/${DB_KEY}`, {
-        method: "PUT",
-        headers: { ...headers, "content-type": "application/json" },
-        body: JSON.stringify(doc),
-      });
-      if (!res.ok) die(`الكتابة إلى Netlify فشلت: ${res.status} ${await res.text()}`);
+      await store.setJSON(DB_KEY, doc);
     },
   };
 }

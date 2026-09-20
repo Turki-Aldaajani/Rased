@@ -189,7 +189,8 @@ export function teamSummary(
         (c) =>
           effectiveCategory(c) === category &&
           effectiveStatus(c) !== "rejected" &&
-          effectiveStatus(c) !== "pending",
+          effectiveStatus(c) !== "pending" &&
+          effectiveStatus(c) !== "blocked_source",
       )
       .sort((a, b) => editorialScore(b) - editorialScore(a));
     return { category, count: items.length, topEditorial: items[0] ?? null };

@@ -55,6 +55,9 @@ export type Difficulty = (typeof DIFFICULTIES)[number];
  * What happened to a submission.
  * "pending" means the evaluator could not be reached — the submission is kept
  * and can be retried, and it earns nothing until the evaluation succeeds.
+ * "blocked_source" means the source refused our automated read (HTTP 403 and
+ * its kin). Retrying would fail the same way, so it waits for a host to decide
+ * by hand instead, and earns nothing until they do.
  */
 export const CONTRIBUTION_STATUSES = [
   "accepted",
@@ -62,9 +65,16 @@ export const CONTRIBUTION_STATUSES = [
   "duplicate",
   "rejected",
   "pending",
+  "blocked_source",
 ] as const;
 
 export type ContributionStatus = (typeof CONTRIBUTION_STATUSES)[number];
+
+/** The statuses an evaluation can end in — the two above have no evaluation. */
+export type EvaluatedStatus = Exclude<
+  ContributionStatus,
+  "pending" | "blocked_source"
+>;
 
 /** The three duplicate outcomes. "same_topic_new_value" still earns a point. */
 export const DUPLICATE_OUTCOMES = [
@@ -95,6 +105,7 @@ export const POINT_REASONS = [
   "duplicate",
   "rejected",
   "pending_evaluation",
+  "blocked_source",
   "admin_override",
 ] as const;
 
@@ -159,7 +170,7 @@ export interface ExtractedContent {
 }
 
 export interface Evaluation {
-  status: Exclude<ContributionStatus, "pending">;
+  status: EvaluatedStatus;
   /** Present when the status is "rejected", null otherwise. */
   rejectionReason: string | null;
   eligibility: EligibilityChecks;
@@ -247,11 +258,14 @@ export interface Contribution {
   monthKey: string; // e.g. 2026-09
 
   status: ContributionStatus;
-  /** null while the status is "pending". */
+  /** null while the status is "pending" or "blocked_source". */
   evaluation: Evaluation | null;
   points: PointsAward;
 
-  /** Set when the AI evaluation failed; kept so a retry can explain itself. */
+  /**
+   * Set when there is no evaluation: the AI evaluation failed (kept so a retry
+   * can explain itself) or the source refused us (what it answered, for the host).
+   */
   evaluationError: string | null;
   evaluationAttempts: number;
 

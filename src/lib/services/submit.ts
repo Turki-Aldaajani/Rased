@@ -1,11 +1,12 @@
 import type {
   Contribution,
+  ContributionStatus,
   Member,
   NewsletterCategory,
 } from "@/lib/db/schema";
 import { saveWithAward, newId, replaceWithAward } from "@/lib/db/store";
 import { applyLateDuplicate } from "./duplicates";
-import { evaluateContribution } from "./evaluate";
+import { evaluateContribution, type EvaluationOutcome } from "./evaluate";
 import { decidePoints } from "./points";
 import { autoLabel } from "./title";
 import { cycleKey, monthKey, weekKey } from "@/lib/util/date";
@@ -31,6 +32,16 @@ export interface SubmitInput {
 export interface SubmitResult {
   contribution: Contribution;
   notices: string[];
+}
+
+/**
+ * The status an outcome is stored under. With no evaluation there are two
+ * ways to get here: the evaluator could not be reached (retry it), or the
+ * source turned us away (a host decides — retrying would change nothing).
+ */
+function statusOf(outcome: EvaluationOutcome): ContributionStatus {
+  if (outcome.evaluation) return outcome.evaluation.status;
+  return outcome.blocked ? "blocked_source" : "pending";
 }
 
 export async function submitContribution(
@@ -66,7 +77,7 @@ export async function submitContribution(
 
   const now = new Date();
   const cycle = cycleKey(now);
-  const status = outcome.evaluation?.status ?? "pending";
+  const status = statusOf(outcome);
 
   const draft: Contribution = {
     id: newId(),
@@ -86,7 +97,7 @@ export async function submitContribution(
     evaluation: outcome.evaluation,
     points: {
       awarded: 0,
-      reason: "pending_evaluation",
+      reason: status === "blocked_source" ? "blocked_source" : "pending_evaluation",
       cycleKey: cycle,
       cycleTotalBefore: 0,
     },
@@ -144,7 +155,7 @@ export async function reevaluateContribution(
   );
 
   const updated = await replaceWithAward(current.id, (c, ctx) => {
-    const status = outcome.evaluation?.status ?? "pending";
+    const status = statusOf(outcome);
     const withEval: Contribution = {
       ...c,
       status,

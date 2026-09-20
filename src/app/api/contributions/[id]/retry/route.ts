@@ -22,6 +22,13 @@ export async function POST(_req: Request, { params }: Ctx) {
   if (!current) {
     return NextResponse.json({ error: "غير موجود." }, { status: 404 });
   }
+  if (effectiveStatus(current) === "blocked_source") {
+    // The source refuses machine reads, so a retry would meet the same wall.
+    return NextResponse.json(
+      { error: "هذه المساهمة تنتظر مراجعة المضيف اليدوية." },
+      { status: 409 },
+    );
+  }
   if (effectiveStatus(current) !== "pending") {
     return NextResponse.json(
       { error: "هذه المساهمة مُقيَّمة بالفعل." },

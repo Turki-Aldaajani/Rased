@@ -9,6 +9,7 @@ import {
   type Difficulty,
   type DuplicateOutcome,
   type EligibilityChecks,
+  type EvaluatedStatus,
   type Evaluation,
   type NewsletterCategory,
   type VerificationStatus,
@@ -35,13 +36,25 @@ import {
 import { hostname, meaningfulWordCount, truncate } from "@/lib/util/text";
 
 export interface EvaluationOutcome {
-  /** null when the evaluator could not be reached — the caller stores it pending. */
+  /**
+   * null when there is nothing to store as an evaluation: the evaluator could
+   * not be reached (the caller stores it pending) or the source blocked us
+   * (`blocked`, stored for a host to review by hand).
+   */
   evaluation: Evaluation | null;
   candidates: DuplicateCandidate[];
   /** Non-fatal things worth telling the member (e.g. offline mode). */
   notices: string[];
-  /** Set when the evaluation failed and should be retried. */
+  /**
+   * Why there is no evaluation. Retryable when `blocked` is false; when it is
+   * true this is what the source answered, kept for the host.
+   */
   error: string | null;
+  /**
+   * The source refused our automated read. No evaluator was consulted and a
+   * retry would meet the same refusal, so only a human can settle it.
+   */
+  blocked: boolean;
 }
 
 /** True when the selected provider has the key it needs. */
@@ -75,6 +88,19 @@ export async function evaluateContribution(
       : webSearch(`${input.title} ${hostname(input.url)}`.trim()),
   ]);
 
+  // A source that refuses automated reads is settled by a person, not by a
+  // model guessing from the member's own words. This runs before any provider
+  // is consulted and does not depend on which one is configured.
+  if (isBlockedSource(snapshot)) {
+    return {
+      evaluation: null,
+      candidates: [],
+      notices,
+      error: snapshot.error ?? `استجاب المصدر بـ HTTP ${snapshot.status}.`,
+      blocked: true,
+    };
+  }
+
   const candidates = findDuplicateCandidates(input, existing);
 
   if (client.enabled()) {
@@ -93,7 +119,7 @@ export async function evaluateContribution(
           `لا يملك ${client.model} تصفّحًا للإنترنت، فاعتمد التقييم على نص الصفحة وحده دون تحقق مستقل.`,
         );
       }
-      return { evaluation, candidates, notices, error: null };
+      return { evaluation, candidates, notices, error: null, blocked: false };
     } catch (err) {
       // §22: never lose the submission. The caller stores it pending.
       return {
@@ -104,6 +130,7 @@ export async function evaluateContribution(
           (err as Error)?.message ?? "خطأ غير معروف في المقيّم",
           300,
         ),
+        blocked: false,
       };
     }
   }
@@ -116,6 +143,7 @@ export async function evaluateContribution(
     candidates,
     notices,
     error: null,
+    blocked: false,
   };
 }
 
@@ -131,7 +159,7 @@ export async function evaluateContribution(
 export function deriveStatus(
   eligibility: EligibilityChecks,
   duplicate: DuplicateOutcome,
-): Exclude<ContributionStatus, "pending"> {
+): EvaluatedStatus {
   const floorFailed = Object.entries(eligibility).some(
     // The duplicate criterion is handled by `duplicate`, not by a flag.
     ([, passed]) => !passed,
@@ -152,6 +180,24 @@ export function deriveStatus(
 export type Reachability = "readable" | "blocked" | "broken";
 
 const BLOCKING_STATUSES = [401, 402, 403, 405, 406, 409, 429, 451];
+
+/**
+ * The statuses that mean "the server refused us": credentials wanted, access
+ * forbidden, our client not acceptable, rate-limited, blocked for legal
+ * reasons. A 404 or 410 is not among them — that page really is gone, and it
+ * keeps its own handling. 5xx and network failures stay out too: those are
+ * the source being down, not the source turning us away.
+ */
+export const SOURCE_BLOCK_STATUSES = [401, 403, 406, 429, 451];
+
+/** True when the source answered with a refusal to automated access. */
+export function isBlockedSource(snapshot: SourceSnapshot): boolean {
+  return (
+    !snapshot.ok &&
+    snapshot.status !== null &&
+    SOURCE_BLOCK_STATUSES.includes(snapshot.status)
+  );
+}
 
 export function reachability(snapshot: SourceSnapshot): Reachability {
   if (snapshot.ok) return "readable";

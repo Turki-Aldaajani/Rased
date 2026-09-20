@@ -90,6 +90,11 @@ export const STATUS_META: Record<
     color: "var(--info)",
     hint: "تعذّر الوصول إلى المقيّم — المساهمة محفوظة ويمكن إعادة المحاولة",
   },
+  blocked_source: {
+    text: "بانتظار المراجعة اليدوية",
+    color: "var(--accent)",
+    hint: "المصدر يمنع الوصول الآلي — تنتظر مراجعة المضيف",
+  },
 };
 
 export const DUPLICATE_META: Record<
