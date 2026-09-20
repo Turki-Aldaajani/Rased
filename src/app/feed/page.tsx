@@ -29,7 +29,7 @@ export default async function FeedPage() {
           كل المساهمات
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          كل ما أرسله الفريق، الأحدث أولًا — بما في ذلك ما لم يُحتسب له نقاط.
+          كل ما أرسله الفريق، الأحدث أولًا، بما في ذلك ما لم يُحتسب له نقاط.
         </p>
         <DiamondRule className="mt-5" />
       </div>

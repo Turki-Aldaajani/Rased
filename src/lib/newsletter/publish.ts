@@ -7,10 +7,10 @@ import { dirname, join, resolve } from "path";
  * The public newsletter is GitHub Pages serving `main:/docs`, so publishing
  * means putting `docs/newsletter/NN/index.html` into the repository:
  *
- *   github      — through the GitHub Contents API. What the deployed app uses:
+ *   github     , through the GitHub Contents API. What the deployed app uses:
  *                 Netlify functions cannot write to disk, and a commit is what
  *                 GitHub Pages deploys from.
- *   filesystem  — straight into the local checkout, for development. The file
+ *   filesystem , straight into the local checkout, for development. The file
  *                 then goes through the normal commit/PR flow.
  *
  * Both refuse to overwrite a file unless the caller says it is a deliberate

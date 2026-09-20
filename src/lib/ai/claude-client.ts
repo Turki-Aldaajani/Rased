@@ -25,7 +25,7 @@ import type { AIClient, LabelResult } from "./types";
 /**
  * The Claude path, unchanged: it reads the web itself through the server-side
  * web_search/web_fetch tools and answers by calling the evaluation tool.
- * This is the default provider — nothing here depends on AI_PROVIDER.
+ * This is the default provider, nothing here depends on AI_PROVIDER.
  */
 
 const MODEL = process.env.RASED_MODEL || "claude-opus-5";

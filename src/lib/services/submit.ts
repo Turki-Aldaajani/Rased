@@ -37,7 +37,7 @@ export interface SubmitResult {
 /**
  * The status an outcome is stored under. With no evaluation there are two
  * ways to get here: the evaluator could not be reached (retry it), or the
- * source turned us away (a host decides — retrying would change nothing).
+ * source turned us away (a host decides, retrying would change nothing).
  */
 function statusOf(outcome: EvaluationOutcome): ContributionStatus {
   if (outcome.evaluation) return outcome.evaluation.status;

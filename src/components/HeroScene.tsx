@@ -16,7 +16,7 @@ const DEFAULT_SCENE =
  * Sampling the rendered canvas first was worth it: the robot is a black body
  * lit blue-green (its lit pixels measure ~177°, already between #155043 and
  * #125D64), not the neutral silver it looks like. So the usual grey-tinting
- * recipe — sepia, then a big hue rotation — sends it past teal into blue,
+ * recipe, sepia, then a big hue rotation, sends it past teal into blue,
  * which is a colour the identity does not have. Strengthening what the scene
  * already has is both truer to the identity and safer: saturation deepens the
  * green, the small rotation leans it off cyan toward the brand, and the
@@ -57,7 +57,7 @@ export default function HeroScene({ scene = DEFAULT_SCENE }: { scene?: string })
   return (
     <div ref={ref} className="w-full">
       <Card className="relative overflow-hidden border-border bg-background">
-        {/* The identity's diagonal wash — brand-deep into gold, kept low
+        {/* The identity's diagonal wash, brand-deep into gold, kept low
             enough that it lights the card without colouring it. */}
         <div
           className="pointer-events-none absolute inset-0"
@@ -74,7 +74,7 @@ export default function HeroScene({ scene = DEFAULT_SCENE }: { scene?: string })
             </h2>
             <p className="mt-3 max-w-sm text-sm leading-relaxed text-muted-foreground">
               رابطك يُفتح ويُقرأ، ويُتحقق منه على الإنترنت، ويُؤرَّخ بإعلانه
-              الأصلي — لا بوقت اكتشافك له — ويُصنَّف على أقسام النشرة، ويُقارَن
+              الأصلي، لا بوقت اكتشافك له، ويُصنَّف على أقسام النشرة، ويُقارَن
               بكل مساهمة سابقة قبل أن تُحتسب نقطتك.
             </p>
           </div>

@@ -14,7 +14,7 @@ import { effectivePoints } from "@/lib/db/schema";
  * It reads exactly three things: whether the contribution is valid, whether it
  * duplicates an earlier one, and how many points the member already holds in
  * this cycle. It never reads the editorial score, the category, the source or
- * the subject — a beginner's learning resource and a frontier model release
+ * the subject, a beginner's learning resource and a frontier model release
  * are worth the same +1.
  */
 

@@ -252,7 +252,7 @@ function head(opts: {
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>${esc(opts.title)}</title>
 
-<!-- ===== معاينة الرابط عند المشاركة (Open Graph) — نطاق GitHub Pages ===== -->
+<!-- ===== معاينة الرابط عند المشاركة (Open Graph)، نطاق GitHub Pages ===== -->
 <meta property="og:type" content="article">
 <meta property="og:site_name" content="إنجاز">
 <meta property="og:locale" content="ar_SA">
@@ -290,7 +290,7 @@ const PREVIEW_RIBBON = `<style>
     background: var(--accent); color: var(--ink); font-size: 13px; font-weight: 700; line-height: 1.5; }
   @media print { .draft-ribbon { display: none; } }
 </style>
-<p class="draft-ribbon" role="status">مسودة — معاينة قبل النشر</p>`;
+<p class="draft-ribbon" role="status">مسودة، معاينة قبل النشر</p>`;
 
 function stripTatweel(s: string): string {
   return s.replace(/ـ/g, "");

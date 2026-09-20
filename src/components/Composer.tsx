@@ -1,6 +1,6 @@
 "use client";
 
-import { Link2, Loader2, Pencil } from "lucide-react";
+import { Check, Link2, Loader2, Pencil } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   useCallback,
@@ -20,6 +20,7 @@ import {
   type NewsletterCategory,
 } from "@/lib/db/schema";
 import type { AutoLabel } from "@/lib/services/title";
+import { cn } from "@/lib/utils";
 import { CATEGORY_LABELS } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
 
@@ -56,6 +57,7 @@ export default function Composer() {
   const [labeling, setLabeling] = useState(false);
   const [title, setTitle] = useState("");
   const [editingTitle, setEditingTitle] = useState(false);
+  const [titleConfirmed, setTitleConfirmed] = useState(false);
   const [pickingMember, setPickingMember] = useState(false);
   const [busy, setBusy] = useState(false);
   const [step, setStep] = useState(0);
@@ -79,6 +81,7 @@ export default function Composer() {
       if (data.label) {
         setLabel(data.label);
         setTitle(data.label.title);
+        setTitleConfirmed(false);
       }
     } catch {
       // Silent: the server names it again at submit time if we have nothing.
@@ -87,7 +90,7 @@ export default function Composer() {
     }
   }, []);
 
-  // Name the link as soon as it stops changing — no button to press.
+  // Name the link as soon as it stops changing, no button to press.
   useEffect(() => {
     if (busy) return;
     const link = url.trim();
@@ -95,6 +98,7 @@ export default function Composer() {
       labelRun.current++;
       setLabel(null);
       setTitle("");
+      setTitleConfirmed(false);
       setLabeling(false);
       return;
     }
@@ -113,6 +117,11 @@ export default function Composer() {
     el.style.height = "auto";
     el.style.height = `${Math.max(el.scrollHeight, REASON_MIN_HEIGHT)}px`;
   }, [reason]);
+
+  function confirmTitle() {
+    setTitleConfirmed(true);
+    reasonRef.current?.focus();
+  }
 
   async function setFocus(next: NewsletterCategory | null) {
     if (!member) return;
@@ -139,7 +148,7 @@ export default function Composer() {
       return;
     }
     if (reason.trim().length < 10) {
-      setError("اكتب سببًا محددًا لأهمية هذا المحتوى — جملة قصيرة تكفي.");
+      setError("اكتب الخبر بكلماتك، جملة أو جملتان تكفيان.");
       return;
     }
 
@@ -190,7 +199,7 @@ export default function Composer() {
           ماذا اكتشفت؟
         </h1>
         <p className="mt-2.5 text-sm text-muted-foreground">
-          الصق رابطًا واكتب لماذا يهم — ورصد يتولّى التحقق والتصنيف.
+          الصق رابطًا واكتب الخبر بكلماتك، ورصد يتولّى التحقق والتصنيف.
         </p>
       </div>
 
@@ -235,39 +244,46 @@ export default function Composer() {
               </div>
             ) : (
               label && (
-                <div>
+                // The title is the one thing rased writes on behalf of the
+                // member, so it is not allowed to slip past them: it sits in
+                // its own panel, lit in the identity teal, until they say it
+                // is right or fix it themselves.
+                <div
+                  className={cn(
+                    "rounded-lg border p-4 transition-colors duration-200",
+                    titleConfirmed ? "border-border" : "border-interactive",
+                  )}
+                >
+                  <p className="text-xs text-muted-foreground">
+                    {titleConfirmed
+                      ? "العنوان الذي أكّدته"
+                      : "اقرأ العنوان قبل الإرسال"}
+                  </p>
+
                   {editingTitle ? (
                     <Input
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      onBlur={() => setEditingTitle(false)}
+                      onBlur={() => {
+                        setEditingTitle(false);
+                        setTitleConfirmed(true);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === "Escape") {
                           e.preventDefault();
                           setEditingTitle(false);
+                          setTitleConfirmed(true);
                         }
                       }}
                       autoFocus
                       maxLength={200}
                       aria-label="العنوان"
-                      className="text-sm font-medium"
+                      className="mt-2 text-base font-medium"
                     />
                   ) : (
-                    <div className="flex items-start gap-2">
-                      <p className="text-sm font-medium leading-snug text-foreground">
-                        {title || "مساهمة بلا عنوان"}
-                      </p>
-                      <button
-                        type="button"
-                        onClick={() => setEditingTitle(true)}
-                        disabled={busy}
-                        aria-label="تعديل العنوان"
-                        title="تعديل العنوان"
-                        className="mt-0.5 shrink-0 text-muted-foreground transition-colors duration-200 hover:text-foreground"
-                      >
-                        <Pencil className="size-3.5" />
-                      </button>
-                    </div>
+                    <p className="mt-1.5 text-base font-medium leading-snug text-foreground">
+                      {title || "مساهمة بلا عنوان"}
+                    </p>
                   )}
 
                   <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted-foreground">
@@ -283,15 +299,61 @@ export default function Composer() {
                       {label.summary}
                     </p>
                   )}
+
+                  {!editingTitle && (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {titleConfirmed ? (
+                        <span
+                          className="inline-flex items-center gap-1.5 text-xs"
+                          style={{ color: "var(--interactive-bright)" }}
+                        >
+                          <Check className="size-3.5" aria-hidden />
+                          العنوان مؤكَّد
+                        </span>
+                      ) : (
+                        <Button
+                          type="button"
+                          size="sm"
+                          disabled={busy}
+                          onClick={confirmTitle}
+                        >
+                          <Check aria-hidden />
+                          العنوان صحيح
+                        </Button>
+                      )}
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        disabled={busy}
+                        onClick={() => setEditingTitle(true)}
+                      >
+                        <Pencil aria-hidden />
+                        عدّل العنوان
+                      </Button>
+                    </div>
+                  )}
                 </div>
               )
             )}
           </div>
         )}
 
-        {/* The one field the member actually writes. */}
+        {/* The one field the member actually writes, and the one the
+            newsletter prints word for word. */}
         <div className="mt-5">
+          <label
+            htmlFor="member-text"
+            className="block text-sm font-medium text-foreground"
+          >
+            اكتب الخبر هنا
+          </label>
+          <p className="mt-1 mb-2 text-xs leading-relaxed text-muted-foreground">
+            لخّص الخبر بكلماتك، وأضف لماذا يهم فريقنا. هذا النص يظهر في النشرة
+            كما كتبته.
+          </p>
           <Textarea
+            id="member-text"
             ref={reasonRef}
             value={reason}
             onChange={(e) => {
@@ -301,14 +363,13 @@ export default function Composer() {
             disabled={busy}
             rows={5}
             maxLength={REASON_MAX}
-            aria-label="لماذا ترى أن هذا مهم؟"
-            placeholder="لماذا ترى أن هذا مهم؟"
+            placeholder="مثال: أطلقت Anthropic نموذج Claude جديدًا يدعم..."
             className="resize-none overflow-hidden text-sm leading-relaxed"
             style={{ minHeight: REASON_MIN_HEIGHT }}
           />
           <div className="mt-1.5 flex items-start gap-3 px-1 text-xs text-muted-foreground">
             <p className="min-w-0 flex-1">
-              مطلوب — جملة أو جملتان تكفيان. كلامك يُحفظ كما هو.
+              مطلوب، جملة أو جملتان تكفيان. كلامك يُحفظ كما هو.
             </p>
             <span
               className="shrink-0 tabular-nums opacity-70"
@@ -358,7 +419,7 @@ export default function Composer() {
             ))}
             {members.length === 0 && (
               <span className="text-xs">
-                لا يوجد أعضاء بعد — أضفهم من الإدارة.
+                لا يوجد أعضاء بعد، أضفهم من الإدارة.
               </span>
             )}
           </>
@@ -391,7 +452,7 @@ export default function Composer() {
             ))}
           </select>
           <span className="w-full text-center opacity-70">
-            اتجاه بحث فقط — أرسل أي شيء مفيد تجده خارجه.
+            اتجاه بحث فقط، أرسل أي شيء مفيد تجده خارجه.
           </span>
         </div>
       )}

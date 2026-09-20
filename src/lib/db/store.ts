@@ -23,7 +23,7 @@ import type { StorageProvider, StoreDriver, StoredDocument } from "./types";
  * by STORAGE_PROVIDER and lives behind `StoreDriver`.
  *
  * Seeding, migration of old rows and the per-cycle cap all sit here, above
- * the driver line, so every backend inherits them identically — a driver only
+ * the driver line, so every backend inherits them identically, a driver only
  * ever moves one JSON document around. See ./types.ts.
  */
 
@@ -88,7 +88,7 @@ function seedDatabase(): Database {
  *
  * A cheap first line of defence, not the real guarantee: on serverless every
  * request can land on a different instance, where this chain does nothing.
- * Cross-instance exclusion is the driver's job — `postgres` takes an advisory
+ * Cross-instance exclusion is the driver's job, `postgres` takes an advisory
  * lock for the whole of `transact`, `netlify` has none.
  */
 let writeChain: Promise<unknown> = Promise.resolve();
@@ -100,7 +100,7 @@ let writeChain: Promise<unknown> = Promise.resolve();
 let seeding: Promise<Database> | null = null;
 
 // ---------------------------------------------------------------------------
-// Migration — records written before the contribution engine existed
+// Migration, records written before the contribution engine existed
 // ---------------------------------------------------------------------------
 
 interface LegacyEvaluation {

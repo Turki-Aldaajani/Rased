@@ -163,7 +163,7 @@ export default function NewsletterAdminPage() {
             )}
             {overview && !overview.aiEnabled && (
               <p className="text-xs text-muted-foreground">
-                لا يوجد ANTHROPIC_API_KEY — ستُجمَّع النصوص من بيانات المساهمات
+                لا يوجد ANTHROPIC_API_KEY، ستُجمَّع النصوص من بيانات المساهمات
                 دون صياغة، وتُعلَّم للمراجعة.
               </p>
             )}
@@ -207,7 +207,7 @@ export default function NewsletterAdminPage() {
                   تغطية الأقسام
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  الصالح مقابل المختار — يوضح إن كان العدد متوازنًا
+                  الصالح مقابل المختار، يوضح إن كان العدد متوازنًا
                 </p>
               </div>
               <ul className="divide-y divide-border">
@@ -246,7 +246,7 @@ export default function NewsletterAdminPage() {
                     خارج الاختيار
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    محفوظة كلها — يمكن إضافتها يدويًا داخل المسودة
+                    محفوظة كلها، يمكن إضافتها يدويًا داخل المسودة
                   </p>
                 </div>
                 {overview.unused.length === 0 ? (
@@ -260,7 +260,7 @@ export default function NewsletterAdminPage() {
                         <p className="truncate text-sm text-foreground">{u.title}</p>
                         <p className="mt-0.5 text-xs text-muted-foreground">
                           {u.memberName} · تحريريًا {u.editorialScore} ·{" "}
-                          {REASON_LABELS[u.reason] ?? u.reason} — {u.detail}
+                          {REASON_LABELS[u.reason] ?? u.reason}, {u.detail}
                         </p>
                       </li>
                     ))}
@@ -274,7 +274,7 @@ export default function NewsletterAdminPage() {
                     المساهمون
                   </h2>
                   <p className="text-xs text-muted-foreground">
-                    النقاط للترتيب فقط — لا تؤثر في اختيار المحتوى
+                    النقاط للترتيب فقط، لا تؤثر في اختيار المحتوى
                   </p>
                 </div>
                 <ul className="divide-y divide-border">
@@ -294,7 +294,7 @@ export default function NewsletterAdminPage() {
                           {contributionsCount(c.submissions)} · {c.accepted} مقبولة
                         </span>
                         <span className="w-16 text-end text-xs text-muted-foreground">
-                          {points ? `${points.points} نقاط` : "—"}
+                          {points ? `${points.points} نقاط` : "0"}
                         </span>
                       </li>
                     );

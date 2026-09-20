@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 
 /**
  * Retry button for a submission whose evaluation failed.
- * The submission was never lost — this just runs the evaluator again and
+ * The submission was never lost, this just runs the evaluator again and
  * awards the point if it is now due.
  */
 export default function RetryEvaluation({

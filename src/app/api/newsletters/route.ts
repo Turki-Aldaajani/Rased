@@ -25,7 +25,7 @@ export async function GET(req: Request) {
   });
 }
 
-/** "Generate Newsletter" for a cycle — always a draft, never a publication. */
+/** "Generate Newsletter" for a cycle, always a draft, never a publication. */
 export async function POST(req: Request) {
   return adminRoute(req, async () => {
     const body = await readJson(req);

@@ -47,7 +47,7 @@ import { openWarnings, validateIssue } from "./validate";
  *
  * Nothing here publishes on its own. `createDraft` and every regenerate call
  * produce a draft; only `publishIssue`, called by an editor, writes anything
- * public — and it will not overwrite an issue that already exists.
+ * public, and it will not overwrite an issue that already exists.
  */
 
 export class NewsletterError extends Error {
@@ -60,7 +60,7 @@ export class NewsletterError extends Error {
   }
 }
 
-/** Issue #1's own opening and closing lines — the family's defaults. */
+/** Issue #1's own opening and closing lines, the family's defaults. */
 const DEFAULT_TITLE = "نـشـرة الـذكـاء الاصـطـنـاعـي";
 const DEFAULT_LEAD =
   "لا نخبرك بكل ما حدث في الذكاء الاصطناعي، بل نختصر لك ما يستحق معرفته وما يمكنك استخدامه.";
@@ -89,7 +89,7 @@ function issueForCycle(db: Database, cycle: string) {
 }
 
 // ---------------------------------------------------------------------------
-// Overview — what the editor sees before and while building an issue
+// Overview, what the editor sees before and while building an issue
 // ---------------------------------------------------------------------------
 
 export interface CycleOverview {
@@ -156,7 +156,7 @@ export async function cycleOverview(cycle: string): Promise<CycleOverview> {
     })),
     unused: plan.unused,
     contributors: [...contributors.values()].sort((a, b) => b.submissions - a.submissions),
-    // Shown for context only — points never feed the selection above.
+    // Shown for context only, points never feed the selection above.
     leaderboard: cycleLeaderboard(members, db.contributions, cycle)
       .filter((r) => r.points > 0)
       .map((r) => ({ memberName: r.memberName, points: r.points, rank: r.rank })),
@@ -274,7 +274,7 @@ export async function createDraft(cycle: string): Promise<NewsletterIssue> {
 function assertEditable(issue: NewsletterIssue) {
   if (issue.status === "published") {
     throw new NewsletterError(
-      "هذا العدد منشور. لا يُعاد توليده حتى لا يُستبدل المنشور بمحتوى جديد — عدّله يدويًا إن لزم.",
+      "هذا العدد منشور. لا يُعاد توليده حتى لا يُستبدل المنشور بمحتوى جديد، عدّله يدويًا إن لزم.",
       409,
     );
   }
@@ -393,7 +393,7 @@ function replaceItem(
   };
 }
 
-/** "Add an item" — always from a real contribution, so it stays traceable. */
+/** "Add an item", always from a real contribution, so it stays traceable. */
 export async function addItem(
   id: string,
   contributionId: string,
@@ -402,7 +402,7 @@ export async function addItem(
   const current = await getIssue(id);
   if (!current) throw new NewsletterError("العدد غير موجود.", 404);
   if (current.status === "published") {
-    throw new NewsletterError("العدد منشور — لا تُضاف إليه عناصر.", 409);
+    throw new NewsletterError("العدد منشور، لا تُضاف إليه عناصر.", 409);
   }
   const db = await readDb();
   const contribution = db.contributions.find((c) => c.id === contributionId);
@@ -687,7 +687,7 @@ export async function publishIssue(
 
   const itemCount = issue.sections.reduce((n, s) => n + s.items.length, 0);
   if (itemCount === 0) {
-    throw new NewsletterError("العدد فارغ — لا يُنشر عدد بلا محتوى.", 422);
+    throw new NewsletterError("العدد فارغ، لا يُنشر عدد بلا محتوى.", 422);
   }
   const warnings = openWarnings(issue);
   if (warnings > 0 && !options.acknowledgeWarnings) {

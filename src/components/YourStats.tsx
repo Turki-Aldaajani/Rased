@@ -49,7 +49,7 @@ export default function YourStats({
           ))}
           {members.length === 0 && (
             <p className="text-sm text-muted-foreground">
-              لا يوجد أعضاء بعد —{" "}
+              لا يوجد أعضاء بعد،{" "}
               <Link
                 href="/admin"
                 className="text-primary underline-offset-4 hover:underline"
@@ -78,7 +78,7 @@ export default function YourStats({
     },
     {
       label: "ترتيب الدورة",
-      value: row && row.points > 0 ? row.rank : "—",
+      value: row && row.points > 0 ? row.rank : "لا يوجد",
       sub: `من أصل ${membersCount(board.length)}`,
     },
     {
@@ -128,7 +128,7 @@ export default function YourStats({
 
       {left === 0 && (
         <p className="border-b border-border px-5 py-3 text-xs text-muted-foreground">
-          بلغت الحد الأقصى لهذه الدورة — استمر في الإرسال إن وجدت ما يستحق؛
+          بلغت الحد الأقصى لهذه الدورة، استمر في الإرسال إن وجدت ما يستحق؛
           المساهمات تُحفظ وقد تدخل النشرة، لكنها لن تزيد ترتيبك.
         </p>
       )}

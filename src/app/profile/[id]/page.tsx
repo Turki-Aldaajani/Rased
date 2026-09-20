@@ -43,7 +43,7 @@ export default async function ProfilePage({ params }: Props) {
     },
     {
       label: "ترتيب الدورة",
-      value: stats.cycleRank ?? "—",
+      value: stats.cycleRank ?? "لا يوجد",
       sub: `من أصل ${membersCount(members.length)}`,
     },
     {
@@ -98,7 +98,7 @@ export default async function ProfilePage({ params }: Props) {
         ))}
       </div>
 
-      {/* Cycle-by-cycle record — old cycles are preserved, never overwritten. */}
+      {/* Cycle-by-cycle record, old cycles are preserved, never overwritten. */}
       {stats.history.length > 0 && (
         <Card className="overflow-hidden">
           <div className="border-b border-border px-5 py-4">

@@ -9,7 +9,7 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 
-/** useLayoutEffect on the client, useEffect on the server — no SSR warning. */
+/** useLayoutEffect on the client, useEffect on the server, no SSR warning. */
 const useIsoLayoutEffect =
   typeof window === "undefined" ? useEffect : useLayoutEffect;
 
@@ -63,7 +63,7 @@ export function CountUp({
       const start = performance.now();
       const tick = (now: number) => {
         const t = Math.min(1, (now - start) / duration);
-        // Ease-out: fast at first, then settling — the way a tally lands.
+        // Ease-out: fast at first, then settling, the way a tally lands.
         const eased = 1 - (1 - t) ** 3;
         setShown(Math.round(value * eased));
         if (t < 1) frame = requestAnimationFrame(tick);

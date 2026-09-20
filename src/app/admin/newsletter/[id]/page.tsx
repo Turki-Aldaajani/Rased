@@ -461,7 +461,7 @@ export default function NewsletterEditorPage({
 
               {section.items.length === 0 ? (
                 <p className="px-5 py-6 text-sm text-muted-foreground">
-                  لا يوجد محتوى مختار لهذا القسم — سيُحذف القسم من الصفحة المنشورة.
+                  لا يوجد محتوى مختار لهذا القسم، سيُحذف القسم من الصفحة المنشورة.
                 </p>
               ) : (
                 <ul className="divide-y divide-border">
@@ -621,7 +621,11 @@ export default function NewsletterEditorPage({
 
                             <Field
                               label="لماذا يهمك؟"
-                              hint={`سبب العضو كما كتبه: «${item.whyItMatters ? "" : "لم يُحفظ"}»`}
+                              hint={
+                                item.whyItMatters.trim()
+                                  ? "نص العضو كما كتبه، ويُنشر حرفيًا. لا تعدّله إلا لضرورة."
+                                  : "العضو لم يكتب نصًا. اكتب سطرًا أو أزل العنصر."
+                              }
                             >
                               <Textarea
                                 className="min-h-20 text-sm"

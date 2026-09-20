@@ -35,11 +35,11 @@ type Props = { params: Promise<{ id: string }> };
 const POINT_REASON_TEXT: Record<string, string> = {
   valid_contribution: "مساهمة صحيحة وجديدة.",
   new_angle_on_known_topic: "موضوع معروف، لكن مساهمتك تضيف قيمة جديدة.",
-  cycle_cap_reached: `بلغت الحد الأقصى ${POINTS.maxPerCycle} نقاط في هذه الدورة — المساهمة محفوظة وقد تدخل النشرة.`,
+  cycle_cap_reached: `بلغت الحد الأقصى ${POINTS.maxPerCycle} نقاط في هذه الدورة، المساهمة محفوظة وقد تدخل النشرة.`,
   duplicate: "سبق إرسال المحتوى نفسه، لذا لا تُحتسب نقطة جديدة.",
   rejected: "لم تستوفِ المساهمة الحد الأدنى للقبول.",
   pending_evaluation: "لم يكتمل التقييم بعد.",
-  blocked_source: "لم تُحتسب نقطة بعد — تنتظر قرار المضيف.",
+  blocked_source: "لم تُحتسب نقطة بعد، تنتظر قرار المضيف.",
   admin_override: "عدّل المضيف النقاط يدويًا.",
 };
 
@@ -63,7 +63,7 @@ export default async function ResultPage({ params }: Props) {
     c.points.reason === "blocked_source" && status !== "blocked_source"
       ? "راجعها المضيف يدويًا."
       : POINT_REASON_TEXT[c.points.reason];
-  const summaryLine = e?.summaryForMember || reasonText || "—";
+  const summaryLine = e?.summaryForMember || reasonText || "لا يوجد ملخّص.";
 
   const dimensions = e
     ? (Object.keys(EDITORIAL.weights) as EditorialDimension[]).map((key) => ({
@@ -231,10 +231,13 @@ export default async function ResultPage({ params }: Props) {
       {/* What the member wrote, and how the evaluator read it. */}
       <Card className="p-5">
         <h2 className="text-sm font-semibold text-foreground">
-          لماذا رأى {c.memberName} أنها مهمة
+          الخبر بكلمات {c.memberName}
         </h2>
+        <p className="mt-1 text-xs text-muted-foreground">
+          هذا النص يظهر في النشرة كما هو.
+        </p>
         <p className="font-serif-text mt-2 whitespace-pre-wrap text-sm leading-relaxed text-foreground">
-          {c.memberReason || "—"}
+          {c.memberReason || "لم يكتب العضو نصًا."}
         </p>
         {c.note && (
           <p className="mt-3 border-t border-border pt-3 text-sm text-muted-foreground">
@@ -278,7 +281,7 @@ export default async function ResultPage({ params }: Props) {
                 <dd className="mt-1.5 text-sm text-foreground">
                   {e.audience.tags
                     .map((a) => AUDIENCE_LABELS[a] ?? a)
-                    .join("، ") || "—"}
+                    .join("، ") || "لا يوجد"}
                 </dd>
                 {e.audience.reason && (
                   <dd className="mt-1 text-xs text-muted-foreground">
@@ -300,7 +303,7 @@ export default async function ResultPage({ params }: Props) {
             </dl>
             {c.focusArea && (
               <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">
-                مجال بحثك وقت الإرسال: {categoryLabel(c.focusArea)} — اتجاه فقط،
+                مجال بحثك وقت الإرسال: {categoryLabel(c.focusArea)}، اتجاه فقط،
                 والتصنيف أعلاه مبني على المحتوى نفسه.
               </p>
             )}
@@ -333,7 +336,7 @@ export default async function ResultPage({ params }: Props) {
                   {e.extracted.keyPoints.map((p, i) => (
                     <li
                       key={i}
-                      className="flex gap-2 text-sm text-muted-foreground before:content-['—']"
+                      className="flex gap-2 text-sm text-muted-foreground before:content-['·']"
                     >
                       <span>{p}</span>
                     </li>
@@ -417,7 +420,7 @@ export default async function ResultPage({ params }: Props) {
                 {e.verification.evidence.map((line, i) => (
                   <li
                     key={i}
-                    className="flex gap-2 text-sm text-muted-foreground before:content-['—']"
+                    className="flex gap-2 text-sm text-muted-foreground before:content-['·']"
                   >
                     <span>{line}</span>
                   </li>
@@ -464,7 +467,7 @@ export default async function ResultPage({ params }: Props) {
             )}
           </Card>
 
-          {/* Editorial value — clearly separated from points */}
+          {/* Editorial value, clearly separated from points */}
           <Card className="p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
@@ -472,7 +475,7 @@ export default async function ResultPage({ params }: Props) {
                   القيمة التحريرية
                 </h2>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  تُستخدم لترتيب محتوى النشرة فقط — لا علاقة لها بنقاطك.
+                  تُستخدم لترتيب محتوى النشرة فقط، لا علاقة لها بنقاطك.
                 </p>
               </div>
               <EditorialMeter score={e.editorial.score} />
@@ -513,7 +516,7 @@ export default async function ResultPage({ params }: Props) {
         <p className="pb-2 text-center text-xs text-muted-foreground">
           {e?.engine === "ai"
             ? `قُيِّمت بواسطة ${e.model} مع تحقق مباشر من الإنترنت.`
-            : "قُيِّمت بالخوارزمية غير المتصلة — فعّل ANTHROPIC_API_KEY للتقييم الكامل."}
+            : "قُيِّمت بالخوارزمية غير المتصلة، فعّل ANTHROPIC_API_KEY للتقييم الكامل."}
         </p>
       )}
     </div>

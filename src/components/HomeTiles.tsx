@@ -21,8 +21,8 @@ function TileLabel({ children }: { children: React.ReactNode }) {
 
 /**
  * The small cells beside the composer. They answer the three things a member
- * wants to know before pasting anything — how much they have sent, how long
- * they have left, and who is ahead — and nothing else.
+ * wants to know before pasting anything, how much they have sent, how long
+ * they have left, and who is ahead, and nothing else.
  */
 export default function HomeTiles({
   perMember,
@@ -101,7 +101,7 @@ export default function HomeTiles({
         )}
         <p className="mt-1 text-xs text-muted-foreground">
           {leader
-            ? "نقاط هذه الدورة — الترتيب بالنقاط وحدها"
+            ? "نقاط هذه الدورة، الترتيب بالنقاط وحدها"
             : "أول مساهمة صحيحة تتصدّر الدورة"}
         </p>
       </SpotlightCard>

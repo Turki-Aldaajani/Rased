@@ -25,7 +25,7 @@ export interface ReviewFlag {
 export interface ItemSource {
   /** Publication or site name, e.g. "OpenAI". */
   name: string;
-  /** The contribution's URL — never written by the model. */
+  /** The contribution's URL, never written by the model. */
   url: string;
   /** Optional link text when it should differ from the source name. */
   linkText: string;
@@ -44,7 +44,10 @@ export interface NewsletterItem {
   /** Small label above the lead story, e.g. "الخبر الأهم". */
   kicker: string;
   paragraphs: string[];
-  /** "لماذا يهمك؟" — built from the member's own reason. */
+  /**
+   * "لماذا يهمك؟" is the member's own text, printed word for word. The model
+   * is not asked for it and cannot overwrite it; only an editor can.
+   */
   whyItMatters: string;
 
   /** Tools: the audience pill beside the name, e.g. "للمطورين". */
@@ -72,7 +75,7 @@ export interface NewsletterItem {
   ctaLabel: string;
   source: ItemSource;
 
-  /** Traceability — shown in the admin area, not on the public page. */
+  /** Traceability, shown in the admin area, not on the public page. */
   contributor: { memberId: string; memberName: string };
   category: NewsletterCategory;
   editorialScore: number;
@@ -81,7 +84,7 @@ export interface NewsletterItem {
   writtenBy: "ai" | "source" | "editor";
   /** Things the model itself said it could not support. Editors clear them. */
   aiNotes: string[];
-  /** Recomputed on every save — see validate.ts. */
+  /** Recomputed on every save, see validate.ts. */
   flags: ReviewFlag[];
 }
 
@@ -130,7 +133,7 @@ export interface NewsletterIssue {
   cycleEnd: string; // YYYY-MM-DD
   status: IssueStatus;
 
-  /** Hero title, lead and closing — Issue #1's defaults, editable. */
+  /** Hero title, lead and closing, Issue #1's defaults, editable. */
   title: string;
   lead: string;
   closing: string;

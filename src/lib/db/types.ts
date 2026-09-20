@@ -7,7 +7,7 @@ import type { Database } from "./schema";
 export type StorageProvider = "netlify" | "postgres";
 
 /**
- * A stored document, exactly as it came back from the backend — rows written
+ * A stored document, exactly as it came back from the backend, rows written
  * before the contribution engine existed included. Hydrating it into a
  * `Database` is `store.ts`'s job, so every backend goes through one migration
  * path instead of each driver growing its own.
@@ -20,7 +20,7 @@ export interface StoredDocument {
 
 /**
  * What a storage backend has to provide. The whole application is built on one
- * JSON document, so a driver only ever has to move that document around —
+ * JSON document, so a driver only ever has to move that document around,
  * seeding, migration, points and leaderboards all sit above this line.
  */
 export interface StoreDriver {

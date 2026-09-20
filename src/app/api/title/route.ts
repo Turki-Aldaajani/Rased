@@ -27,7 +27,7 @@ export async function POST(req: Request) {
     if (!/^https?:$/.test(parsed.protocol)) throw new Error("bad protocol");
   } catch {
     return NextResponse.json(
-      { error: "هذا الرابط غير صالح — يجب أن يبدأ بـ https://" },
+      { error: "هذا الرابط غير صالح، يجب أن يبدأ بـ https://" },
       { status: 400 },
     );
   }

@@ -36,7 +36,7 @@ export function contentSimilarity(
 /**
  * Cheap local pass that narrows the field before the evaluator reads it.
  * Signals: normalised URL, title similarity and body-text similarity. The
- * evaluator makes the actual call — including the "same topic, new value"
+ * evaluator makes the actual call, including the "same topic, new value"
  * case, which text similarity alone cannot see.
  */
 export function findDuplicateCandidates(

@@ -24,7 +24,7 @@ interface CurrentUserValue {
 const Ctx = createContext<CurrentUserValue | null>(null);
 
 /**
- * "Who am I" for the whole app. No auth — just a name kept in localStorage,
+ * "Who am I" for the whole app. No auth, just a name kept in localStorage,
  * which is all this MVP needs.
  */
 export function CurrentUserProvider({ children }: { children: ReactNode }) {
@@ -50,7 +50,7 @@ export function CurrentUserProvider({ children }: { children: ReactNode }) {
       try {
         setId(localStorage.getItem(STORAGE_KEY));
       } catch {
-        /* private mode — just stay signed out */
+        /* private mode, just stay signed out */
       }
       setReady(true);
     })();

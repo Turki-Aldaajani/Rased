@@ -88,12 +88,12 @@ export const STATUS_META: Record<
   pending: {
     text: "بانتظار التقييم",
     color: "var(--info)",
-    hint: "تعذّر الوصول إلى المقيّم — المساهمة محفوظة ويمكن إعادة المحاولة",
+    hint: "تعذّر الوصول إلى المقيّم، المساهمة محفوظة ويمكن إعادة المحاولة",
   },
   blocked_source: {
     text: "بانتظار المراجعة اليدوية",
     color: "var(--accent)",
-    hint: "المصدر يمنع الوصول الآلي — تنتظر مراجعة المضيف",
+    hint: "المصدر يمنع الوصول الآلي، تنتظر مراجعة المضيف",
   },
 };
 
@@ -119,7 +119,7 @@ export const VERIFICATION_META: Record<
 };
 
 /**
- * A status dot plus quiet text. The state colour appears on the dot only —
+ * A status dot plus quiet text. The state colour appears on the dot only,
  * enough to read at a glance, not enough to colour the page.
  */
 function StatusDot({ color }: { color: string }) {
@@ -197,7 +197,7 @@ export function CategoryPill({
 }
 
 /**
- * The member-facing number. Always 0 or 1 — a contribution point, never the
+ * The member-facing number. Always 0 or 1, a contribution point, never the
  * editorial score, which lives in its own clearly-labelled place.
  */
 export function PointsBadge({
@@ -298,7 +298,7 @@ export function ContributionRow({
         className="w-8 shrink-0 pt-0.5 text-end text-sm font-semibold tabular-nums"
         style={{ color: points > 0 ? "var(--primary)" : "var(--muted-foreground)" }}
       >
-        {points > 0 ? `+${points}` : "—"}
+        {points > 0 ? `+${points}` : "0"}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm text-foreground">
@@ -313,7 +313,7 @@ export function ContributionRow({
           <span>{relativeTime(contribution.createdAt)}</span>
           <StatusBadge status={status} />
           {contribution.evaluation && (
-            <span title="القيمة التحريرية للنشرة — ليست نقاط العضو">
+            <span title="القيمة التحريرية للنشرة، ليست نقاط العضو">
               تحريريًا {editorialScore(contribution)}
             </span>
           )}

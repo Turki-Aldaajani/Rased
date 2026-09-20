@@ -195,7 +195,7 @@ export default function AdminPage() {
             منطقة المضيف
           </h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            التقييم التلقائي هو الافتراضي — ولك الكلمة الأخيرة في كل شيء.
+            التقييم التلقائي هو الافتراضي، ولك الكلمة الأخيرة في كل شيء.
           </p>
           <DiamondRule className="mt-4 max-w-sm" />
         </div>
@@ -245,7 +245,7 @@ export default function AdminPage() {
             بانتظار إعادة التقييم
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
-            {contributionsCount(pending.length)} لم يكتمل تقييمها — محفوظة بلا
+            {contributionsCount(pending.length)} لم يكتمل تقييمها، محفوظة بلا
             نقاط حتى تنجح إعادة المحاولة.
           </p>
           <ul className="mt-3 space-y-2">
@@ -277,7 +277,7 @@ export default function AdminPage() {
       <SpotlightCard className="p-5">
         <h2 className="text-sm font-semibold text-foreground">أعضاء الفريق</h2>
         <p className="mt-1 text-xs text-muted-foreground">
-          {membersCount(active.length)} نشط — فريق الذكاء الاصطناعي تسعة أعضاء،
+          {membersCount(active.length)} نشط، فريق الذكاء الاصطناعي تسعة أعضاء،
           أضف من ينقص.
         </p>
         <form
@@ -495,7 +495,7 @@ function AdminContributionRow({
                 : "var(--muted-foreground)",
           }}
         >
-          {effectivePoints(c) > 0 ? `+${effectivePoints(c)}` : "—"}
+          {effectivePoints(c) > 0 ? `+${effectivePoints(c)}` : "0"}
         </span>
         <div className="min-w-0 flex-1">
           <Link
@@ -712,7 +712,7 @@ function AdminContributionRow({
                           href={`/result/${m.id}`}
                           className="hover:text-foreground hover:underline"
                         >
-                          {Math.round(m.score * 100)}٪ — {m.title} (
+                          {Math.round(m.score * 100)}٪، {m.title} (
                           {m.memberName})
                         </Link>
                       </li>
