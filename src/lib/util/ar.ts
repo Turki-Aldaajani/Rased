@@ -19,8 +19,23 @@ export function contributionsCount(n: number): string {
   return arPlural(n, ["مساهمة واحدة", "مساهمتان", `${n} مساهمات`, `${n} مساهمة`]);
 }
 
+/**
+ * Points come in halves now, so they are written as numbers, not words. A
+ * whole number stays whole: "3", not "3.0".
+ */
+export function formatPoints(n: number): string {
+  return Number.isInteger(n) ? String(n) : n.toFixed(1);
+}
+
 export function pointsCount(n: number): string {
+  // Arabic count agreement is for whole things. Half a point takes the
+  // singular noun and the digits carry the rest.
+  if (!Number.isInteger(n)) return `${formatPoints(n)} نقطة`;
   return arPlural(n, ["نقطة واحدة", "نقطتان", `${n} نقاط`, `${n} نقطة`]);
+}
+
+export function sectionsCount(n: number): string {
+  return arPlural(n, ["قسم واحد", "قسمان", `${n} أقسام`, `${n} قسمًا`]);
 }
 
 export function daysCount(n: number): string {

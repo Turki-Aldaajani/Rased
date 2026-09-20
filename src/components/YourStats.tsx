@@ -8,7 +8,7 @@ import { CountUp } from "@/components/ui/count-up";
 import { POINTS } from "@/lib/config/rules";
 import type { Contribution } from "@/lib/db/schema";
 import type { LeaderboardRow } from "@/lib/services/leaderboard";
-import { membersCount, pointsCount } from "@/lib/util/ar";
+import { formatPoints, membersCount, pointsCount } from "@/lib/util/ar";
 import { cycleLabel } from "@/lib/util/date";
 import { ContributionRow } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
@@ -68,13 +68,20 @@ export default function YourStats({
   const total = totals[member.id] ?? { points: 0, count: 0 };
   const mine = latest[member.id] ?? [];
   const points = row?.points ?? 0;
-  const left = Math.max(0, POINTS.maxPerCycle - points);
+  const base = row?.basePoints ?? 0;
+  const bonus = (row?.bonusPoints ?? 0) + (row?.diversityPoints ?? 0);
+  const left = Math.max(0, POINTS.maxBasePerCycle - base);
 
   const tiles = [
     {
       label: "نقاط الدورة",
-      value: `${points}/${POINTS.maxPerCycle}`,
-      sub: left > 0 ? `بقيت ${pointsCount(left)}` : "بلغت الحد الأقصى",
+      value: points,
+      sub:
+        bonus > 0
+          ? `أساس ${formatPoints(base)} · بونص ${formatPoints(bonus)}`
+          : left > 0
+            ? `أساس فقط، بقيت ${pointsCount(left)}`
+            : "بلغت حد الأساس",
     },
     {
       label: "ترتيب الدورة",
@@ -84,7 +91,12 @@ export default function YourStats({
     {
       label: "مساهمات الدورة",
       value: row?.submissions ?? 0,
-      sub: row && row.overCap > 0 ? `${row.overCap} بعد الحد` : "كلها محفوظة",
+      sub:
+        row && row.pendingBonuses > 0
+          ? `${row.pendingBonuses} بونص بانتظار المضيف`
+          : row && row.overCap > 0
+            ? `${row.overCap} بعد الحد`
+            : "كلها محفوظة",
     },
     {
       label: "إجمالي النقاط",
@@ -128,8 +140,8 @@ export default function YourStats({
 
       {left === 0 && (
         <p className="border-b border-border px-5 py-3 text-xs text-muted-foreground">
-          بلغت الحد الأقصى لهذه الدورة، استمر في الإرسال إن وجدت ما يستحق؛
-          المساهمات تُحفظ وقد تدخل النشرة، لكنها لن تزيد ترتيبك.
+          بلغت حد نقاط الأساس لهذه الدورة. استمر في الإرسال، فالمساهمات تُحفظ
+          وقد تدخل النشرة، والبونص على ما تكتبه ما زال يرفع ترتيبك.
         </p>
       )}
 

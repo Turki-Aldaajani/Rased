@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { CountUp } from "@/components/ui/count-up";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
-import { POINTS } from "@/lib/config/rules";
 import { useCurrentUser } from "./CurrentUser";
 
 export interface HomeTilesProps {
@@ -89,9 +88,6 @@ export default function HomeTiles({
             </Link>
             <span className="text-xl font-semibold tabular-nums text-foreground">
               <CountUp value={leader.points} />
-              <span className="text-xs text-muted-foreground">
-                /{POINTS.maxPerCycle}
-              </span>
             </span>
           </div>
         ) : (

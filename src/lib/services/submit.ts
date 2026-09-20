@@ -4,7 +4,9 @@ import type {
   Member,
   NewsletterCategory,
 } from "@/lib/db/schema";
+import { emptyBonus, effectiveCategory } from "@/lib/db/schema";
 import { saveWithAward, newId, replaceWithAward } from "@/lib/db/store";
+import { proposeBonus } from "./bonus";
 import { applyLateDuplicate } from "./duplicates";
 import { evaluateContribution, type EvaluationOutcome } from "./evaluate";
 import { decidePoints } from "./points";
@@ -103,6 +105,7 @@ export async function submitContribution(
     },
     evaluationError: outcome.error,
     evaluationAttempts: 1,
+    bonus: emptyBonus(),
     adminOverride: null,
     removed: false,
   };
@@ -126,6 +129,17 @@ export async function submitContribution(
           cycleKey: decision.cycleKey,
           cycleTotalBefore: decision.cycleTotalBefore,
         },
+        // Proposed against the status this landed on, not the one it was
+        // evaluated under: a link that turned out to be a late duplicate has
+        // no news of its own to attach a bonus to.
+        bonus: proposeBonus({
+          suggestion: outcome.bonusSuggestion,
+          status: resolved.status,
+          category: effectiveCategory(resolved),
+          memberId: resolved.memberId,
+          cycleKey: resolved.cycleKey,
+          existing,
+        }),
       };
     },
   );
@@ -141,6 +155,7 @@ export async function reevaluateContribution(
   current: Contribution,
   existing: Contribution[],
 ): Promise<SubmitResult> {
+  const others = existing.filter((c) => c.id !== current.id);
   const outcome = await evaluateContribution(
     {
       title: current.title,
@@ -151,7 +166,7 @@ export async function reevaluateContribution(
       focusArea: current.focusArea,
       memberName: current.memberName,
     },
-    existing.filter((c) => c.id !== current.id),
+    others,
   );
 
   const updated = await replaceWithAward(current.id, (c, ctx) => {
@@ -181,6 +196,20 @@ export async function reevaluateContribution(
         cycleKey: decision.cycleKey,
         cycleTotalBefore: decision.cycleTotalBefore,
       },
+      // A host's decision outlives a re-evaluation. Only an undecided bonus
+      // is proposed again.
+      bonus:
+        c.bonus.status === "confirmed" || c.bonus.status === "rejected"
+          ? c.bonus
+          : proposeBonus({
+              suggestion: outcome.bonusSuggestion,
+              status: resolved.status,
+              category: effectiveCategory(resolved),
+              memberId: resolved.memberId,
+              cycleKey: resolved.cycleKey,
+              existing: others,
+              selfId: resolved.id,
+            }),
     };
   });
 

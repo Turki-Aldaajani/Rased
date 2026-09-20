@@ -34,6 +34,7 @@ import {
   type EvaluationToolInput,
 } from "./prompt";
 import { hostname, meaningfulWordCount, truncate } from "@/lib/util/text";
+import { ruleForSection, type BonusSuggestion } from "./bonus";
 
 export interface EvaluationOutcome {
   /**
@@ -55,6 +56,12 @@ export interface EvaluationOutcome {
    * retry would meet the same refusal, so only a human can settle it.
    */
   blocked: boolean;
+  /**
+   * What the evaluator thought the member's own writing earned, if anything.
+   * A proposal only: services/bonus.ts decides whether it can even be put to a
+   * host, and a host decides whether it is granted.
+   */
+  bonusSuggestion: BonusSuggestion | null;
 }
 
 /** True when the selected provider has the key it needs. */
@@ -98,6 +105,7 @@ export async function evaluateContribution(
       notices,
       error: snapshot.error ?? `استجاب المصدر بـ HTTP ${snapshot.status}.`,
       blocked: true,
+      bonusSuggestion: null,
     };
   }
 
@@ -119,7 +127,18 @@ export async function evaluateContribution(
           `لا يملك ${client.model} تصفّحًا للإنترنت، فاعتمد التقييم على نص الصفحة وحده دون تحقق مستقل.`,
         );
       }
-      return { evaluation, candidates, notices, error: null, blocked: false };
+      return {
+        evaluation,
+        candidates,
+        notices,
+        error: null,
+        blocked: false,
+        bonusSuggestion: readBonusSuggestion(
+          toolInput.bonusRequirement,
+          toolInput.bonusReason,
+          evaluation.classification.primary,
+        ),
+      };
     } catch (err) {
       // §22: never lose the submission. The caller stores it pending.
       return {
@@ -131,6 +150,7 @@ export async function evaluateContribution(
           300,
         ),
         blocked: false,
+        bonusSuggestion: null,
       };
     }
   }
@@ -138,12 +158,56 @@ export async function evaluateContribution(
   notices.push(
     `وضع غير متصل: لم يُضبط ${providerKeyName(client.name)}، فتم التقييم بالخوارزمية المدمجة. لم يجرِ أي تحقق مستقل من المصدر.`,
   );
+  const offline = evaluateHeuristically(input, snapshot, candidates);
   return {
-    evaluation: evaluateHeuristically(input, snapshot, candidates),
+    evaluation: offline,
     candidates,
     notices,
     error: null,
     blocked: false,
+    bonusSuggestion: heuristicBonus(input, offline),
+  };
+}
+
+/**
+ * Reads the evaluator's bonus answer, and throws it away unless it belongs to
+ * the section the evaluator itself chose. A model that proposes "how to use"
+ * on a news item has contradicted itself, and the safe reading of a
+ * contradiction is no bonus.
+ */
+function readBonusSuggestion(
+  requirement: unknown,
+  reason: unknown,
+  primary: NewsletterCategory,
+): BonusSuggestion | null {
+  const value = String(requirement ?? "").trim();
+  const rule = ruleForSection(primary);
+  if (!rule || value !== rule.requirement) return null;
+  return {
+    requirement: rule.requirement,
+    reason: truncate(String(reason ?? "").trim(), 300),
+  };
+}
+
+/**
+ * Offline, there is no way to tell the member's own steps from a paragraph
+ * copied off the tool's page. So this proposes on effort alone, and says so:
+ * a host reads every proposal anyway, and being told what the guess is worth
+ * is more useful than a guess dressed up as a judgement.
+ */
+const OFFLINE_BONUS_WORDS = 25;
+
+function heuristicBonus(
+  input: EvaluationInput,
+  evaluation: Evaluation,
+): BonusSuggestion | null {
+  const rule = ruleForSection(evaluation.classification.primary);
+  if (!rule) return null;
+  if (meaningfulWordCount(input.memberReason) < OFFLINE_BONUS_WORDS) return null;
+  return {
+    requirement: rule.requirement,
+    reason:
+      "اقتراح من الوضع غير المتصل: النص مفصّل بما يكفي، لكن لم يجرِ التحقق من كونه بكلمات العضو. يحتاج قراءتك.",
   };
 }
 

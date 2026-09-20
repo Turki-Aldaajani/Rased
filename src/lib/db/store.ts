@@ -1,6 +1,7 @@
 import { randomUUID } from "crypto";
 import { POINTS } from "@/lib/config/rules";
 import {
+  emptyBonus,
   NEWSLETTER_CATEGORIES,
   type Contribution,
   type ContributionStatus,
@@ -123,7 +124,12 @@ interface LegacyEvaluation {
  * score and the member's points are recomputed under the new flat rule.
  */
 function migrateContribution(raw: Record<string, unknown>): Contribution {
-  if (raw.points && raw.status) return raw as unknown as Contribution;
+  if (raw.points && raw.status) {
+    const stored = raw as unknown as Contribution;
+    // Rows written before the bonus engine have no bonus at all, which is the
+    // same thing as never having been proposed one.
+    return stored.bonus ? stored : { ...stored, bonus: emptyBonus() };
+  }
 
   const legacy = (raw.evaluation ?? {}) as LegacyEvaluation;
   const createdAt = String(raw.createdAt ?? new Date().toISOString());
@@ -240,6 +246,7 @@ function migrateContribution(raw: Record<string, unknown>): Contribution {
     points,
     evaluationError: null,
     evaluationAttempts: 1,
+    bonus: emptyBonus(),
     adminOverride: null,
     removed: Boolean(raw.removed),
   };
@@ -256,7 +263,7 @@ function enforceCapAcrossHistory(contributions: Contribution[]): void {
     const key = `${c.memberId}:${c.cycleKey}`;
     const before = totals.get(key) ?? 0;
     c.points.cycleTotalBefore = before;
-    if (before >= POINTS.maxPerCycle) {
+    if (before >= POINTS.maxBasePerCycle) {
       c.points.awarded = 0;
       c.points.reason = "cycle_cap_reached";
     } else {

@@ -17,24 +17,34 @@ import { Card } from "@/components/ui/card";
 import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { POINTS } from "@/lib/config/rules";
+import { BONUS, POINTS } from "@/lib/config/rules";
 import {
+  BONUS_REQUIREMENTS,
   CONTRIBUTION_STATUSES,
   DUPLICATE_OUTCOMES,
   NEWSLETTER_CATEGORIES,
+  bonusPending,
   editorialScore,
+  effectiveBonus,
   effectiveCategory,
   effectiveDuplicate,
   effectivePoints,
   effectiveStatus,
+  type BonusRequirement,
   type Contribution,
   type ContributionStatus,
   type DuplicateOutcome,
   type Member,
   type NewsletterCategory,
 } from "@/lib/db/schema";
+import {
+  REQUIREMENT_LABELS,
+  SKIP_REASON_LABELS,
+  ruleForSection,
+  valueForRequirement,
+} from "@/lib/services/bonus";
 import { isEarningStatus } from "@/lib/services/points";
-import { contributionsCount, membersCount } from "@/lib/util/ar";
+import { contributionsCount, formatPoints, membersCount } from "@/lib/util/ar";
 import { cycleLabel, formatDate } from "@/lib/util/date";
 import { hostname } from "@/lib/util/text";
 import { cn } from "@/lib/utils";
@@ -180,6 +190,9 @@ export default function AdminPage() {
   const active = members.filter((m) => m.active);
   const inactive = members.filter((m) => !m.active);
   const pending = contributions.filter((c) => effectiveStatus(c) === "pending");
+  // Every bonus is proposed by the evaluator and granted by a person. Until
+  // someone here decides, none of it is on the board.
+  const awaitingBonus = contributions.filter(bonusPending);
   // The source refused a machine read, so only a person can settle these.
   // They leave this group the moment a host decides (the override wins).
   const needsReview = contributions.filter(
@@ -233,6 +246,31 @@ export default function AdminPage() {
                 contribution={c}
                 busy={busy}
                 send={send}
+              />
+            ))}
+          </ul>
+        </SpotlightCard>
+      )}
+
+      {awaitingBonus.length > 0 && (
+        <SpotlightCard>
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="text-sm font-semibold text-foreground">
+              بونص بانتظار تأكيدك
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {contributionsCount(awaitingBonus.length)} اقترح لها رصد بونصًا
+              على نص العضو. لا شيء منها يدخل اللوحة قبل أن تقرّر.
+            </p>
+          </div>
+          <ul className="divide-y divide-border">
+            {awaitingBonus.map((c) => (
+              <AdminContributionRow
+                key={c.id}
+                contribution={c}
+                busy={busy}
+                send={send}
+                startOpen
               />
             ))}
           </ul>
@@ -456,7 +494,15 @@ function MemberRow({
   );
 }
 
-function AdminContributionRow({
+/**
+ * The bonus review.
+ *
+ * The evaluator can tell that a member wrote something; it cannot tell that
+ * they wrote it themselves, or that steps for a tool are steps and not the
+ * tool's own blurb. So it proposes, this decides, and the board only ever
+ * counts what was decided here.
+ */
+function BonusReview({
   contribution: c,
   busy,
   send,
@@ -465,7 +511,168 @@ function AdminContributionRow({
   busy: boolean;
   send: (url: string, method: string, body?: unknown) => Promise<boolean>;
 }) {
-  const [open, setOpen] = useState(false);
+  const bonus = c.bonus;
+  const sectionRule = ruleForSection(effectiveCategory(c));
+  const fallback =
+    bonus.requirement ?? bonus.suggested?.requirement ?? sectionRule?.requirement ?? null;
+
+  const [requirement, setRequirement] = useState<BonusRequirement | "">(
+    fallback ?? "",
+  );
+  const [value, setValue] = useState(
+    String(
+      bonus.awarded ||
+        bonus.suggested?.value ||
+        (fallback ? valueForRequirement(fallback) : 0),
+    ),
+  );
+  const [note, setNote] = useState(bonus.note);
+
+  const decided = bonus.status === "confirmed" || bonus.status === "rejected";
+
+  return (
+    <div className="mt-4 border-t border-border pt-3">
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <p className="text-xs font-semibold text-foreground">البونص</p>
+        {bonus.status === "pending" && bonus.suggested && (
+          <p className="text-xs" style={{ color: "var(--accent)" }}>
+            بونص مقترح: {REQUIREMENT_LABELS[bonus.suggested.requirement]} +
+            {formatPoints(bonus.suggested.value)}، بانتظار تأكيد الإدارة
+          </p>
+        )}
+        {bonus.status === "confirmed" && (
+          <p className="text-xs" style={{ color: "var(--success)" }}>
+            مؤكَّد: {bonus.requirement ? REQUIREMENT_LABELS[bonus.requirement] : "بونص"}{" "}
+            +{formatPoints(bonus.awarded)}
+          </p>
+        )}
+        {bonus.status === "rejected" && (
+          <p className="text-xs" style={{ color: "var(--destructive)" }}>
+            مرفوض، لا يُحتسب.
+          </p>
+        )}
+        {bonus.status === "none" && (
+          <p className="text-xs text-muted-foreground">
+            {bonus.skipped
+              ? SKIP_REASON_LABELS[bonus.skipped]
+              : "لا بونص مقترح."}
+          </p>
+        )}
+      </div>
+
+      {bonus.suggested?.reason && (
+        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+          {bonus.suggested.reason}
+        </p>
+      )}
+
+      <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div>
+          <Label htmlFor={`breq-${c.id}`}>نوع البونص</Label>
+          <select
+            id={`breq-${c.id}`}
+            className={SELECT_CLASS}
+            value={requirement}
+            onChange={(e) => {
+              const next = e.target.value as BonusRequirement | "";
+              setRequirement(next);
+              if (next) setValue(String(valueForRequirement(next)));
+            }}
+          >
+            <option value="">بلا بونص</option>
+            {BONUS_REQUIREMENTS.map((r) => (
+              <option key={r} value={r}>
+                {REQUIREMENT_LABELS[r]}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <Label htmlFor={`bval-${c.id}`}>
+            القيمة (0–{BONUS.maxManual})
+          </Label>
+          <Input
+            id={`bval-${c.id}`}
+            type="number"
+            min={0}
+            max={BONUS.maxManual}
+            step={0.5}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor={`bnote-${c.id}`}>سبب القرار (اختياري)</Label>
+          <Input
+            id={`bnote-${c.id}`}
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="يظهر مع المساهمة"
+            maxLength={200}
+          />
+        </div>
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button
+          size="sm"
+          disabled={busy || !requirement}
+          onClick={() =>
+            send(`/api/contributions/${c.id}`, "PATCH", {
+              bonus: {
+                decision: "confirm",
+                requirement,
+                value: Number(value),
+                note,
+              },
+            })
+          }
+        >
+          تأكيد البونص
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          disabled={busy}
+          onClick={() =>
+            send(`/api/contributions/${c.id}`, "PATCH", {
+              bonus: { decision: "reject", note },
+            })
+          }
+        >
+          رفض البونص
+        </Button>
+        {decided && (
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled={busy}
+            onClick={() =>
+              send(`/api/contributions/${c.id}`, "PATCH", {
+                bonus: { decision: "reset" },
+              })
+            }
+          >
+            إعادة إلى الاقتراح
+          </Button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AdminContributionRow({
+  contribution: c,
+  busy,
+  send,
+  startOpen = false,
+}: {
+  contribution: Contribution;
+  busy: boolean;
+  send: (url: string, method: string, body?: unknown) => Promise<boolean>;
+  startOpen?: boolean;
+}) {
+  const [open, setOpen] = useState(startOpen);
   // A source the machine could not read has no automatic answer to correct,
   // so the decision starts empty instead of pre-filled with "waiting".
   const awaitingReview = effectiveStatus(c) === "blocked_source";
@@ -495,7 +702,9 @@ function AdminContributionRow({
                 : "var(--muted-foreground)",
           }}
         >
-          {effectivePoints(c) > 0 ? `+${effectivePoints(c)}` : "0"}
+          {effectivePoints(c) + effectiveBonus(c) > 0
+            ? `+${formatPoints(effectivePoints(c) + effectiveBonus(c))}`
+            : "0"}
         </span>
         <div className="min-w-0 flex-1">
           <Link
@@ -520,6 +729,14 @@ function AdminContributionRow({
               </a>
             ) : (
               <span>تحريريًا {editorialScore(c)}</span>
+            )}
+            {c.bonus.status === "pending" && (
+              <span style={{ color: "var(--accent)" }}>بونص بانتظار التأكيد</span>
+            )}
+            {c.bonus.status === "confirmed" && (
+              <span style={{ color: "var(--success)" }}>
+                بونص +{formatPoints(c.bonus.awarded)}
+              </span>
             )}
             {c.removed && <span>مُزالة</span>}
             {overridden && <span>معدّلة</span>}
@@ -571,13 +788,13 @@ function AdminContributionRow({
             </div>
             <div>
               <Label htmlFor={`points-${c.id}`}>
-                النقاط (0–{POINTS.maxPerCycle})
+                نقطة الأساس (0–{POINTS.maxBasePerCycle})
               </Label>
               <Input
                 id={`points-${c.id}`}
                 type="number"
                 min={0}
-                max={POINTS.maxPerCycle}
+                max={POINTS.maxBasePerCycle}
                 value={points}
                 onChange={(e) => setPoints(e.target.value)}
               />
@@ -691,6 +908,8 @@ function AdminContributionRow({
               {c.removed ? "استعادة المساهمة" : "إزالة المساهمة"}
             </Button>
           </div>
+
+          <BonusReview contribution={c} busy={busy} send={send} />
 
           {c.evaluation && (
             <div className="mt-4 space-y-2 border-t border-border pt-3 text-xs text-muted-foreground">

@@ -1,6 +1,7 @@
-import { ACCEPTANCE, EDITORIAL, POINTS } from "@/lib/config/rules";
+import { ACCEPTANCE, BONUS, EDITORIAL, POINTS } from "@/lib/config/rules";
 import {
   AUDIENCES,
+  BONUS_REQUIREMENTS,
   DIFFICULTIES,
   NEWSLETTER_CATEGORIES,
   type NewsletterCategory,
@@ -23,11 +24,13 @@ export interface EvaluationInput {
 
 export const SYSTEM_PROMPT = `You evaluate submissions for "Rased" (رصد), the internal contribution and knowledge system of the Enjaz Club AI Team. Members hunt for useful AI content and submit it; every two weeks the team turns the best of it into a newsletter.
 
-Your job has two halves, and you must keep them apart:
+Your job has three parts, and you must keep them apart:
 
 A) IS THIS A VALID CONTRIBUTION? A yes/no judgement against a fixed floor. Every valid contribution is worth the same to the member, whatever it is about. You never decide how many points someone gets — the server does that, and it is always +1 for a valid contribution.
 
 B) WHAT IS THIS CONTENT WORTH TO THE NEWSLETTER? A separate editorial judgement used only to order the newsletter.
+
+C) DID THE MEMBER WRITE THE EXTRA THING THEIR SECTION ASKS FOR? A bonus proposal, described in its own section below. You propose it; a host grants it.
 
 Never let B leak into A. A beginner-level learning resource from a small company and a frontier model release from a major lab are both valid contributions. Rejecting something because it is "less important", "less interesting", "from a smaller company", "beginner-level" or "in a less prestigious category" is wrong.
 
@@ -50,6 +53,24 @@ VERIFICATION — never fabricate it. Use web_search and web_fetch when you have 
 EXTRACTION — pull out only what the source actually says. Leave anything you could not find as an empty string or empty list. Never invent a date, a company, a capability or an audience.
 
 THE MEMBER'S WORDS — their reason is preserved verbatim elsewhere. Your "aiInterpretation" is your own reading of it, not a rewrite of it.
+
+THE BONUS, what you propose in "bonusRequirement" and "bonusReason":
+
+Each section asks the member for one thing beyond the link itself:
+- أهم الأخبار: "why_it_matters", they say why this matters to the team, in their own judgement.
+- جديد النماذج: "who_is_it_for", they say who on the team this model suits and for what.
+- أدوات جديدة and أدوات أخرى: "how_to_use", they give actual steps or a real workflow for using the tool.
+- تعلّم هذا الأسبوع: "quick_example", they give a concrete example of the idea, not a description of it.
+- رائج على السوشال: "takeaway", they say what to take from the discussion.
+
+Rules, and they are strict:
+1. There is no bonus without a valid contribution under it. If the status is not accepted or accepted_with_new_angle, answer "none".
+2. Propose only the requirement belonging to the primaryCategory you chose. Never propose a different section's requirement.
+3. The member has to have actually written it, in their own words, in the text you were given. Not the source's words: a paragraph lifted from the tool's own landing page is not the member explaining how to use it. If you cannot tell them apart, answer "none" and say why in bonusReason.
+4. A single sentence that only repeats the headline is not the extra thing. Neither is a general recommendation with nothing specific in it.
+5. When in doubt, answer "none". A host reviews every proposal you make, and a missed bonus costs the member far less than a bonus granted for writing they did not do.
+
+"bonusReason" is one line of Arabic either way: what in their text earned it, or what was missing.
 
 Write every Arabic-facing field (summaryForMember, rejectionReason, classificationReason, audienceReason, duplicateReason, aiInterpretation, aiSummary, keyPoints, capabilities, practicalValue, evidence) in clear Modern Standard Arabic. Keep product, company and model names in their original Latin spelling. Dates stay ISO (YYYY-MM-DD) and URLs stay as they are.
 
@@ -168,7 +189,7 @@ export function buildUserPrompt(
       '  "rejected"                — it fails the acceptance floor. Give a specific, factual rejectionReason.',
       `A member's contribution reason counts as given when it says something specific — roughly ${ACCEPTANCE.minReasonWords} meaningful words or more. Do not demand an essay.`,
       "",
-      `For context only: a valid contribution is worth ${POINTS.perValidContribution} point, and a member can earn at most ${POINTS.maxPerCycle} points per two-week cycle. You do not compute this.`,
+      `For context only: a valid contribution is worth ${POINTS.perValidContribution} point, and a member can earn at most ${POINTS.maxBasePerCycle} points per two-week cycle. You do not compute this.`,
       "",
       "Now research the submission and call submit_evaluation.",
     ].join("\n"),
@@ -333,6 +354,18 @@ export const EVALUATION_TOOL = {
           "One or two sentences in Arabic telling the member what happened and why. Concise — not your whole reasoning.",
       },
 
+      bonusRequirement: {
+        type: "string",
+        enum: [...BONUS_REQUIREMENTS, "none"],
+        description:
+          "The section requirement the member's own text satisfies, or 'none'. Must belong to primaryCategory.",
+      },
+      bonusReason: {
+        type: "string",
+        description:
+          "One line in Arabic: what in the member's text earned the bonus, or what was missing.",
+      },
+
       editorial: {
         type: "object",
         properties: dimensionProps,
@@ -368,6 +401,8 @@ export const EVALUATION_TOOL = {
       "aiInterpretation",
       "aiSummary",
       "summaryForMember",
+      "bonusRequirement",
+      "bonusReason",
       "editorial",
     ],
     additionalProperties: false,
@@ -412,5 +447,7 @@ export interface EvaluationToolInput {
   aiInterpretation: string;
   aiSummary: string;
   summaryForMember: string;
+  bonusRequirement: string;
+  bonusReason: string;
   editorial: Record<string, number>;
 }

@@ -89,12 +89,12 @@ export function decidePoints(
     };
   }
 
-  if (cycleTotalBefore >= POINTS.maxPerCycle) {
+  if (cycleTotalBefore >= POINTS.maxBasePerCycle) {
     return {
       ...base,
       awarded: 0,
       reason: "cycle_cap_reached",
-      explanation: `مساهمة صحيحة، لكنك بلغت الحد الأقصى ${POINTS.maxPerCycle} نقاط في هذه الدورة. تبقى المساهمة محفوظة وقد تدخل النشرة.`,
+      explanation: `مساهمة صحيحة، لكنك بلغت الحد الأقصى ${POINTS.maxBasePerCycle} نقاط في هذه الدورة. تبقى المساهمة محفوظة وقد تدخل النشرة.`,
     };
   }
 

@@ -14,14 +14,9 @@ import { Card } from "@/components/ui/card";
 import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  NEWSLETTER_CATEGORIES,
-  type Contribution,
-  type NewsletterCategory,
-} from "@/lib/db/schema";
+import type { Contribution } from "@/lib/db/schema";
 import type { AutoLabel } from "@/lib/services/title";
 import { cn } from "@/lib/utils";
-import { CATEGORY_LABELS } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
 
 const STEPS = [
@@ -49,7 +44,7 @@ function looksLikeUrl(value: string): boolean {
 
 export default function Composer() {
   const router = useRouter();
-  const { member, members, setMemberId, ready, refresh } = useCurrentUser();
+  const { member, members, setMemberId, ready } = useCurrentUser();
 
   const [url, setUrl] = useState("");
   const [reason, setReason] = useState("");
@@ -123,16 +118,6 @@ export default function Composer() {
     reasonRef.current?.focus();
   }
 
-  async function setFocus(next: NewsletterCategory | null) {
-    if (!member) return;
-    await fetch(`/api/members/${member.id}`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ focusArea: next }),
-    });
-    await refresh();
-  }
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     if (busy) return;
@@ -169,7 +154,6 @@ export default function Composer() {
           url: link,
           title: title.trim(),
           memberReason: reason.trim(),
-          focusArea: member.focusArea ?? undefined,
         }),
       });
       const data = (await res.json()) as {
@@ -430,32 +414,12 @@ export default function Composer() {
         )}
       </div>
 
-      {/* Research direction: a hint to the member, never a filter on the result. */}
-      {member && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
-          <label htmlFor="focus-area" className="text-xs">
-            مجال بحثك
-          </label>
-          <select
-            id="focus-area"
-            value={member.focusArea ?? ""}
-            onChange={(e) =>
-              void setFocus((e.target.value || null) as NewsletterCategory | null)
-            }
-            className="h-10 cursor-pointer rounded-full border border-border bg-card px-4 text-sm text-foreground transition-colors duration-200 hover:border-border-strong hover:bg-muted focus-visible:border-ring focus-visible:outline-none"
-          >
-            <option value="">بلا مجال محدد</option>
-            {NEWSLETTER_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_LABELS[c]}
-              </option>
-            ))}
-          </select>
-          <span className="w-full text-center opacity-70">
-            اتجاه بحث فقط، أرسل أي شيء مفيد تجده خارجه.
-          </span>
-        </div>
-      )}
+      {/* The section is not the member's to choose: rased reads the link and
+          the text and decides, and a host confirms it. Picking your own
+          section was the one way to aim at the bonus you wanted. */}
+      <p className="mt-4 text-center text-xs text-muted-foreground">
+        القسم يحدده رصد من محتوى الرابط ونصّك، ويؤكده المضيف.
+      </p>
     </Card>
   );
 }
