@@ -24,6 +24,11 @@ interface CountUpProps extends ComponentProps<"span"> {
   value: number;
   /** How long the whole count takes, in milliseconds. */
   duration?: number;
+  /**
+   * Decimal places to climb through. Defaults to one for a value that has a
+   * fraction, since points come in halves, and none for a whole number.
+   */
+  decimals?: number;
 }
 
 /**
@@ -36,11 +41,13 @@ interface CountUpProps extends ComponentProps<"span"> {
 export function CountUp({
   value,
   duration = 900,
+  decimals = Number.isInteger(value) ? 0 : 1,
   className,
   ...props
 }: CountUpProps) {
   const ref = useRef<HTMLSpanElement>(null);
   const [shown, setShown] = useState(value);
+  const round = (n: number) => Number(n.toFixed(decimals));
 
   useIsoLayoutEffect(() => {
     if (prefersReducedMotion() || typeof IntersectionObserver === "undefined") {
@@ -65,7 +72,7 @@ export function CountUp({
         const t = Math.min(1, (now - start) / duration);
         // Ease-out: fast at first, then settling, the way a tally lands.
         const eased = 1 - (1 - t) ** 3;
-        setShown(Math.round(value * eased));
+        setShown(round(value * eased));
         if (t < 1) frame = requestAnimationFrame(tick);
       };
       frame = requestAnimationFrame(tick);
@@ -94,11 +101,13 @@ export function CountUp({
       cancelAnimationFrame(frame);
       clearTimeout(backstop);
     };
-  }, [value, duration]);
+    // `round` closes over `decimals` alone, which cannot change mid-climb.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, duration, decimals]);
 
   return (
     <span ref={ref} className={cn("tabular-nums", className)} {...props}>
-      {shown}
+      {decimals > 0 ? shown.toFixed(decimals) : shown}
     </span>
   );
 }

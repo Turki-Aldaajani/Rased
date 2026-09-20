@@ -97,6 +97,86 @@ export const VERIFICATION_STATUSES = [
 
 export type VerificationStatus = (typeof VERIFICATION_STATUSES)[number];
 
+/**
+ * What a section asks a member to write, on top of the link itself. Each one
+ * belongs to a section (see BONUS.bySection) and is worth what that section
+ * says it is worth.
+ */
+export const BONUS_REQUIREMENTS = [
+  "why_it_matters",
+  "who_is_it_for",
+  "how_to_use",
+  "quick_example",
+  "takeaway",
+] as const;
+
+export type BonusRequirement = (typeof BONUS_REQUIREMENTS)[number];
+
+/**
+ * Where a bonus stands. "none" covers both "nothing was proposed" and "the
+ * contribution cannot carry one"; everything else is a decision waiting for,
+ * or already taken by, a host.
+ */
+export const BONUS_STATUSES = [
+  "none",
+  "pending",
+  "confirmed",
+  "rejected",
+] as const;
+
+export type BonusStatus = (typeof BONUS_STATUSES)[number];
+
+/** Why the evaluator did not put a bonus forward. */
+export const BONUS_SKIP_REASONS = [
+  "no_valid_news",
+  "text_does_not_qualify",
+  "already_earned_this_cycle",
+  "no_category",
+] as const;
+
+export type BonusSkipReason = (typeof BONUS_SKIP_REASONS)[number];
+
+/**
+ * The bonus record on a contribution.
+ *
+ * The evaluator only ever fills `suggested`. Nothing reaches the board until a
+ * host sets `status` to "confirmed", which is the whole point: the machine
+ * cannot tell real usage steps from a paragraph copied off the tool's own
+ * page, so it proposes and a person decides.
+ */
+export interface BonusAward {
+  /** What the evaluator put forward, or null when it put nothing forward. */
+  suggested: {
+    requirement: BonusRequirement;
+    value: number;
+    /** One line in Arabic on what in the member's text earned it. */
+    reason: string;
+  } | null;
+  /** Why there is no suggestion. Null when there is one. */
+  skipped: BonusSkipReason | null;
+  status: BonusStatus;
+  /** What the host granted. Zero until they say otherwise. */
+  awarded: number;
+  /** The requirement the host settled on, which can differ from the proposal. */
+  requirement: BonusRequirement | null;
+  /** The host's word on the decision, shown wherever the bonus is. */
+  note: string;
+  decidedAt: string | null;
+}
+
+/** A contribution that has never been near the bonus engine. */
+export function emptyBonus(): BonusAward {
+  return {
+    suggested: null,
+    skipped: null,
+    status: "none",
+    awarded: 0,
+    requirement: null,
+    note: "",
+    decidedAt: null,
+  };
+}
+
 /** Why a submission did or did not move the member's score. */
 export const POINT_REASONS = [
   "valid_contribution",
@@ -269,6 +349,12 @@ export interface Contribution {
   evaluationError: string | null;
   evaluationAttempts: number;
 
+  /**
+   * The bonus the member's own writing earned, if any. Separate from `points`
+   * because it is decided by a person, on its own timetable.
+   */
+  bonus: BonusAward;
+
   /** Set when an admin corrects the automatic result. AI is never final. */
   adminOverride: {
     status: ContributionStatus | null;
@@ -322,6 +408,23 @@ export function effectiveDuplicate(c: Contribution): DuplicateOutcome {
 /** Editorial value, for the newsletter engine. Deliberately not "points". */
 export function editorialScore(c: Contribution): number {
   return c.evaluation?.editorial.score ?? 0;
+}
+
+/**
+ * The bonus this contribution actually carries. A proposal is worth nothing
+ * until a host confirms it, and a removed contribution carries nothing at all.
+ *
+ * This is per contribution. The once-per-cycle rule and the diversity bonus
+ * are cycle-wide, so they live in services/bonus.ts, not here.
+ */
+export function effectiveBonus(c: Contribution): number {
+  if (c.removed) return 0;
+  return c.bonus?.status === "confirmed" ? c.bonus.awarded : 0;
+}
+
+/** Waiting on a host. This is what the admin queue is built from. */
+export function bonusPending(c: Contribution): boolean {
+  return !c.removed && c.bonus?.status === "pending";
 }
 
 export function isCounted(c: Contribution): boolean {

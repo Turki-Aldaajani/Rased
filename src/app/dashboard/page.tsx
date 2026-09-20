@@ -6,10 +6,13 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { CountUp } from "@/components/ui/count-up";
 import { Reveal } from "@/components/ui/reveal";
-import { POINTS } from "@/lib/config/rules";
 import { editorialScore, type Contribution } from "@/lib/db/schema";
 import { listContributions, listMembers } from "@/lib/db/store";
-import { teamSummary, type LeaderboardRow } from "@/lib/services/leaderboard";
+import {
+  allTimePoints,
+  teamSummary,
+  type LeaderboardRow,
+} from "@/lib/services/leaderboard";
 import { contributionsCount, daysCount, pointsCount } from "@/lib/util/ar";
 import { cycleLabel, daysLeftInCycle } from "@/lib/util/date";
 
@@ -46,9 +49,6 @@ function BoardList({ rows }: { rows: LeaderboardRow[] }) {
             </span>
             <span className="text-sm font-semibold tabular-nums text-foreground">
               <CountUp value={row.points} />
-              <span className="text-xs text-muted-foreground">
-                /{POINTS.maxPerCycle}
-              </span>
             </span>
           </Link>
         </li>
@@ -70,10 +70,7 @@ export default async function DashboardPage() {
   for (const m of members) {
     const mine = contributions.filter((c) => c.memberId === m.id);
     totals[m.id] = {
-      points: mine.reduce(
-        (s, c) => s + (c.adminOverride?.points ?? c.points.awarded),
-        0,
-      ),
+      points: allTimePoints(m.id, contributions),
       count: mine.length,
     };
     latest[m.id] = mine.slice(0, 3);
@@ -127,6 +124,8 @@ export default async function DashboardPage() {
             {summary.totals.duplicates} مكررة · {summary.totals.rejected} مرفوضة
             {summary.totals.pending > 0 &&
               ` · ${summary.totals.pending} بانتظار التقييم`}
+            {summary.totals.pendingBonuses > 0 &&
+              ` · ${summary.totals.pendingBonuses} بونص بانتظار المضيف`}
           </p>
         </Card>
       </div>
@@ -188,7 +187,7 @@ export default async function DashboardPage() {
                   ترتيب الدورة
                 </h2>
                 <p className="text-xs text-muted-foreground">
-                  نقطة لكل مساهمة صحيحة
+                  أساس وبونص مؤكَّد
                 </p>
               </div>
               <Button asChild variant="ghost" size="sm">

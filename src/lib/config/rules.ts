@@ -2,10 +2,15 @@
  * Every tunable rule of the contribution engine lives here.
  *
  * The one thing this file encodes above all: a MEMBER POINT and an EDITORIAL
- * SCORE are different currencies. A valid contribution is worth exactly one
- * point whatever it is about; the editorial score only ever tells the
- * newsletter engine what to lead with. Nothing in `points` may depend on
+ * SCORE are different currencies. Finding something worth reading is worth one
+ * base point whatever it is about; the editorial score only ever tells the
+ * newsletter engine what to lead with. Nothing a member earns may depend on
  * anything in `editorial`.
+ *
+ * On top of the base point sits the bonus, and it is earned by writing, not by
+ * finding: a member who explains what their link is for, for whom, or how to
+ * use it, is doing the newsletter's work in advance. Every bonus is proposed by
+ * the evaluator and granted by a host, never by the model alone.
  */
 
 // ---------------------------------------------------------------------------
@@ -16,14 +21,55 @@ export const POINTS = {
   /** What a valid, non-duplicate contribution is worth. Always flat. */
   perValidContribution: 1,
 
-  /** Maximum points one member can earn inside a single newsletter cycle. */
-  maxPerCycle: 3,
+  /**
+   * Base points one member can earn inside a single newsletter cycle. The cap
+   * is on the base only: bonuses sit above it, or the writing a bonus rewards
+   * would stop paying the moment someone found enough links.
+   *
+   * A cycle is two weeks, so this is twice the old weekly figure of three.
+   */
+  maxBasePerCycle: 6,
 
   /**
    * Submissions past the cap are still stored, still classified and still
    * available to the newsletter engine, they just stop moving the board.
    */
   keepEvaluatingAfterCap: true,
+} as const;
+
+// ---------------------------------------------------------------------------
+// The bonus, earned by what the member writes, granted by a host
+// ---------------------------------------------------------------------------
+
+/**
+ * What each section asks for beyond the news itself, and what that is worth.
+ *
+ * The requirement is per section because the sections want different things: a
+ * news item needs to say why it matters, a tool needs to say how to use it.
+ * The tool bonus is the largest because writing real steps is the most work.
+ */
+export const BONUS = {
+  bySection: {
+    important_news: { requirement: "why_it_matters", value: 0.5 },
+    new_models: { requirement: "who_is_it_for", value: 0.5 },
+    new_tools: { requirement: "how_to_use", value: 1 },
+    other_tools: { requirement: "how_to_use", value: 1 },
+    learn_this_week: { requirement: "quick_example", value: 0.5 },
+    social_trends: { requirement: "takeaway", value: 0.5 },
+  },
+
+  /**
+   * Requirements a member can only be paid for once per cycle. Writing usable
+   * steps for one tool is the point; writing them for six is a grind that
+   * would outweigh everything else on the board.
+   */
+  oncePerCycle: ["how_to_use"],
+
+  /** Covering this many different sections in one cycle is worth this much. */
+  diversity: { sections: 3, value: 2 },
+
+  /** Ceiling on a bonus a host sets by hand, so a slip cannot hand out ten. */
+  maxManual: 3,
 } as const;
 
 /** One newsletter cycle ≈ two weeks, anchored to a Monday. */

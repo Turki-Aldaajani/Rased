@@ -20,11 +20,14 @@ import { EDITORIAL_LABELS, EDITORIAL, POINTS } from "@/lib/config/rules";
 import {
   effectiveCategory,
   effectiveDuplicate,
+  effectiveBonus,
   effectivePoints,
   effectiveStatus,
   type EditorialDimension,
 } from "@/lib/db/schema";
 import { getContribution } from "@/lib/db/store";
+import { REQUIREMENT_LABELS, SKIP_REASON_LABELS } from "@/lib/services/bonus";
+import { formatPoints } from "@/lib/util/ar";
 import { cycleLabel, formatDate } from "@/lib/util/date";
 import { hostname } from "@/lib/util/text";
 
@@ -35,7 +38,7 @@ type Props = { params: Promise<{ id: string }> };
 const POINT_REASON_TEXT: Record<string, string> = {
   valid_contribution: "مساهمة صحيحة وجديدة.",
   new_angle_on_known_topic: "موضوع معروف، لكن مساهمتك تضيف قيمة جديدة.",
-  cycle_cap_reached: `بلغت الحد الأقصى ${POINTS.maxPerCycle} نقاط في هذه الدورة، المساهمة محفوظة وقد تدخل النشرة.`,
+  cycle_cap_reached: `بلغت حد الأساس ${POINTS.maxBasePerCycle} نقاط في هذه الدورة، المساهمة محفوظة وقد تدخل النشرة. البونص لا يدخل هذا الحد.`,
   duplicate: "سبق إرسال المحتوى نفسه، لذا لا تُحتسب نقطة جديدة.",
   rejected: "لم تستوفِ المساهمة الحد الأدنى للقبول.",
   pending_evaluation: "لم يكتمل التقييم بعد.",
@@ -64,6 +67,7 @@ export default async function ResultPage({ params }: Props) {
       ? "راجعها المضيف يدويًا."
       : POINT_REASON_TEXT[c.points.reason];
   const summaryLine = e?.summaryForMember || reasonText || "لا يوجد ملخّص.";
+  const bonus = effectiveBonus(c);
 
   const dimensions = e
     ? (Object.keys(EDITORIAL.weights) as EditorialDimension[]).map((key) => ({
@@ -131,7 +135,8 @@ export default async function ResultPage({ params }: Props) {
             <div>
               <dt className="text-xs text-muted-foreground">النقاط</dt>
               <dd className="mt-1 text-sm text-foreground">
-                {points > 0 ? `+${points}` : "بلا نقاط"}
+                {points > 0 ? `أساس +${points}` : "بلا نقطة أساس"}
+                {bonus > 0 && ` · بونص +${formatPoints(bonus)}`}
               </dd>
             </div>
           </dl>
@@ -147,6 +152,57 @@ export default async function ResultPage({ params }: Props) {
             )}
         </div>
       </Card>
+
+      {/* The bonus is the half of the score the member controls, so it is
+          told plainly: what was asked for, what was proposed, and who has it
+          now. Nothing here is on the board until a host says so. */}
+      {(c.bonus.suggested || c.bonus.skipped) && (
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold text-foreground">
+            بونص ما كتبته
+          </h2>
+          {c.bonus.status === "pending" && c.bonus.suggested && (
+            <>
+              <p className="mt-2 text-sm text-foreground">
+                بونص مقترح: {REQUIREMENT_LABELS[c.bonus.suggested.requirement]}{" "}
+                +{formatPoints(c.bonus.suggested.value)}، بانتظار تأكيد المضيف.
+              </p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                لا يدخل اللوحة قبل أن يؤكده.
+              </p>
+            </>
+          )}
+          {c.bonus.status === "confirmed" && (
+            <p className="mt-2 text-sm text-foreground">
+              مؤكَّد:{" "}
+              {c.bonus.requirement
+                ? REQUIREMENT_LABELS[c.bonus.requirement]
+                : "بونص"}{" "}
+              +{formatPoints(c.bonus.awarded)}.
+            </p>
+          )}
+          {c.bonus.status === "rejected" && (
+            <p className="mt-2 text-sm text-foreground">
+              راجعه المضيف ولم يحتسبه.
+            </p>
+          )}
+          {c.bonus.status === "none" && c.bonus.skipped && (
+            <p className="mt-2 text-sm text-foreground">
+              {SKIP_REASON_LABELS[c.bonus.skipped]}
+            </p>
+          )}
+          {c.bonus.suggested?.reason && (
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+              {c.bonus.suggested.reason}
+            </p>
+          )}
+          {c.bonus.note && (
+            <p className="mt-2 border-t border-border pt-3 text-sm text-muted-foreground">
+              المضيف: {c.bonus.note}
+            </p>
+          )}
+        </Card>
+      )}
 
       {status === "pending" && (
         <Card className="p-5">

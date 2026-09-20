@@ -11,10 +11,12 @@ import type {
 } from "@/lib/db/schema";
 import {
   editorialScore,
+  effectiveBonus,
   effectiveCategory,
   effectivePoints,
   effectiveStatus,
 } from "@/lib/db/schema";
+import { formatPoints } from "@/lib/util/ar";
 import { SECTION_TITLE_BY_CATEGORY } from "@/lib/newsletter/sections";
 import { relativeTime } from "@/lib/util/date";
 import { cn } from "@/lib/utils";
@@ -283,8 +285,10 @@ export function ContributionRow({
   className?: string;
 }) {
   const points = effectivePoints(contribution);
+  const bonus = effectiveBonus(contribution);
   const status = effectiveStatus(contribution);
   const category = effectiveCategory(contribution);
+  const total = points + bonus;
 
   return (
     <Link
@@ -295,10 +299,10 @@ export function ContributionRow({
       )}
     >
       <span
-        className="w-8 shrink-0 pt-0.5 text-end text-sm font-semibold tabular-nums"
-        style={{ color: points > 0 ? "var(--primary)" : "var(--muted-foreground)" }}
+        className="w-10 shrink-0 pt-0.5 text-end text-sm font-semibold tabular-nums"
+        style={{ color: total > 0 ? "var(--primary)" : "var(--muted-foreground)" }}
       >
-        {points > 0 ? `+${points}` : "0"}
+        {total > 0 ? `+${formatPoints(total)}` : "0"}
       </span>
       <span className="min-w-0 flex-1">
         <span className="block truncate text-sm text-foreground">
@@ -315,6 +319,16 @@ export function ContributionRow({
           {contribution.evaluation && (
             <span title="القيمة التحريرية للنشرة، ليست نقاط العضو">
               تحريريًا {editorialScore(contribution)}
+            </span>
+          )}
+          {bonus > 0 && (
+            <span title="بونص مؤكَّد على نص العضو">
+              بونص +{formatPoints(bonus)}
+            </span>
+          )}
+          {contribution.bonus?.status === "pending" && (
+            <span title="اقترحه رصد وينتظر تأكيد المضيف">
+              بونص بانتظار التأكيد
             </span>
           )}
           {contribution.adminOverride && <span>بتعديل من المضيف</span>}

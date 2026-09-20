@@ -3,14 +3,22 @@ import { DiamondRule } from "@/components/brand/DiamondRule";
 import { Card } from "@/components/ui/card";
 import { CountUp } from "@/components/ui/count-up";
 import { Reveal } from "@/components/ui/reveal";
-import { POINTS } from "@/lib/config/rules";
+import { BONUS, POINTS } from "@/lib/config/rules";
+import { NEWSLETTER_CATEGORIES } from "@/lib/db/schema";
+import { CATEGORY_LABELS } from "@/components/contribution";
 import { listContributions, listMembers } from "@/lib/db/store";
 import {
   cycleLeaderboard,
   knownCycles,
   type LeaderboardRow,
 } from "@/lib/services/leaderboard";
-import { contributionsCount, daysCount, pointsCount } from "@/lib/util/ar";
+import {
+  contributionsCount,
+  daysCount,
+  formatPoints,
+  sectionsCount,
+} from "@/lib/util/ar";
+import { REQUIREMENT_LABELS } from "@/lib/services/bonus";
 import { cycleKey, cycleLabel, daysLeftInCycle } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
@@ -50,15 +58,24 @@ function Board({
                 <span className="mt-0.5 block text-xs text-muted-foreground">
                   {contributionsCount(row.submissions)} في الدورة
                   {row.overCap > 0 && ` · ${row.overCap} بعد بلوغ الحد`}
-                  {row.atCap && " · بلغ الحد الأقصى"}
+                  {row.atCap && " · بلغ حد الأساس"}
+                </span>
+                {/* Where the number came from, so nobody has to ask. */}
+                <span className="mt-0.5 block text-xs text-muted-foreground">
+                  أساس {formatPoints(row.basePoints)}
+                  {row.bonusPoints > 0 &&
+                    ` · بونص ${formatPoints(row.bonusPoints)}`}
+                  {row.diversityPoints > 0 &&
+                    ` · تنوّع ${formatPoints(row.diversityPoints)}`}
+                  {/* Parenthesised, not "· 1 بونص": a digit either side of a
+                      separator reads as one number in RTL. */}
+                  {row.pendingBonuses > 0 &&
+                    ` · بونص بانتظار المضيف (${row.pendingBonuses})`}
                 </span>
               </span>
               <span className="shrink-0 text-end">
                 <span className="block text-base font-semibold tabular-nums text-foreground">
                   <CountUp value={row.points} />
-                  <span className="text-xs text-muted-foreground">
-                    /{POINTS.maxPerCycle}
-                  </span>
                 </span>
                 <span className="block text-xs text-muted-foreground">نقاط</span>
               </span>
@@ -94,10 +111,9 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         <h1 className="font-serif-display text-xl font-semibold tracking-tight text-foreground">
           المتصدرون
         </h1>
-        <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-          كل مساهمة صحيحة تساوي نقطة واحدة، مهما كان موضوعها، وبحد أقصى{" "}
-          {pointsCount(POINTS.maxPerCycle)} لكل عضو في الدورة. الترتيب بالنقاط
-          وحدها، لا بالقيمة التحريرية ولا بعدد الروابط.
+        <p className="mt-1 max-w-2xl text-sm text-muted-foreground">
+          نقطة أساس لكل مساهمة صحيحة مهما كان موضوعها، وبونص على ما تكتبه أنت
+          فوقها. الترتيب بمجموع الاثنين، لا بالقيمة التحريرية ولا بعدد الروابط.
         </p>
         <DiamondRule className="mt-5" />
       </div>
@@ -148,35 +164,87 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           <h2 className="text-sm font-semibold text-foreground">
             كيف تُحتسب النقاط
           </h2>
-          <ul className="mt-4 grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
+          <p className="mt-1 text-xs text-muted-foreground">
+            نقاطك مبنية على شيئين: أن تجد، وأن تكتب.
+          </p>
+
+          <h3 className="mt-5 text-sm font-medium text-foreground">
+            أولًا: نقطة الأساس
+          </h3>
+          <ul className="mt-2 grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
             <li>
-              <span className="text-foreground">نقطة واحدة</span>، لكل مساهمة
+              <span className="text-foreground">نقطة واحدة</span> لكل مساهمة
               صحيحة وغير مكررة، أيًّا كان تصنيفها.
             </li>
             <li>
-              <span className="text-foreground">{POINTS.maxPerCycle} نقاط</span>،
-              الحد الأقصى لكل عضو في الدورة الواحدة (أسبوعان).
+              <span className="text-foreground">
+                {formatPoints(POINTS.maxBasePerCycle)} نقاط
+              </span>{" "}
+              حد الأساس لكل عضو في الدورة (أسبوعان). البونص لا يدخل هذا الحد.
             </li>
             <li>
-              <span className="text-foreground">الأهمية لا تزيد النقاط</span>،
-              خبر كبير ومصدر تعليمي بسيط كلاهما نقطة واحدة.
-            </li>
-            <li>
-              <span className="text-foreground">بعد بلوغ الحد</span>، أرسل ما
-              تشاء؛ المساهمات تُحفظ وقد تدخل النشرة لكنها لا تزيد ترتيبك.
-            </li>
-            <li>
-              <span className="text-foreground">المكرر</span>، لا نقطة، لكن
+              <span className="text-foreground">المكرر</span> لا نقطة له، لكن
               المساهمة تبقى محفوظة.
             </li>
             <li>
-              <span className="text-foreground">زاوية جديدة</span>، موضوع مطروق
-              بتجربة أو مقارنة جديدة يُحتسب مساهمة كاملة.
+              <span className="text-foreground">زاوية جديدة</span> على موضوع
+              مطروق تُحتسب مساهمة كاملة.
             </li>
           </ul>
+
+          <h3 className="mt-6 text-sm font-medium text-foreground">
+            ثانيًا: البونص، على ما تكتبه
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            كل قسم يطلب شيئًا واحدًا فوق الرابط نفسه. اكتبه بكلماتك مع الخبر،
+            ويقترحه رصد، ثم يؤكده المضيف قبل أن يدخل اللوحة.
+          </p>
+          <ul className="mt-3 divide-y divide-border rounded-md border border-border">
+            {NEWSLETTER_CATEGORIES.map((category) => {
+              const rule = BONUS.bySection[category];
+              return (
+                <li
+                  key={category}
+                  className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2.5 text-sm"
+                >
+                  <span className="w-36 shrink-0 text-foreground">
+                    {CATEGORY_LABELS[category]}
+                  </span>
+                  <span className="min-w-0 flex-1 text-muted-foreground">
+                    {REQUIREMENT_LABELS[rule.requirement]}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-foreground">
+                    +{formatPoints(rule.value)}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          <ul className="mt-3 grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
+            <li>
+              <span className="text-foreground">لا بونص بلا خبر.</span> نص وحده،
+              مهما كان جيدًا، لا يساوي شيئًا بلا مساهمة صحيحة تحته.
+            </li>
+            <li>
+              <span className="text-foreground">كيفية الاستخدام مرة واحدة</span>{" "}
+              في الدورة. أدوات أخرى ترسلها بعدها تأخذ نقطة الأساس وحدها.
+            </li>
+            <li>
+              <span className="text-foreground">
+                تنوّع +{formatPoints(BONUS.diversity.value)}
+              </span>{" "}
+              لمن غطّى {sectionsCount(BONUS.diversity.sections)} مختلفة أو أكثر
+              في الدورة، مرة واحدة.
+            </li>
+            <li>
+              <span className="text-foreground">القسم يحدده رصد</span> من محتوى
+              الرابط ونصّك، ويؤكده المضيف. لم يعد اختيارًا لك.
+            </li>
+          </ul>
+
           <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
             القيمة التحريرية (0-100) تُحسب لكل مساهمة لترتيب محتوى النشرة، ولا
-            تدخل في هذا الترتيب إطلاقًا.
+            تدخل في هذا الترتيب إطلاقًا، لا في الأساس ولا في البونص.
           </p>
         </Card>
       </Reveal>

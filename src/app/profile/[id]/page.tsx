@@ -10,7 +10,7 @@ import { Card } from "@/components/ui/card";
 import { POINTS } from "@/lib/config/rules";
 import { getMember, listContributions, listMembers } from "@/lib/db/store";
 import { memberStats } from "@/lib/services/leaderboard";
-import { contributionsCount, membersCount, pointsCount } from "@/lib/util/ar";
+import { formatPoints, contributionsCount, membersCount, pointsCount } from "@/lib/util/ar";
 import { cycleKey, cycleLabel } from "@/lib/util/date";
 
 export const dynamic = "force-dynamic";
@@ -35,7 +35,7 @@ export default async function ProfilePage({ params }: Props) {
   const tiles = [
     {
       label: "نقاط الدورة",
-      value: `${stats.cyclePoints}/${POINTS.maxPerCycle}`,
+      value: formatPoints(stats.cyclePoints),
       sub:
         stats.pointsLeft > 0
           ? `بقيت ${pointsCount(stats.pointsLeft)}`
@@ -126,7 +126,7 @@ export default async function ProfilePage({ params }: Props) {
                 <span className="w-12 text-end font-semibold tabular-nums text-foreground">
                   {h.points}
                   <span className="text-xs text-muted-foreground">
-                    /{POINTS.maxPerCycle}
+                    /{POINTS.maxBasePerCycle}
                   </span>
                 </span>
               </li>

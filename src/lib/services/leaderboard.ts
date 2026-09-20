@@ -1,5 +1,6 @@
-import { POINTS } from "@/lib/config/rules";
+import { BONUS, POINTS } from "@/lib/config/rules";
 import {
+  bonusPending,
   editorialScore,
   effectiveCategory,
   effectiveDuplicate,
@@ -10,19 +11,36 @@ import {
   type NewsletterCategory,
 } from "@/lib/db/schema";
 import { cycleKey, cycleKeysSince } from "@/lib/util/date";
+import { cycleBonusFor } from "./bonus";
 
 /**
- * Standings are built from member points only.
+ * Standings are built from what a member earned, and nothing else.
  *
  * Not from the editorial score, not from how many links someone pasted, and
  * not from which newsletter category they landed in. Rasad is not here to
  * decide who is the better team member.
+ *
+ * Two currencies add up here and they are kept apart all the way down: the
+ * base point for finding something worth reading, capped per cycle, and the
+ * bonus for writing what the section asked for, which a host has confirmed by
+ * hand. Neither ever reads the other.
  */
 
 export interface LeaderboardRow {
   memberId: string;
   memberName: string;
+  /** One per valid contribution, up to the cycle cap. */
+  basePoints: number;
+  /** Confirmed section bonuses, after the once-per-cycle rule. */
+  bonusPoints: number;
+  /** The whole-cycle bonus for covering enough different sections. */
+  diversityPoints: number;
+  /** What the board ranks on: base + bonus + diversity. */
   points: number;
+  /** Distinct sections among their confirmed bonuses this cycle. */
+  sections: number;
+  /** Bonuses proposed but not yet decided by a host. Never in `points`. */
+  pendingBonuses: number;
   /** Everything they sent this cycle, counted or not. */
   submissions: number;
   /** Submissions that earned a point. */
@@ -58,23 +76,52 @@ export function cycleLeaderboard(
   const live = contributions.filter((c) => !c.removed && c.cycleKey === cycle);
   const rows = members.map((m) => {
     const mine = live.filter((c) => c.memberId === m.id);
-    const points = mine.reduce((sum, c) => sum + effectivePoints(c), 0);
+    const basePoints = mine.reduce((sum, c) => sum + effectivePoints(c), 0);
     const counted = mine.filter((c) => effectivePoints(c) > 0).length;
     const overCap = mine.filter(
       (c) => c.points.reason === "cycle_cap_reached",
     ).length;
+    const bonus = cycleBonusFor(m.id, live, cycle);
     return {
       memberId: m.id,
       memberName: m.name,
-      points,
+      basePoints,
+      bonusPoints: bonus.sectionPoints,
+      diversityPoints: bonus.diversityPoints,
+      points: basePoints + bonus.total,
+      sections: bonus.sections.length,
+      pendingBonuses: mine.filter(bonusPending).length,
       submissions: mine.length,
       counted,
       overCap,
-      atCap: points >= POINTS.maxPerCycle,
+      atCap: basePoints >= POINTS.maxBasePerCycle,
     };
   });
   return rank(rows);
 }
+
+/**
+ * Everything one member has earned, ever: base points plus the bonuses each
+ * cycle actually paid. Bonuses are cycle-scoped, so they have to be added a
+ * cycle at a time rather than summed off the rows.
+ */
+export function allTimePoints(
+  memberId: string,
+  contributions: Contribution[],
+): number {
+  const mine = contributions.filter(
+    (c) => !c.removed && c.memberId === memberId,
+  );
+  const base = mine.reduce((sum, c) => sum + effectivePoints(c), 0);
+  const cycles = [...new Set(mine.map((c) => c.cycleKey))];
+  return cycles.reduce(
+    (sum, key) => sum + cycleBonusFor(memberId, mine, key).total,
+    base,
+  );
+}
+
+/** How many different sections a cycle has to cover to earn the diversity bonus. */
+export const DIVERSITY_SECTIONS = BONUS.diversity.sections;
 
 /** All cycles that have data, newest first, the historical record. */
 export function knownCycles(contributions: Contribution[]): string[] {
@@ -90,7 +137,15 @@ export function knownCycles(contributions: Contribution[]): string[] {
 export interface MemberStats {
   member: Member;
   cycle: string;
+  /** Base + bonus + diversity, the number the board ranks on. */
   cyclePoints: number;
+  cycleBasePoints: number;
+  cycleBonusPoints: number;
+  cycleDiversityPoints: number;
+  /** Bonuses still waiting on a host. Not in cyclePoints. */
+  cyclePendingBonuses: number;
+  /** Distinct sections among this cycle's confirmed bonuses. */
+  cycleSections: number;
   cycleRank: number | null;
   cycleSubmissions: number;
   atCap: boolean;
@@ -119,23 +174,31 @@ export function memberStats(
   const history = knownCycles(mine)
     .map((key) => {
       const inCycle = mine.filter((c) => c.cycleKey === key);
+      const bonus = cycleBonusFor(member.id, mine, key);
       return {
         cycle: key,
-        points: inCycle.reduce((sum, c) => sum + effectivePoints(c), 0),
+        points:
+          inCycle.reduce((sum, c) => sum + effectivePoints(c), 0) + bonus.total,
         submissions: inCycle.length,
       };
     })
     .filter((h) => h.submissions > 0 || h.cycle === cycle);
 
+  const base = row?.basePoints ?? 0;
   return {
     member,
     cycle,
     cyclePoints,
+    cycleBasePoints: base,
+    cycleBonusPoints: row?.bonusPoints ?? 0,
+    cycleDiversityPoints: row?.diversityPoints ?? 0,
+    cyclePendingBonuses: row?.pendingBonuses ?? 0,
+    cycleSections: row?.sections ?? 0,
     cycleRank: row && row.points > 0 ? row.rank : null,
     cycleSubmissions: mine.filter((c) => c.cycleKey === cycle).length,
-    atCap: cyclePoints >= POINTS.maxPerCycle,
-    pointsLeft: Math.max(0, POINTS.maxPerCycle - cyclePoints),
-    totalPoints: mine.reduce((sum, c) => sum + effectivePoints(c), 0),
+    atCap: base >= POINTS.maxBasePerCycle,
+    pointsLeft: Math.max(0, POINTS.maxBasePerCycle - base),
+    totalPoints: history.reduce((sum, h) => sum + h.points, 0),
     totalSubmissions: mine.length,
     history,
     recent: mine.slice(0, 5),
@@ -160,7 +223,10 @@ export interface TeamSummary {
     duplicates: number;
     rejected: number;
     pending: number;
+    /** Base + bonus + diversity across the cycle. */
     points: number;
+    /** Bonuses proposed and still waiting on a host. */
+    pendingBonuses: number;
   };
 }
 
@@ -214,7 +280,8 @@ export function teamSummary(
         .length,
       rejected: live.filter((c) => effectiveStatus(c) === "rejected").length,
       pending: live.filter((c) => effectiveStatus(c) === "pending").length,
-      points: inCycle.reduce((sum, c) => sum + effectivePoints(c), 0),
+      points: board.reduce((sum, r) => sum + r.points, 0),
+      pendingBonuses: inCycle.filter(bonusPending).length,
     },
   };
 }
