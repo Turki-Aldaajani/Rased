@@ -62,6 +62,15 @@ export function decidePoints(
         "لم يكتمل التقييم بعد، لذا لم تُحتسب نقطة. المساهمة محفوظة ويمكن إعادة تقييمها.",
     };
   }
+  if (status === "blocked_source") {
+    return {
+      ...base,
+      awarded: 0,
+      reason: "blocked_source",
+      explanation:
+        "المصدر يمنع الوصول الآلي، لذا لم تُحتسب نقطة بعد. ستُحتسب إن أقرّها المضيف بعد مراجعتها يدويًا.",
+    };
+  }
   if (status === "rejected") {
     return {
       ...base,

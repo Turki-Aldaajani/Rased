@@ -82,8 +82,11 @@ about where to look, never a restriction and never the final category.
 **5. Verification, honestly.** The member is responsible for checking the source
 first. Rasad reports exactly what it could confirm: `verified`,
 `partially_verified`, or `not_independently_verified`. It never claims a check
-it did not perform. A page that blocks our reader (403) is not the same as a
-dead link (404) — the first is marked unverified, the second is rejected.
+it did not perform. A page that blocks our reader (403, and its kin 401, 406,
+429 and 451) is not the same as a dead link (404). The dead link is rejected.
+The blocked page is not evaluated at all: it is stored as `blocked_source` and
+waits in the host area for a person to open the link and decide. We do not try
+to get past a source's bot protection.
 
 **6. The member's words are kept.** `memberReason` is stored verbatim and never
 overwritten. The evaluator's reading of it is stored separately as
@@ -185,6 +188,7 @@ retry, so a point is never awarded on an evaluation that did not happen.
 | A duplicate | 0 (still stored, still available to the newsletter) |
 | A rejected submission | 0 |
 | A pending one | 0 until the evaluation succeeds |
+| One whose source blocks automated reads (`blocked_source`) | 0 until a host decides |
 
 Points are decided in `src/lib/services/points.ts` and awarded inside the same
 locked write as the save, so two submissions evaluated concurrently cannot both

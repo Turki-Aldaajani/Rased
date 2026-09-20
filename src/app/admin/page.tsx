@@ -31,8 +31,10 @@ import {
   type Member,
   type NewsletterCategory,
 } from "@/lib/db/schema";
+import { isEarningStatus } from "@/lib/services/points";
 import { contributionsCount, membersCount } from "@/lib/util/ar";
 import { cycleLabel, formatDate } from "@/lib/util/date";
+import { hostname } from "@/lib/util/text";
 import { cn } from "@/lib/utils";
 
 const PASS_KEY = "rased:admin";
@@ -176,6 +178,12 @@ export default function AdminPage() {
   const active = members.filter((m) => m.active);
   const inactive = members.filter((m) => !m.active);
   const pending = contributions.filter((c) => effectiveStatus(c) === "pending");
+  // The source refused a machine read, so only a person can settle these.
+  // They leave this group the moment a host decides (the override wins).
+  const needsReview = contributions.filter(
+    (c) => effectiveStatus(c) === "blocked_source" && !c.removed,
+  );
+  const listed = contributions.filter((c) => !needsReview.includes(c));
 
   return (
     <div className="space-y-8">
@@ -202,6 +210,30 @@ export default function AdminPage() {
         <p className="text-sm" style={{ color: "var(--destructive)" }}>
           {message}
         </p>
+      )}
+
+      {needsReview.length > 0 && (
+        <Card className="overflow-hidden">
+          <div className="border-b border-border px-5 py-4">
+            <h2 className="text-sm font-semibold text-foreground">
+              تحتاج مراجعتك اليدوية
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {contributionsCount(needsReview.length)} منع مصدرها القراءة
+              الآلية. لن تُقيَّم آليًا، فافتح الرابط بنفسك ثم قرّر.
+            </p>
+          </div>
+          <ul className="divide-y divide-border">
+            {needsReview.map((c) => (
+              <AdminContributionRow
+                key={c.id}
+                contribution={c}
+                busy={busy}
+                send={send}
+              />
+            ))}
+          </ul>
+        </Card>
       )}
 
       {pending.length > 0 && (
@@ -315,17 +347,21 @@ export default function AdminPage() {
             كل المساهمات
           </h2>
           <p className="text-xs text-muted-foreground">
-            {contributions.length} إجمالًا · صحّح الحالة أو التصنيف أو النقاط إذا
-            أخطأ التقييم التلقائي
+            {contributions.length} إجمالًا
+            {needsReview.length > 0 &&
+              ` (${needsReview.length} منها في قسم المراجعة اليدوية أعلاه)`}{" "}
+            · صحّح الحالة أو التصنيف أو النقاط إذا أخطأ التقييم التلقائي
           </p>
         </div>
-        {contributions.length === 0 ? (
+        {listed.length === 0 ? (
           <p className="px-5 py-8 text-sm text-muted-foreground">
-            لا توجد مساهمات بعد.
+            {contributions.length === 0
+              ? "لا توجد مساهمات بعد."
+              : "كل المساهمات في قسم المراجعة اليدوية أعلاه."}
           </p>
         ) : (
           <ul className="divide-y divide-border">
-            {contributions.map((c) => (
+            {listed.map((c) => (
               <AdminContributionRow
                 key={c.id}
                 contribution={c}
@@ -427,7 +463,12 @@ function AdminContributionRow({
   send: (url: string, method: string, body?: unknown) => Promise<boolean>;
 }) {
   const [open, setOpen] = useState(false);
-  const [status, setStatus] = useState<ContributionStatus>(effectiveStatus(c));
+  // A source the machine could not read has no automatic answer to correct,
+  // so the decision starts empty instead of pre-filled with "waiting".
+  const awaitingReview = effectiveStatus(c) === "blocked_source";
+  const [status, setStatus] = useState<ContributionStatus | "">(
+    awaitingReview ? "" : effectiveStatus(c),
+  );
   const [points, setPoints] = useState(String(effectivePoints(c)));
   const [category, setCategory] = useState<NewsletterCategory | "">(
     effectiveCategory(c) ?? "",
@@ -465,7 +506,18 @@ function AdminContributionRow({
             <span>{categoryLabel(effectiveCategory(c))}</span>
             <span>{formatDate(c.createdAt)}</span>
             <span>{cycleLabel(c.cycleKey)}</span>
-            <span>تحريريًا {editorialScore(c)}</span>
+            {awaitingReview ? (
+              <a
+                href={c.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="text-foreground underline-offset-4 hover:underline"
+              >
+                افتح المصدر ({hostname(c.url) || c.url})
+              </a>
+            ) : (
+              <span>تحريريًا {editorialScore(c)}</span>
+            )}
             {c.removed && <span>مُزالة</span>}
             {overridden && <span>معدّلة</span>}
           </p>
@@ -476,7 +528,7 @@ function AdminContributionRow({
           )}
           <StatusBadge status={effectiveStatus(c)} />
           <Button variant="outline" size="sm" onClick={() => setOpen((v) => !v)}>
-            {open ? "إغلاق" : "تعديل"}
+            {open ? "إغلاق" : awaitingReview ? "راجع" : "تعديل"}
           </Button>
         </div>
       </div>
@@ -490,11 +542,24 @@ function AdminContributionRow({
                 id={`status-${c.id}`}
                 className={SELECT_CLASS}
                 value={status}
-                onChange={(e) =>
-                  setStatus(e.target.value as ContributionStatus)
-                }
+                onChange={(e) => {
+                  const next = e.target.value as ContributionStatus;
+                  setStatus(next);
+                  // The one decision that always carries a point (or none), so
+                  // the host does not have to remember to type it as well.
+                  if (awaitingReview) {
+                    setPoints(String(isEarningStatus(next) ? POINTS.perValidContribution : 0));
+                  }
+                }}
               >
-                {CONTRIBUTION_STATUSES.map((s) => (
+                {awaitingReview && (
+                  <option value="" disabled>
+                    اختر القرار
+                  </option>
+                )}
+                {CONTRIBUTION_STATUSES.filter(
+                  (s) => s !== "blocked_source",
+                ).map((s) => (
                   <option key={s} value={s}>
                     {STATUS_META[s].text}
                   </option>
@@ -568,7 +633,7 @@ function AdminContributionRow({
           <div className="mt-3 flex flex-wrap gap-2">
             <Button
               size="sm"
-              disabled={busy}
+              disabled={busy || !status}
               onClick={async () => {
                 const ok = await send(`/api/contributions/${c.id}`, "PATCH", {
                   status,
@@ -658,8 +723,16 @@ function AdminContributionRow({
             </div>
           )}
           {c.evaluationError && (
-            <p className="mt-3 text-xs" style={{ color: "var(--destructive)" }}>
-              خطأ التقييم: {c.evaluationError}
+            <p
+              className={cn(
+                "mt-3 text-xs",
+                awaitingReview && "text-muted-foreground",
+              )}
+              style={awaitingReview ? undefined : { color: "var(--destructive)" }}
+            >
+              {awaitingReview
+                ? `ما ردّ به المصدر: ${c.evaluationError}`
+                : `خطأ التقييم: ${c.evaluationError}`}
             </p>
           )}
         </div>

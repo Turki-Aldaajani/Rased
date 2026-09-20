@@ -39,6 +39,7 @@ const POINT_REASON_TEXT: Record<string, string> = {
   duplicate: "سبق إرسال المحتوى نفسه، لذا لا تُحتسب نقطة جديدة.",
   rejected: "لم تستوفِ المساهمة الحد الأدنى للقبول.",
   pending_evaluation: "لم يكتمل التقييم بعد.",
+  blocked_source: "لم تُحتسب نقطة بعد — تنتظر قرار المضيف.",
   admin_override: "عدّل المضيف النقاط يدويًا.",
 };
 
@@ -55,6 +56,14 @@ export default async function ResultPage({ params }: Props) {
   const original = e?.duplicate.ofId
     ? await getContribution(e.duplicate.ofId)
     : null;
+
+  // A host's decision replaces "waiting for review". The stored reason still
+  // says so, because an override never rewrites the automatic result.
+  const reasonText =
+    c.points.reason === "blocked_source" && status !== "blocked_source"
+      ? "راجعها المضيف يدويًا."
+      : POINT_REASON_TEXT[c.points.reason];
+  const summaryLine = e?.summaryForMember || reasonText || "—";
 
   const dimensions = e
     ? (Object.keys(EDITORIAL.weights) as EditorialDimension[]).map((key) => ({
@@ -127,15 +136,15 @@ export default async function ResultPage({ params }: Props) {
             </div>
           </dl>
           <p className="mt-4 border-t border-border pt-3 text-sm leading-relaxed text-foreground">
-            {e?.summaryForMember ||
-              POINT_REASON_TEXT[c.points.reason] ||
-              "—"}
+            {summaryLine}
           </p>
-          {c.points.reason !== "valid_contribution" && (
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {POINT_REASON_TEXT[c.points.reason]}
-            </p>
-          )}
+          {c.points.reason !== "valid_contribution" &&
+            reasonText &&
+            reasonText !== summaryLine && (
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {reasonText}
+              </p>
+            )}
         </div>
       </Card>
 
@@ -152,6 +161,19 @@ export default async function ResultPage({ params }: Props) {
             مستحقة.
           </p>
           <RetryEvaluation id={c.id} attempts={c.evaluationAttempts} />
+        </Card>
+      )}
+
+      {status === "blocked_source" && (
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold text-foreground">
+            لا يمكن تقييم هذا الرابط آليًا
+          </h2>
+          <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+            يمنع هذا المصدر الوصول الآلي إلى صفحاته، وهذا لا يعني أن رابطك
+            خاطئ. مساهمتك محفوظة وسيراجعها المضيف يدويًا، وستُحتسب النقطة إن
+            كانت مستحقة.
+          </p>
         </Card>
       )}
 
@@ -486,11 +508,14 @@ export default async function ResultPage({ params }: Props) {
         </>
       )}
 
-      <p className="pb-2 text-center text-xs text-muted-foreground">
-        {e?.engine === "ai"
-          ? `قُيِّمت بواسطة ${e.model} مع تحقق مباشر من الإنترنت.`
-          : "قُيِّمت بالخوارزمية غير المتصلة — فعّل ANTHROPIC_API_KEY للتقييم الكامل."}
-      </p>
+      {/* Nothing evaluated a blocked source, so there is no engine to credit. */}
+      {c.status !== "blocked_source" && (
+        <p className="pb-2 text-center text-xs text-muted-foreground">
+          {e?.engine === "ai"
+            ? `قُيِّمت بواسطة ${e.model} مع تحقق مباشر من الإنترنت.`
+            : "قُيِّمت بالخوارزمية غير المتصلة — فعّل ANTHROPIC_API_KEY للتقييم الكامل."}
+        </p>
+      )}
     </div>
   );
 }
