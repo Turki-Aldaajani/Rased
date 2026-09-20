@@ -116,79 +116,109 @@
 /* ---------------------------------------------------------------------------
    Design tokens. Dark only — there is no light theme and no toggle.
 
-   The interface is built almost entirely from neutrals: background, text and
-   borders. The green is spent only where the eye should land — the primary
-   button, an active link, a selected state. State colours (success, warning,
-   error, info) appear only when something is actually in that state, never as
-   decoration.
+   The palette below is Injaz's own, taken from the identity file: nothing is
+   invented here. Every other token in this file is either one of those values
+   or a mix of two of them, so a colour can never drift outside the identity.
    --------------------------------------------------------------------------- */
 
 :root {
   color-scheme: dark;
 
-  --background: #131c18;
-  --foreground: #f1efe6;
+  /* ─── هوية إنجاز ─── */
+  --bg: #16211c;
+  --surface: #1b2a24;
+  --brand: #155043;
+  --brand-deep: #144c3f;
+  --interactive: #125d64;
+  --gold: #897c4d;
+  --neutral-100: #f5f5f5;
+  --neutral-300: #d9d9d9;
 
-  /* Deepest surface, for the one 3D panel on the home page. */
-  --surface-deep: #0b100d;
+  /* The identity's diagonal gradient. Every slide in the identity file runs
+     brand-deep → gold; here it is a wash behind the hero, never a fill. */
+  --identity-gradient: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--brand-deep) 34%, transparent) 0%,
+    color-mix(in srgb, var(--brand-deep) 18%, transparent) 46%,
+    color-mix(in srgb, var(--gold) 15%, transparent) 100%
+  );
 
-  --card: #18231e;
-  --card-foreground: #f1efe6;
+  /* The diamond motif, as a lattice for the ambient background. */
+  --diamond-lattice: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cpath d='M48 4L92 48L48 92L4 48Z' fill='none' stroke='%23F5F5F5' stroke-opacity='.5'/%3E%3Crect x='45' y='45' width='6' height='6' transform='rotate(45 48 48)' fill='%23897C4D' fill-opacity='.9'/%3E%3C/svg%3E");
+
+  /* ─── Semantic roles, all derived from the palette above ─── */
+  --background: var(--bg);
+  --foreground: var(--neutral-100);
+
+  --card: var(--surface);
+  --card-foreground: var(--foreground);
 
   /* Muted = quiet surface. Muted-foreground = quiet text. */
-  --muted: #1f2b25;
-  --muted-foreground: #9a968a;
+  --muted: color-mix(in srgb, var(--neutral-300) 8%, var(--surface));
+  --muted-foreground: color-mix(in srgb, var(--neutral-300) 68%, var(--bg));
 
-  --surface-secondary: #3a3826;
+  --border: color-mix(in srgb, var(--neutral-300) 14%, var(--surface));
+  --border-strong: color-mix(in srgb, var(--neutral-300) 26%, var(--surface));
+  --input: var(--border);
 
-  --border: #26332c;
-  --input: #26332c;
-  --ring: #4f9aa1;
+  --interactive-bright: color-mix(
+    in srgb,
+    var(--interactive) 52%,
+    var(--neutral-100)
+  );
+  /* Gold is too dark to read at text sizes on this background; this is the
+     same gold lifted with the neutral, for the few places it carries words. */
+  --gold-bright: color-mix(in srgb, var(--gold) 68%, var(--neutral-100));
+  --ring: var(--interactive-bright);
 
-  --primary: #2e7d69;
-  --primary-foreground: #fafafa;
-  --primary-muted: #1b2a24;
+  --primary: var(--brand);
+  --primary-foreground: var(--neutral-100);
+  --primary-muted: color-mix(in srgb, var(--brand) 30%, var(--surface));
 
-  /* The identity greens, kept raw for lighting and glows. */
-  --brand-deep: #155043;
-  --interactive: #125d64;
-  --interactive-bright: #4f9aa1;
+  /* Gold is the identity's accent: spent on a motif or a label, never on a
+     surface and never on body text. */
+  --accent: var(--gold);
 
-  --accent: #a4b02c;
-
+  /* State colours. Semantic only — they appear when something is actually in
+     that state, never as decoration. */
   --success: #4fb972;
   --warning: #f3c43c;
   --destructive: #ff6b5c;
   --info: #5cb6f0;
-  --highlight: #f25c9c;
 
   --radius: 0.375rem;
   --shadow-card: none;
+
+  /* Motion. Short enough to feel instant, long enough to be seen. */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --t-fast: 170ms;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-surface-deep: var(--surface-deep);
+  --color-surface: var(--surface);
   --color-card: var(--card);
   --color-card-foreground: var(--card-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
-  --color-surface-secondary: var(--surface-secondary);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-input: var(--input);
   --color-ring: var(--ring);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-primary-muted: var(--primary-muted);
+  --color-brand: var(--brand);
   --color-brand-deep: var(--brand-deep);
   --color-interactive: var(--interactive);
+  --color-gold: var(--gold);
+  --color-gold-bright: var(--gold-bright);
   --color-accent: var(--accent);
   --color-success: var(--success);
   --color-warning: var(--warning);
   --color-destructive: var(--destructive);
   --color-info: var(--info);
-  --color-highlight: var(--highlight);
 
   --radius-sm: calc(var(--radius) - 2px);
   --radius-md: var(--radius);
@@ -223,6 +253,97 @@ body {
 :focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+/* ---------------------------------------------------------------------------
+   Micro-transitions. Everything that answers a pointer settles in the same
+   170ms, so the whole interface moves at one speed.
+   --------------------------------------------------------------------------- */
+
+a,
+button,
+select,
+summary,
+input,
+textarea,
+[role="button"] {
+  transition-property:
+    color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: var(--t-fast);
+  transition-timing-function: var(--ease);
+}
+
+/* ---------------------------------------------------------------------------
+   The ambient background: the identity's diamond lattice drifting behind the
+   page, plus two soft identity lights. Both stay under 5% opacity, so this
+   reads as texture and never as content. Off entirely for reduced motion.
+   --------------------------------------------------------------------------- */
+
+.ambient {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
+}
+.ambient::before,
+.ambient::after {
+  content: "";
+  position: absolute;
+  inset: -20%;
+}
+.ambient::before {
+  background-image: var(--diamond-lattice);
+  background-size: 96px 96px;
+  opacity: 0.045;
+  animation: lattice-drift 240s linear infinite;
+}
+.ambient::after {
+  background-image:
+    radial-gradient(
+      36rem 36rem at 18% 12%,
+      var(--interactive) 0%,
+      transparent 70%
+    ),
+    radial-gradient(30rem 30rem at 82% 78%, var(--gold) 0%, transparent 72%);
+  opacity: 0.05;
+  animation: lights-drift 200s ease-in-out infinite alternate;
+}
+
+@keyframes lattice-drift {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(-96px, -96px, 0);
+  }
+}
+
+@keyframes lights-drift {
+  from {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    transform: translate3d(2.5%, -2%, 0) scale(1.08);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Cards fading in as they are scrolled to. The class only bites once the
+   inline script in the layout has added `reveal-ready`, so a page without
+   JavaScript — or with reduced motion — shows everything immediately.
+   --------------------------------------------------------------------------- */
+
+.reveal-ready .reveal {
+  opacity: 0;
+  translate: 0 10px;
+  transition:
+    opacity 460ms var(--ease),
+    translate 460ms var(--ease);
+}
+.reveal-ready .reveal.is-visible {
+  opacity: 1;
+  translate: none;
 }
 
 /* Progress bar used in the score breakdown. */
@@ -278,6 +399,13 @@ body {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+  .ambient {
+    display: none;
+  }
+  .reveal-ready .reveal {
+    opacity: 1 !important;
+    translate: none !important;
   }
   .loader {
     animation-duration: 900ms !important;

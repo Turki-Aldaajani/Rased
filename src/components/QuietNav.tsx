@@ -2,15 +2,14 @@
 
 import { LayoutDashboard, List, Settings, Trophy, User } from "lucide-react";
 import Link from "next/link";
-import { contributionsCount, daysCount } from "@/lib/util/ar";
-import { daysLeftInCycle } from "@/lib/util/date";
 import { useCurrentUser } from "./CurrentUser";
 
 /**
- * The only thing on the home page besides the composer, and it sits well below
- * it: everything here is somewhere you go *after* submitting, not before.
+ * Everything here is somewhere you go *after* submitting, not before — so it
+ * sits below the grid, in the quietest type on the page. The cycle's numbers
+ * are not repeated here; the tiles beside the composer already carry them.
  */
-export default function QuietNav({ thisCycle }: { thisCycle: number }) {
+export default function QuietNav() {
   const { member } = useCurrentUser();
 
   const items = [
@@ -23,7 +22,7 @@ export default function QuietNav({ thisCycle }: { thisCycle: number }) {
   ];
 
   return (
-    <div className="mx-auto mt-24 w-full max-w-xl">
+    <div className="mx-auto w-full max-w-xl">
       <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-3">
         {items.map(({ href, label, Icon }) => (
           <Link
@@ -36,12 +35,6 @@ export default function QuietNav({ thisCycle }: { thisCycle: number }) {
           </Link>
         ))}
       </div>
-
-      <p className="mt-5 text-center text-xs text-muted-foreground">
-        {thisCycle === 0
-          ? `لا توجد مساهمات في هذه الدورة بعد · بقي ${daysCount(daysLeftInCycle())}`
-          : `${contributionsCount(thisCycle)} في هذه الدورة · بقي ${daysCount(daysLeftInCycle())}`}
-      </p>
     </div>
   );
 }

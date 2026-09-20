@@ -1,6 +1,12 @@
 "use client";
 
-import { motion, useMotionValue, useSpring, useTransform } from "framer-motion";
+import {
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  useSpring,
+  useTransform,
+} from "framer-motion";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
@@ -22,13 +28,17 @@ export function Spotlight({ className, size = 320 }: SpotlightProps) {
   const [parent, setParent] = useState<HTMLElement | null>(null);
   const [visible, setVisible] = useState(false);
 
+  const reduced = useReducedMotion();
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
   const spring = { bounce: 0, damping: 28, stiffness: 260 };
   const springX = useSpring(mouseX, spring);
   const springY = useSpring(mouseY, spring);
-  const left = useTransform(springX, (x) => `${x - size / 2}px`);
-  const top = useTransform(springY, (y) => `${y - size / 2}px`);
+  // Reduced motion keeps the light — it just stops it trailing the cursor.
+  const x = reduced ? mouseX : springX;
+  const y = reduced ? mouseY : springY;
+  const left = useTransform(x, (v) => `${v - size / 2}px`);
+  const top = useTransform(y, (v) => `${v - size / 2}px`);
 
   useEffect(() => {
     const el = containerRef.current?.parentElement;
@@ -78,7 +88,7 @@ export function Spotlight({ className, size = 320 }: SpotlightProps) {
           "radial-gradient(circle at center, color-mix(in srgb, var(--interactive) 40%, transparent) 0%, color-mix(in srgb, var(--brand-deep) 22%, transparent) 45%, transparent 72%)",
       }}
       animate={{ opacity: visible ? 1 : 0 }}
-      transition={{ duration: 0.25 }}
+      transition={{ duration: reduced ? 0 : 0.25 }}
       aria-hidden
     />
   );

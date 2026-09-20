@@ -4,6 +4,7 @@ import { Check, ChevronDown } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { InjazMark } from "@/components/brand/InjazLogo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useCurrentUser } from "./CurrentUser";
@@ -110,11 +111,19 @@ export default function Header() {
       )}
     >
       <div className="mx-auto flex h-14 max-w-5xl items-center gap-6 px-4 sm:px-6">
+        {/* Injaz owns this interface, and the header says so once: the arch,
+            the name, then the product it is host to. */}
         <Link
           href="/"
-          className="text-sm font-semibold tracking-tight text-foreground"
+          aria-label="إنجاز — رصد"
+          className="flex items-center gap-2 text-foreground"
         >
-          Rased
+          <InjazMark className="h-6" />
+          <span className="font-serif-display text-base font-semibold leading-none">
+            إنـجـاز
+          </span>
+          <span className="h-3.5 w-px bg-border" aria-hidden />
+          <span className="text-xs text-muted-foreground">رصد</span>
         </Link>
 
         {!bare && (
