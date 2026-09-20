@@ -11,8 +11,10 @@ import {
   VerificationBadge,
   categoryLabel,
 } from "@/components/contribution";
+import { DiamondRule } from "@/components/brand/DiamondRule";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { SpotlightCard } from "@/components/ui/spotlight-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { POINTS } from "@/lib/config/rules";
@@ -40,7 +42,7 @@ import { cn } from "@/lib/utils";
 const PASS_KEY = "rased:admin";
 
 const SELECT_CLASS =
-  "h-9 w-full rounded-md border border-input bg-card px-3 text-sm text-foreground transition-colors duration-200 focus-visible:border-ring focus-visible:outline-none";
+  "h-9 w-full cursor-pointer rounded-md border border-input bg-card px-3 text-sm text-foreground transition-colors duration-200 hover:border-border-strong focus-visible:border-ring focus-visible:outline-none";
 
 export default function AdminPage() {
   const { refresh: refreshMembers } = useCurrentUser();
@@ -195,6 +197,7 @@ export default function AdminPage() {
           <p className="mt-1 text-sm text-muted-foreground">
             التقييم التلقائي هو الافتراضي — ولك الكلمة الأخيرة في كل شيء.
           </p>
+          <DiamondRule className="mt-4 max-w-sm" />
         </div>
         <div className="ms-auto flex gap-2">
           <Button asChild size="sm">
@@ -213,7 +216,7 @@ export default function AdminPage() {
       )}
 
       {needsReview.length > 0 && (
-        <Card className="overflow-hidden">
+        <SpotlightCard>
           <div className="border-b border-border px-5 py-4">
             <h2 className="text-sm font-semibold text-foreground">
               تحتاج مراجعتك اليدوية
@@ -233,11 +236,11 @@ export default function AdminPage() {
               />
             ))}
           </ul>
-        </Card>
+        </SpotlightCard>
       )}
 
       {pending.length > 0 && (
-        <Card className="p-5">
+        <SpotlightCard className="p-5">
           <h2 className="text-sm font-semibold text-foreground">
             بانتظار إعادة التقييم
           </h2>
@@ -267,11 +270,11 @@ export default function AdminPage() {
               </li>
             ))}
           </ul>
-        </Card>
+        </SpotlightCard>
       )}
 
       {/* Team members */}
-      <Card className="p-5">
+      <SpotlightCard className="p-5">
         <h2 className="text-sm font-semibold text-foreground">أعضاء الفريق</h2>
         <p className="mt-1 text-xs text-muted-foreground">
           {membersCount(active.length)} نشط — فريق الذكاء الاصطناعي تسعة أعضاء،
@@ -338,10 +341,10 @@ export default function AdminPage() {
             </ul>
           </div>
         )}
-      </Card>
+      </SpotlightCard>
 
       {/* Submissions */}
-      <Card className="overflow-hidden">
+      <SpotlightCard>
         <div className="border-b border-border px-5 py-4">
           <h2 className="text-sm font-semibold text-foreground">
             كل المساهمات
@@ -371,7 +374,7 @@ export default function AdminPage() {
             ))}
           </ul>
         )}
-      </Card>
+      </SpotlightCard>
     </div>
   );
 }

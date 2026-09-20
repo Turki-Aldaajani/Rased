@@ -1,5 +1,8 @@
 import Link from "next/link";
+import { DiamondRule } from "@/components/brand/DiamondRule";
 import { Card } from "@/components/ui/card";
+import { CountUp } from "@/components/ui/count-up";
+import { Reveal } from "@/components/ui/reveal";
 import { POINTS } from "@/lib/config/rules";
 import { listContributions, listMembers } from "@/lib/db/store";
 import {
@@ -52,7 +55,7 @@ function Board({
               </span>
               <span className="shrink-0 text-end">
                 <span className="block text-base font-semibold tabular-nums text-foreground">
-                  {row.points}
+                  <CountUp value={row.points} />
                   <span className="text-xs text-muted-foreground">
                     /{POINTS.maxPerCycle}
                   </span>
@@ -96,6 +99,7 @@ export default async function LeaderboardPage({ searchParams }: Props) {
           {pointsCount(POINTS.maxPerCycle)} لكل عضو في الدورة. الترتيب بالنقاط
           وحدها — لا بالقيمة التحريرية ولا بعدد الروابط.
         </p>
+        <DiamondRule className="mt-5" />
       </div>
 
       {/* Cycle history — old boards are kept, not overwritten. */}
@@ -139,41 +143,43 @@ export default async function LeaderboardPage({ searchParams }: Props) {
         />
       </Card>
 
-      <Card className="p-5">
-        <h2 className="text-sm font-semibold text-foreground">
-          كيف تُحتسب النقاط
-        </h2>
-        <ul className="mt-4 grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
-          <li>
-            <span className="text-foreground">نقطة واحدة</span> — لكل مساهمة
-            صحيحة وغير مكررة، أيًّا كان تصنيفها.
-          </li>
-          <li>
-            <span className="text-foreground">{POINTS.maxPerCycle} نقاط</span> —
-            الحد الأقصى لكل عضو في الدورة الواحدة (أسبوعان).
-          </li>
-          <li>
-            <span className="text-foreground">الأهمية لا تزيد النقاط</span> —
-            خبر كبير ومصدر تعليمي بسيط كلاهما نقطة واحدة.
-          </li>
-          <li>
-            <span className="text-foreground">بعد بلوغ الحد</span> — أرسل ما
-            تشاء؛ المساهمات تُحفظ وقد تدخل النشرة لكنها لا تزيد ترتيبك.
-          </li>
-          <li>
-            <span className="text-foreground">المكرر</span> — لا نقطة، لكن
-            المساهمة تبقى محفوظة.
-          </li>
-          <li>
-            <span className="text-foreground">زاوية جديدة</span> — موضوع مطروق
-            بتجربة أو مقارنة جديدة يُحتسب مساهمة كاملة.
-          </li>
-        </ul>
-        <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
-          القيمة التحريرية (0-100) تُحسب لكل مساهمة لترتيب محتوى النشرة، ولا
-          تدخل في هذا الترتيب إطلاقًا.
-        </p>
-      </Card>
+      <Reveal>
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold text-foreground">
+            كيف تُحتسب النقاط
+          </h2>
+          <ul className="mt-4 grid gap-2.5 text-sm text-muted-foreground sm:grid-cols-2">
+            <li>
+              <span className="text-foreground">نقطة واحدة</span> — لكل مساهمة
+              صحيحة وغير مكررة، أيًّا كان تصنيفها.
+            </li>
+            <li>
+              <span className="text-foreground">{POINTS.maxPerCycle} نقاط</span> —
+              الحد الأقصى لكل عضو في الدورة الواحدة (أسبوعان).
+            </li>
+            <li>
+              <span className="text-foreground">الأهمية لا تزيد النقاط</span> —
+              خبر كبير ومصدر تعليمي بسيط كلاهما نقطة واحدة.
+            </li>
+            <li>
+              <span className="text-foreground">بعد بلوغ الحد</span> — أرسل ما
+              تشاء؛ المساهمات تُحفظ وقد تدخل النشرة لكنها لا تزيد ترتيبك.
+            </li>
+            <li>
+              <span className="text-foreground">المكرر</span> — لا نقطة، لكن
+              المساهمة تبقى محفوظة.
+            </li>
+            <li>
+              <span className="text-foreground">زاوية جديدة</span> — موضوع مطروق
+              بتجربة أو مقارنة جديدة يُحتسب مساهمة كاملة.
+            </li>
+          </ul>
+          <p className="mt-5 border-t border-border pt-4 text-xs text-muted-foreground">
+            القيمة التحريرية (0-100) تُحسب لكل مساهمة لترتيب محتوى النشرة، ولا
+            تدخل في هذا الترتيب إطلاقًا.
+          </p>
+        </Card>
+      </Reveal>
     </div>
   );
 }

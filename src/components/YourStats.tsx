@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
+import { CountUp } from "@/components/ui/count-up";
 import { POINTS } from "@/lib/config/rules";
 import type { Contribution } from "@/lib/db/schema";
 import type { LeaderboardRow } from "@/lib/services/leaderboard";
@@ -39,16 +41,11 @@ export default function YourStats({
         <p className="mt-1 text-sm text-muted-foreground">
           بلا تسجيل، وبلا كلمة مرور.
         </p>
-        <div className="mt-3 flex flex-wrap gap-1">
+        <div className="mt-4 flex flex-wrap gap-2">
           {members.map((m) => (
-            <Button
-              key={m.id}
-              variant="ghost"
-              size="sm"
-              onClick={() => setMemberId(m.id)}
-            >
+            <Chip key={m.id} onClick={() => setMemberId(m.id)}>
               {m.name}
-            </Button>
+            </Chip>
           ))}
           {members.length === 0 && (
             <p className="text-sm text-muted-foreground">
@@ -118,7 +115,11 @@ export default function YourStats({
           >
             <p className="text-xs text-muted-foreground">{t.label}</p>
             <p className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-              {t.value}
+              {typeof t.value === "number" ? (
+                <CountUp value={t.value} />
+              ) : (
+                t.value
+              )}
             </p>
             <p className="text-xs text-muted-foreground">{t.sub}</p>
           </div>

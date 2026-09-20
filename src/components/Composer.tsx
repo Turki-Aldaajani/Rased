@@ -10,6 +10,8 @@ import {
   type FormEvent,
 } from "react";
 import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Chip } from "@/components/ui/chip";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,7 +20,6 @@ import {
   type NewsletterCategory,
 } from "@/lib/db/schema";
 import type { AutoLabel } from "@/lib/services/title";
-import { cn } from "@/lib/utils";
 import { CATEGORY_LABELS } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
 
@@ -30,6 +31,10 @@ const STEPS = [
   "التصنيف وتحديد الجمهور",
   "تقييم المساهمة",
 ];
+
+const REASON_MAX = 2000;
+/** Five lines, so the field looks like the paragraph it is asking for. */
+const REASON_MIN_HEIGHT = 132;
 
 function looksLikeUrl(value: string): boolean {
   const v = value.trim();
@@ -58,6 +63,7 @@ export default function Composer() {
 
   // Only the newest naming request is allowed to write to state.
   const labelRun = useRef(0);
+  const reasonRef = useRef<HTMLTextAreaElement>(null);
 
   const runLabel = useCallback(async (link: string, context: string) => {
     const run = ++labelRun.current;
@@ -98,6 +104,15 @@ export default function Composer() {
     // the naming request.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [url, busy, runLabel]);
+
+  // The reason field grows with what is written in it, and never shrinks
+  // below the five lines it starts at.
+  useEffect(() => {
+    const el = reasonRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${Math.max(el.scrollHeight, REASON_MIN_HEIGHT)}px`;
+  }, [reason]);
 
   async function setFocus(next: NewsletterCategory | null) {
     if (!member) return;
@@ -169,8 +184,8 @@ export default function Composer() {
   }
 
   return (
-    <section className="mx-auto w-full max-w-xl">
-      <div className="mb-10 text-center">
+    <Card className="flex h-full w-full flex-col p-6 sm:p-8">
+      <div className="mb-8 text-center">
         <h1 className="font-serif-display text-2xl font-semibold tracking-tight text-foreground sm:text-3xl">
           ماذا اكتشفت؟
         </h1>
@@ -180,9 +195,10 @@ export default function Composer() {
       </div>
 
       <form onSubmit={onSubmit}>
-        <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-2 transition-colors duration-200 focus-within:border-ring">
+        {/* The one thing this page is for, sized like it. */}
+        <div className="flex items-center gap-2 rounded-lg border border-border bg-card p-2.5 transition-colors duration-200 focus-within:border-ring">
           <Link2
-            className="ms-1.5 size-4 shrink-0 text-muted-foreground"
+            className="ms-1.5 size-5 shrink-0 text-muted-foreground"
             aria-hidden
           />
           <Input
@@ -197,10 +213,11 @@ export default function Composer() {
             aria-label="رابط الشيء الذي اكتشفته"
             placeholder="https://"
             dir="ltr"
-            className="h-9 border-0 bg-transparent px-1 text-base focus-visible:border-0 sm:text-sm"
+            className="h-11 border-0 bg-transparent px-1 text-base focus-visible:border-0"
           />
           <Button
             type="submit"
+            size="lg"
             disabled={busy || !url.trim()}
             className="shrink-0"
           >
@@ -273,22 +290,31 @@ export default function Composer() {
         )}
 
         {/* The one field the member actually writes. */}
-        <div className="mt-4">
+        <div className="mt-5">
           <Textarea
+            ref={reasonRef}
             value={reason}
             onChange={(e) => {
               setReason(e.target.value);
               setError(null);
             }}
             disabled={busy}
-            maxLength={2000}
+            rows={5}
+            maxLength={REASON_MAX}
             aria-label="لماذا ترى أن هذا مهم؟"
             placeholder="لماذا ترى أن هذا مهم؟"
-            className="text-sm"
+            className="resize-none overflow-hidden text-sm leading-relaxed"
+            style={{ minHeight: REASON_MIN_HEIGHT }}
           />
-          <p className="mt-1.5 px-1 text-xs text-muted-foreground">
-            مطلوب — جملة أو جملتان تكفيان. كلامك يُحفظ كما هو.
-          </p>
+          <div className="mt-1.5 flex items-start gap-3 px-1 text-xs text-muted-foreground">
+            <p className="min-w-0 flex-1">
+              مطلوب — جملة أو جملتان تكفيان. كلامك يُحفظ كما هو.
+            </p>
+            <span
+              className="shrink-0 tabular-nums opacity-70"
+              aria-hidden
+            >{`${reason.length}/${REASON_MAX}`}</span>
+          </div>
         </div>
 
         {busy && (
@@ -311,54 +337,51 @@ export default function Composer() {
         </p>
       )}
 
-      <div className="mt-8 flex min-h-8 items-center justify-center text-xs text-muted-foreground">
+      <div className="mt-8 flex min-h-10 flex-wrap items-center justify-center gap-2 text-sm text-muted-foreground">
         {!ready ? (
           <span className="h-3 w-28 rounded bg-muted" />
         ) : pickingMember || !member ? (
-          <div className="flex flex-wrap items-center justify-center gap-1">
-            <span className="me-1">أنت</span>
+          <>
+            <span className="me-1 text-xs">أنت</span>
             {members.map((m) => (
-              <Button
+              <Chip
                 key={m.id}
-                type="button"
-                variant="ghost"
-                size="sm"
+                selected={m.id === member?.id}
                 onClick={() => {
                   setMemberId(m.id);
                   setPickingMember(false);
                   setError(null);
                 }}
-                className={cn(m.id === member?.id && "text-foreground")}
               >
                 {m.name}
-              </Button>
+              </Chip>
             ))}
             {members.length === 0 && (
-              <span>لا يوجد أعضاء بعد — أضفهم من الإدارة.</span>
+              <span className="text-xs">
+                لا يوجد أعضاء بعد — أضفهم من الإدارة.
+              </span>
             )}
-          </div>
+          </>
         ) : (
-          <button
-            type="button"
-            onClick={() => setPickingMember(true)}
-            className="transition-colors duration-200 hover:text-foreground"
-          >
+          <Chip onClick={() => setPickingMember(true)}>
             تُرسَل باسم <span className="text-foreground">{member.name}</span>
-          </button>
+          </Chip>
         )}
       </div>
 
       {/* Research direction: a hint to the member, never a filter on the result. */}
       {member && (
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-1 text-xs text-muted-foreground">
-          <span className="me-1">مجال بحثك</span>
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs text-muted-foreground">
+          <label htmlFor="focus-area" className="text-xs">
+            مجال بحثك
+          </label>
           <select
+            id="focus-area"
             value={member.focusArea ?? ""}
             onChange={(e) =>
               void setFocus((e.target.value || null) as NewsletterCategory | null)
             }
-            aria-label="مجال بحثك"
-            className="cursor-pointer rounded border-0 bg-transparent p-0 text-xs text-muted-foreground underline decoration-dotted underline-offset-4 outline-none transition-colors duration-200 hover:text-foreground"
+            className="h-10 cursor-pointer rounded-full border border-border bg-card px-4 text-sm text-foreground transition-colors duration-200 hover:border-border-strong hover:bg-muted focus-visible:border-ring focus-visible:outline-none"
           >
             <option value="">بلا مجال محدد</option>
             {NEWSLETTER_CATEGORIES.map((c) => (
@@ -372,6 +395,6 @@ export default function Composer() {
           </span>
         </div>
       )}
-    </section>
+    </Card>
   );
 }

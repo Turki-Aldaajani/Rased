@@ -39,18 +39,32 @@
 <style>
   /* ═══════════ إنجاز | نشرة الذكاء الاصطناعي — نسخة الويب ═══════════ */
 
-  /* خط ثمانية: يُستخدم فقط إن كان مثبتًا على جهاز القارئ.
-     ترخيص الخط يمنع استضافة ملفاته أو إتاحتها للتنزيل (البندان 37 و40). */
+  /* خط ثمانية هو خط كل أعداد النشرة. تُستخدم النسخة المثبتة على
+     جهاز القارئ إن وُجدت، ثم ملفات الخط المنشورة بجانب الأعداد (../fonts/).
+     والرابط المطلق بعده للمعاينة داخل التطبيق، حيث لا يصحّ المسار النسبي. */
   @font-face {
     font-family: 'Thmanyah';
     src: local('thmanyah sans Regular'), local('thmanyahsans-Regular'),
-         local('Thmanyah Sans'), local('thmanyah Sans'), local('Thmanyah');
+         local('Thmanyah Sans'), local('thmanyah Sans'), local('Thmanyah'),
+         url('../fonts/thmanyah-sans-400.woff2') format('woff2'),
+         url('https://turki-aldaajani.github.io/Rased/newsletter/fonts/thmanyah-sans-400.woff2') format('woff2');
     font-weight: 400;
     font-display: swap;
   }
   @font-face {
     font-family: 'Thmanyah';
-    src: local('thmanyah sans Bold'), local('thmanyahsans-Bold');
+    src: local('thmanyah sans Bold'), local('thmanyahsans-Bold'),
+         url('../fonts/thmanyah-sans-700.woff2') format('woff2'),
+         url('https://turki-aldaajani.github.io/Rased/newsletter/fonts/thmanyah-sans-700.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Thmanyah Serif Display';
+    src: local('thmanyah serif display Bold'),
+         local('thmanyahserifdisplay-Bold'),
+         url('../fonts/thmanyah-serif-display-700.woff2') format('woff2'),
+         url('https://turki-aldaajani.github.io/Rased/newsletter/fonts/thmanyah-serif-display-700.woff2') format('woff2');
     font-weight: 700;
     font-display: swap;
   }

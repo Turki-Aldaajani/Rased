@@ -1,8 +1,11 @@
 import Link from "next/link";
 import YourStats from "@/components/YourStats";
 import { ContributionRow, categoryLabel } from "@/components/contribution";
+import { DiamondRule } from "@/components/brand/DiamondRule";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { CountUp } from "@/components/ui/count-up";
+import { Reveal } from "@/components/ui/reveal";
 import { POINTS } from "@/lib/config/rules";
 import { editorialScore, type Contribution } from "@/lib/db/schema";
 import { listContributions, listMembers } from "@/lib/db/store";
@@ -42,7 +45,7 @@ function BoardList({ rows }: { rows: LeaderboardRow[] }) {
               </span>
             </span>
             <span className="text-sm font-semibold tabular-nums text-foreground">
-              {row.points}
+              <CountUp value={row.points} />
               <span className="text-xs text-muted-foreground">
                 /{POINTS.maxPerCycle}
               </span>
@@ -86,6 +89,7 @@ export default async function DashboardPage() {
           دورة {cycleLabel(summary.cycle)} · بقي {daysCount(daysLeftInCycle())} ·{" "}
           {contributionsCount(summary.totals.thisCycle)} حتى الآن
         </p>
+        <DiamondRule className="mt-5" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -110,7 +114,7 @@ export default async function DashboardPage() {
         <Card className="p-5">
           <p className="text-xs text-muted-foreground">نقاط الفريق</p>
           <p className="mt-2 text-2xl font-semibold tabular-nums text-foreground">
-            {summary.totals.points}
+            <CountUp value={summary.totals.points} />
           </p>
           <p className="mt-0.5 text-xs text-muted-foreground">في هذه الدورة</p>
         </Card>
@@ -176,55 +180,59 @@ export default async function DashboardPage() {
       </Card>
 
       <div className="grid gap-4 lg:grid-cols-5">
-        <Card className="overflow-hidden lg:col-span-2">
-          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                ترتيب الدورة
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                نقطة لكل مساهمة صحيحة
-              </p>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/leaderboard">الكل</Link>
-            </Button>
-          </div>
-          <BoardList rows={summary.board} />
-        </Card>
-
-        <Card className="overflow-hidden lg:col-span-3">
-          <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
-            <div>
-              <h2 className="text-sm font-semibold text-foreground">
-                أحدث المساهمات
-              </h2>
-              <p className="text-xs text-muted-foreground">
-                {summary.totals.submissions} إجمالًا
-              </p>
-            </div>
-            <Button asChild variant="ghost" size="sm">
-              <Link href="/feed">الكل</Link>
-            </Button>
-          </div>
-          <div className="p-2">
-            {summary.recent.length === 0 ? (
-              <div className="px-3 py-10 text-center">
-                <p className="text-sm text-foreground">لا توجد مساهمات بعد</p>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  وجدت شيئًا مفيدًا في الذكاء الاصطناعي هذه الدورة؟
+        <Reveal className="lg:col-span-2">
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  ترتيب الدورة
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  نقطة لكل مساهمة صحيحة
                 </p>
-                <Button asChild size="sm" className="mt-4">
-                  <Link href="/">أضف الأولى</Link>
-                </Button>
               </div>
-            ) : (
-              summary.recent.map((c) => (
-                <ContributionRow key={c.id} contribution={c} />
-              ))
-            )}
-          </div>
-        </Card>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/leaderboard">الكل</Link>
+              </Button>
+            </div>
+            <BoardList rows={summary.board} />
+          </Card>
+        </Reveal>
+
+        <Reveal className="lg:col-span-3">
+          <Card className="overflow-hidden">
+            <div className="flex items-center justify-between gap-3 border-b border-border px-5 py-4">
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  أحدث المساهمات
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {summary.totals.submissions} إجمالًا
+                </p>
+              </div>
+              <Button asChild variant="ghost" size="sm">
+                <Link href="/feed">الكل</Link>
+              </Button>
+            </div>
+            <div className="p-2">
+              {summary.recent.length === 0 ? (
+                <div className="px-3 py-10 text-center">
+                  <p className="text-sm text-foreground">لا توجد مساهمات بعد</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    وجدت شيئًا مفيدًا في الذكاء الاصطناعي هذه الدورة؟
+                  </p>
+                  <Button asChild size="sm" className="mt-4">
+                    <Link href="/">أضف الأولى</Link>
+                  </Button>
+                </div>
+              ) : (
+                summary.recent.map((c) => (
+                  <ContributionRow key={c.id} contribution={c} />
+                ))
+              )}
+            </div>
+          </Card>
+        </Reveal>
       </div>
     </div>
   );
