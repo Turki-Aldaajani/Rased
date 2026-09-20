@@ -26,7 +26,7 @@ export const SYSTEM_PROMPT = `You evaluate submissions for "Rased" (رصد), the
 
 Your job has three parts, and you must keep them apart:
 
-A) IS THIS A VALID CONTRIBUTION? A yes/no judgement against a fixed floor. Every valid contribution is worth the same to the member, whatever it is about. You never decide how many points someone gets — the server does that, and it is always +1 for a valid contribution.
+A) IS THIS A VALID CONTRIBUTION? A yes/no judgement against a fixed floor. Every valid contribution is worth the same to the member, whatever it is about. You never decide how many points someone gets, the server does that, and it is always +1 for a valid contribution.
 
 B) WHAT IS THIS CONTENT WORTH TO THE NEWSLETTER? A separate editorial judgement used only to order the newsletter.
 
@@ -34,7 +34,7 @@ C) DID THE MEMBER WRITE THE EXTRA THING THEIR SECTION ASKS FOR? A bonus proposal
 
 Never let B leak into A. A beginner-level learning resource from a small company and a frontier model release from a major lab are both valid contributions. Rejecting something because it is "less important", "less interesting", "from a smaller company", "beginner-level" or "in a less prestigious category" is wrong.
 
-THE ACCEPTANCE FLOOR — a contribution is valid when all of these hold:
+THE ACCEPTANCE FLOOR, a contribution is valid when all of these hold:
 1. It is genuinely related to AI or the team's scope.
 2. It carries a specific, understandable piece of information.
 3. The source URL is usable.
@@ -43,16 +43,16 @@ THE ACCEPTANCE FLOOR — a contribution is valid when all of these hold:
 6. It is not an exact or substantial duplicate of an earlier accepted contribution.
 7. It offers at least some useful knowledge, discovery, tool, news, research, learning material or practical insight.
 
-DUPLICATES — three outcomes, and only three:
+DUPLICATES, three outcomes, and only three:
 - "unique": nothing earlier covers this.
 - "duplicate": another member already submitted substantially the same content, with nothing meaningfully new.
-- "same_topic_new_value": related to an earlier submission, but this member adds a real new angle — a test they ran, a comparison, a use case, extra information. This is NOT a duplicate; it is a valid contribution in its own right.
+- "same_topic_new_value": related to an earlier submission, but this member adds a real new angle, a test they ran, a comparison, a use case, extra information. This is NOT a duplicate; it is a valid contribution in its own right.
 
-VERIFICATION — never fabricate it. Use web_search and web_fetch when you have them: confirm the thing exists, find the original announcement, and find when it was first published. If you could not check something, say so and set the verification status to "not_independently_verified". Claiming a check you did not perform is the worst error you can make here.
+VERIFICATION, never fabricate it. Use web_search and web_fetch when you have them: confirm the thing exists, find the original announcement, and find when it was first published. If you could not check something, say so and set the verification status to "not_independently_verified". Claiming a check you did not perform is the worst error you can make here.
 
-EXTRACTION — pull out only what the source actually says. Leave anything you could not find as an empty string or empty list. Never invent a date, a company, a capability or an audience.
+EXTRACTION, pull out only what the source actually says. Leave anything you could not find as an empty string or empty list. Never invent a date, a company, a capability or an audience.
 
-THE MEMBER'S WORDS — their reason is preserved verbatim elsewhere. Your "aiInterpretation" is your own reading of it, not a rewrite of it.
+THE MEMBER'S WORDS, their reason is preserved verbatim elsewhere. Your "aiInterpretation" is your own reading of it, not a rewrite of it.
 
 THE BONUS, what you propose in "bonusRequirement" and "bonusReason":
 
@@ -97,7 +97,7 @@ export function buildUserPrompt(
       `One-line description we generated: ${input.description || "(none)"}`,
       `Why the member thinks this is important (their own words): ${input.memberReason || "(not provided)"}`,
       `Extra note from the member: ${input.note || "(none)"}`,
-      `Research direction the member picked: ${input.focusArea ?? "(none)"} — this is a direction only, NOT the category. Classify the content on its own merits.`,
+      `Research direction the member picked: ${input.focusArea ?? "(none)"}, this is a direction only, NOT the category. Classify the content on its own merits.`,
     ].join("\n"),
   );
 
@@ -117,7 +117,7 @@ export function buildUserPrompt(
     : [
         `Could not read the page: ${snapshot.error ?? "unknown error"}`,
         `Domain: ${snapshot.domain || "(unparseable)"}`,
-        "Decide from web search alone whether this claim is real. If you cannot, say so — do not guess.",
+        "Decide from web search alone whether this claim is real. If you cannot, say so, do not guess.",
       ].join("\n");
 
   parts.push(`\n## What our server saw when it opened that URL\n${sourceBlock}`);
@@ -134,7 +134,7 @@ export function buildUserPrompt(
 
   const priorBlock =
     candidates.length === 0
-      ? "None — nothing similar has been submitted before."
+      ? "None, nothing similar has been submitted before."
       : candidates
           .map((c, i) => {
             const k = c.contribution;
@@ -157,12 +157,12 @@ export function buildUserPrompt(
     [
       "",
       "## Newsletter categories",
-      "important_news  — significant AI news the team should know about.",
-      "new_models      — a newly released or updated AI model.",
-      "new_tools       — a genuinely new AI tool or product.",
-      "other_tools     — a useful tool that is not new, or a notable update to an existing one.",
-      "learn_this_week — tutorials, courses, papers, explainers, anything you sit down and learn from.",
-      "social_trends   — what the AI community is discussing, reacting to, or arguing about.",
+      "important_news, significant AI news the team should know about.",
+      "new_models, a newly released or updated AI model.",
+      "new_tools, a genuinely new AI tool or product.",
+      "other_tools, a useful tool that is not new, or a notable update to an existing one.",
+      "learn_this_week, tutorials, courses, papers, explainers, anything you sit down and learn from.",
+      "social_trends, what the AI community is discussing, reacting to, or arguing about.",
       "",
       "Pick one primary category, and add secondary categories when the content genuinely belongs to more than one. Do not force everything into a single conceptual box.",
       "",
@@ -170,24 +170,24 @@ export function buildUserPrompt(
       "",
       `## Difficulty\nFor learning content choose one of: ${DIFFICULTIES.filter((d) => d !== "not_applicable").join(", ")}, and list prerequisites when they matter. For everything else use "not_applicable" and leave prerequisites empty.`,
       "",
-      "## Editorial judgement (newsletter only — NOT member points)",
+      "## Editorial judgement (newsletter only, NOT member points)",
       "Rate each dimension 0-10. These decide what the newsletter leads with; they never change what the member earns.",
-      "  aiRelevance       — how squarely this sits in AI.",
-      "  significance      — how much this matters in the field right now.",
-      "  usefulness        — practical value for projects, study, work.",
-      "  recency           — leave your best judgement; the server recomputes it from the original date.",
-      "  sourceCredibility — official source or peer-reviewed beats tech press beats unknown blog.",
-      "  audienceFit       — fit with students, developers and researchers on this team.",
-      "  uniqueness        — how rarely this has been covered.",
-      "  newsletterValue   — how well it would read as a newsletter item.",
+      "  aiRelevance, how squarely this sits in AI.",
+      "  significance, how much this matters in the field right now.",
+      "  usefulness, practical value for projects, study, work.",
+      "  recency, leave your best judgement; the server recomputes it from the original date.",
+      "  sourceCredibility, official source or peer-reviewed beats tech press beats unknown blog.",
+      "  audienceFit, fit with students, developers and researchers on this team.",
+      "  uniqueness, how rarely this has been covered.",
+      "  newsletterValue, how well it would read as a newsletter item.",
       "",
       "## Acceptance decision",
       "Set each eligibility flag honestly, then set status:",
-      '  "accepted"                — valid and unique.',
-      '  "accepted_with_new_angle" — valid, related to an earlier submission, but adds real new value.',
-      '  "duplicate"               — substantially the same as an earlier submission.',
-      '  "rejected"                — it fails the acceptance floor. Give a specific, factual rejectionReason.',
-      `A member's contribution reason counts as given when it says something specific — roughly ${ACCEPTANCE.minReasonWords} meaningful words or more. Do not demand an essay.`,
+      '  "accepted", valid and unique.',
+      '  "accepted_with_new_angle", valid, related to an earlier submission, but adds real new value.',
+      '  "duplicate", substantially the same as an earlier submission.',
+      '  "rejected", it fails the acceptance floor. Give a specific, factual rejectionReason.',
+      `A member's contribution reason counts as given when it says something specific, roughly ${ACCEPTANCE.minReasonWords} meaningful words or more. Do not demand an essay.`,
       "",
       `For context only: a valid contribution is worth ${POINTS.perValidContribution} point, and a member can earn at most ${POINTS.maxBasePerCycle} points per two-week cycle. You do not compute this.`,
       "",
@@ -280,7 +280,7 @@ export const EVALUATION_TOOL = {
       },
       duplicateConfidence: {
         type: "number",
-        description: "0 to 1 — how sure you are about that match.",
+        description: "0 to 1, how sure you are about that match.",
       },
       duplicateReason: {
         type: "string",
@@ -351,7 +351,7 @@ export const EVALUATION_TOOL = {
       summaryForMember: {
         type: "string",
         description:
-          "One or two sentences in Arabic telling the member what happened and why. Concise — not your whole reasoning.",
+          "One or two sentences in Arabic telling the member what happened and why. Concise, not your whole reasoning.",
       },
 
       bonusRequirement: {
