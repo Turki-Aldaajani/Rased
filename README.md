@@ -3,10 +3,12 @@
 The internal contribution and knowledge system of the Enjaz Club AI Team.
 
 A member finds something useful in AI — a model release, a tool, a paper, a
-technique — pastes the link and says why it matters. Rasad reads the source,
-checks the claim, works out when it was *actually* published, decides whether
-someone already submitted it, classifies it into the newsletter's six sections,
-and awards the member **one point** if the contribution is valid.
+technique — pastes the link and writes the news in their own words. Rasad reads
+the source, checks the claim, works out when it was *actually* published, decides
+whether someone already submitted it, classifies it into the newsletter's six
+sections, and awards the member **one base point** if the contribution is valid.
+On top of that sits a **bonus** for what the member wrote — proposed by the
+evaluator, granted by a host.
 
 This is an **MVP prototype**, not a production system.
 
@@ -19,7 +21,7 @@ This is an **MVP prototype**, not a production system.
 | | Contribution point | Editorial score |
 |---|---|---|
 | Who it is about | the member | the content |
-| Range | 0 or 1 | 0–100 |
+| Range | 0 or 1, plus a bonus | 0–100 |
 | Depends on importance? | **never** | yes |
 | Used for | the leaderboard | ordering the newsletter |
 
@@ -32,6 +34,65 @@ The points engine (`src/lib/services/points.ts`) reads three things and nothing
 else: is the contribution valid, is it a duplicate, and how many points does the
 member already hold this cycle. It cannot see the category, the source or the
 editorial score.
+
+The editorial score's two multipliers — the duplicate one and the verification
+one — apply to the editorial score alone. Neither has ever touched a member's
+base point, and neither touches the bonus.
+
+**What moves the board is therefore: base + confirmed bonus + diversity.**
+Everything else a submission carries is either editorial, or a proposal nobody
+has granted yet.
+
+---
+
+## The bonus — earned by writing, granted by a person
+
+A base point is for *finding*. The bonus is for *writing*: a member who explains
+what their link is for, for whom, or how to use it is doing the newsletter's
+work in advance, and that is what the bonus pays for.
+
+Each section asks for one thing beyond the link itself:
+
+| Section | What the member has to write | Bonus |
+|---|---|---|
+| أهم الأخبار (`important_news`) | why it matters (`why_it_matters`) | **+0.5** |
+| جديد النماذج (`new_models`) | who it is for (`who_is_it_for`) | **+0.5** |
+| أدوات جديدة / أخرى (`new_tools`, `other_tools`) | how to use it (`how_to_use`) | **+1** |
+| تعلّم هذا الأسبوع (`learn_this_week`) | a quick example (`quick_example`) | **+0.5** |
+| رائج على السوشال (`social_trends`) | the takeaway (`takeaway`) | **+0.5** |
+
+Four rules hold it up:
+
+**1. No bonus without news under it.** A paragraph of "why this matters" with no
+valid contribution beneath it is worth nothing at all — not half a point. The
+evaluator confirms there is a real, valid contribution *first*, and only then
+looks at whether the member's text meets that section's requirement.
+
+**2. The evaluator only proposes.** It cannot tell real usage steps from a
+paragraph copied off the tool's own landing page, so it never grants anything.
+Every proposal lands in `/admin` as *"بونص مقترح: … بانتظار تأكيد الإدارة"* and
+a host **accepts**, **rejects** (with an optional reason), or **edits** the type
+and the value by hand. Nothing reaches the leaderboard until they decide. This
+is the general rule, not a special case for tools.
+
+**3. `how_to_use` pays once per cycle.** Writing usable steps for one tool is the
+point; writing them for six is a grind that would outweigh everything else on the
+board. Any further tool in the same cycle still earns its base point, with no
+bonus. The 0.5 requirements are **not** capped this way — a member earns them on
+every qualifying submission.
+
+**4. Diversity: +2 for three sections in one cycle.** Derived automatically from
+the sections of the bonuses a host has already confirmed, so it needs no separate
+confirmation of its own. Once per member per cycle.
+
+The section itself is **never** the member's to choose — see *Classification*
+below. That is what closes the obvious loophole: aiming everything at `new_tools`
+because its bonus is the largest.
+
+Where this lives: the values in `src/lib/config/rules.ts` (`BONUS`), the engine
+in `src/lib/services/bonus.ts`, the proposal in `src/lib/services/prompt.ts` and
+`evaluate.ts`, the host's decision in `PATCH /api/contributions/[id]`, and the
+cycle arithmetic in `src/lib/services/leaderboard.ts`.
 
 ---
 
@@ -57,15 +118,20 @@ beginner-level, or in a less prestigious category.
 "OpenAI released Model X" and "I tested Model X on my project and compared it
 with Y" are two contributions, not one.
 
-**3. Points and the cycle cap.** Each valid contribution is +1, up to **3 points
-per newsletter cycle** (two weeks). Past the cap, submissions are still
-evaluated, classified and kept for the newsletter — they just stop moving the
-board. That cap is the anti-spam mechanism; nothing else blocks submitting.
+**3. Points and the cycle cap.** Each valid contribution is +1, up to **6 base
+points per newsletter cycle** (two weeks — twice the old weekly figure of three,
+for a window twice as long). Past the cap, submissions are still evaluated,
+classified and kept for the newsletter — they just stop moving the board. That
+cap is the anti-spam mechanism; nothing else blocks submitting.
+
+The cap is on the **base only**. Bonuses sit above it, or the writing a bonus
+rewards would stop paying the moment someone found enough links.
 
 **4. Classification.** Every accepted contribution gets a primary newsletter
 category and any secondary ones, plus the audiences it serves and — for
 learning material — a difficulty and prerequisites. The member never picks any
-of this.
+of this: the model reads the link and the member's text and decides, and a host
+confirms or corrects it in `/admin` before any section-linked bonus is granted.
 
 | Category | What belongs in it |
 |---|---|
@@ -76,8 +142,10 @@ of this.
 | `learn_this_week` | tutorials, courses, papers, explainers |
 | `social_trends` | what the AI community is discussing |
 
-A member may pick **one research direction** under the composer. It is a hint
-about where to look, never a restriction and never the final category.
+A member may carry **one research direction** on their profile, set from
+`/admin`. It is a hint about where to look, never a restriction and never the
+final category — and it is deliberately not something a member sets for
+themselves on a submission, because the section decides what a bonus is worth.
 
 **5. Verification, honestly.** The member is responsible for checking the source
 first. Rasad reports exactly what it could confirm: `verified`,
@@ -101,15 +169,18 @@ evaluation eventually succeeds.
 
 ## The home page is one box
 
-Opening the app shows a single composer: paste a link, say why it matters,
-send.
+Opening the app shows a single composer: paste a link, write the news, send.
 
 - **No title to write.** The pasted link is read server-side and named by an LLM
   call (`/api/title`), and the result appears as an editable card under the
   input. Click the title to change it.
-- **No category to pick.** Rasad classifies the content itself.
-- **One field the member writes:** "لماذا ترى أن هذا مهم؟". It is required — it
-  is part of the contribution, not an optional extra.
+- **No category to pick.** There is no section selector anywhere in the
+  composer, and there is not meant to be one: Rasad reads the link and the text
+  and classifies it, a host confirms, and only then is a section's bonus in
+  play. A member choosing their own section would be choosing their own bonus.
+- **One field the member writes:** "اكتب الخبر هنا" — the news in their own
+  words, and why it matters. It is required, it is printed in the newsletter as
+  written, and it is what the bonus is judged on.
 - **Everything else is a click away, not in the way.** The dashboard,
   leaderboard, feed, profiles and host area live on their own pages.
 
@@ -125,8 +196,11 @@ cp .env.example .env.local     # already done if you're picking this up as-is
 npx netlify dev                # http://localhost:8888
 ```
 
-The database is Netlify Blobs, so run it through the Netlify CLI — `npm run
-dev` starts Next.js but has no blobs store to talk to.
+There are two storage backends and `STORAGE_PROVIDER` picks between them. On
+Netlify Blobs — the default when no connection string is set — run it through
+the Netlify CLI, because `npm run dev` starts Next.js with no blobs store to
+talk to. With `DATABASE_URL` (or `POSTGRES_URL`) set, it runs on Postgres and
+plain `npm run dev` is enough.
 
 The team is seeded automatically on first run. The AI team has nine members;
 the default seed is the six names the app shipped with, so add the rest from
@@ -145,8 +219,13 @@ ANTHROPIC_API_KEY=sk-ant-...
 
 That switches on Claude with the server-side `web_search` and `web_fetch` tools:
 it actually goes and reads the source, finds the original announcement, checks
-the release date, reasons about duplicates, classifies the content and extracts
-the key points. Each result page tells you which engine judged it.
+the release date, reasons about duplicates, classifies the content, extracts the
+key points, and proposes a bonus on what the member wrote. Each result page
+tells you which engine judged it.
+
+To run DeepSeek instead, set `AI_PROVIDER=deepseek` and `DEEPSEEK_API_KEY`. It
+is added beside Claude, never in place of it, so the two can be compared on the
+same submission.
 
 Without a key, the offline evaluator runs the same pipeline from page metadata
 and keyword signals. It never reports anything as `verified`, because it has not
@@ -161,29 +240,40 @@ retry, so a point is never awarded on an evaluation that did not happen.
 1. Pick **Nawal** under the composer.
 2. Paste an official AI model announcement. The title and summary fill
    themselves in a moment later.
-3. Write why it matters — a specific sentence is enough — and press **أرسل**.
+3. Write the news in your own words, and say why it matters — press **أرسل**.
+   You never pick a section; Rasad works that out.
 4. You land on the result page: **+1**, the newsletter category it was filed
-   under, the status, and one line saying why. Below that: your own words, the
-   classification, what was extracted from the source, the verification, the
-   duplicate check, and — clearly separated — the editorial score.
+   under, the status, and one line saying why. Below that: **بونص ما كتبته** —
+   either a proposal waiting on a host, or the reason there is none — then your
+   own words, the classification, what was extracted from the source, the
+   verification, the duplicate check, and — clearly separated — the editorial
+   score.
 5. Switch to **Abdullah** and submit the same link. It comes back **مكررة** with
    **0** points and a link to Nawal's original.
 6. Submit a related link as **Reem** with a real tested angle ("جربت… وقارنت…").
    It comes back **مقبولة بزاوية جديدة** with a full **+1**.
-7. Submit two more as Nawal, then a fourth. The fourth is still accepted,
-   classified and stored — with **0** points and "بلغت الحد الأقصى".
-8. Check the **leaderboard**: points only, capped at 3, with past cycles kept.
+7. Submit a tool link as Nawal with actual steps for using it. The result shows
+   **بونص مقترح: كيفية الاستخدام +1، بانتظار تأكيد المضيف** — and the leaderboard
+   does **not** move by it. Open `/admin`, find it under *بونص بانتظار تأكيدك*,
+   press **تأكيد البونص**, and now it does.
+8. Send a second tool as Nawal, steps and all. No bonus is proposed this time:
+   *بونص هذا النوع مُنح مرة في هذه الدورة*. The base point is still awarded.
+9. Submit until Nawal has six base points, then one more. It is still accepted,
+   classified and stored — with **0** base points and "بلغت حد الأساس" — and a
+   bonus can still be proposed on it.
+10. Check the **leaderboard**: each row reads *أساس · بونص · تنوّع*, with past
+    cycles kept.
 
 ---
 
 ## Scoring
 
-### Member points — what the leaderboard is made of
+### Base points — what a member earns for finding
 
 | Rule | Value |
 |---|---|
 | A valid, non-duplicate contribution | **+1** |
-| Maximum per member per cycle | **3** |
+| Maximum **base** per member per cycle | **6** |
 | Cycle length | **14 days**, from a fixed Monday anchor |
 | A duplicate | 0 (still stored, still available to the newsletter) |
 | A rejected submission | 0 |
@@ -193,6 +283,31 @@ retry, so a point is never awarded on an evaluation that did not happen.
 Points are decided in `src/lib/services/points.ts` and awarded inside the same
 locked write as the save, so two submissions evaluated concurrently cannot both
 slip past the cap.
+
+### Bonus points — what a member earns for writing
+
+| Rule | Value |
+|---|---|
+| `why_it_matters`, `who_is_it_for`, `quick_example`, `takeaway` | **+0.5** each, uncapped by count |
+| `how_to_use` | **+1**, once per member per cycle |
+| Covering 3 different sections in one cycle | **+2**, once per member per cycle |
+| Ceiling on a value a host types by hand | **3** |
+| Anything the host has not confirmed | **0** |
+
+Everything above is per **cycle** and resets with it. Bonuses are decided in
+`src/lib/services/bonus.ts`; the once-per-cycle rule is settled on the board,
+where the whole cycle is visible, so re-categorising or restoring a contribution
+can never pay for the same requirement twice.
+
+### Where a leaderboard number comes from
+
+```
+points = base (≤ 6)  +  confirmed section bonuses  +  diversity (+2)
+```
+
+Every row on `/leaderboard` prints that breakdown underneath the name, along
+with how many bonuses are still waiting on a host. `/leaderboard` also carries
+**كيف تُحتسب النقاط** — the same rules, in Arabic, for the team.
 
 ### Editorial score — what the newsletter is ordered by
 
@@ -220,16 +335,23 @@ the scaling, the recency band and the multipliers are computed in
 
 ### Anti-spam
 
-The cycle cap is the whole mechanism. Submit as much as you like: past three
-points everything is still read, classified and kept for the newsletter, it
-simply stops moving the board.
+The cycle cap is the whole mechanism for the base. Submit as much as you like:
+past six base points everything is still read, classified and kept for the
+newsletter, it simply stops moving the board.
+
+The bonus has its own brake and it is a person: nothing is granted without a
+host reading it, and the largest bonus is payable once a cycle.
 
 ### Changing the rules
 
 All tunable numbers live in one file: **`src/lib/config/rules.ts`** — the point
-value and cap, the cycle length and anchor, the editorial weights and
-multipliers, the recency bands, the duplicate thresholds, the acceptance floor,
-and the trusted/reputable/social domain lists. Edit, restart, done.
+value and the base cap (`POINTS`), every bonus value, which requirements are
+once-per-cycle and what diversity pays (`BONUS`), the cycle length and anchor
+(`CYCLE`), the editorial weights and multipliers, the recency bands, the
+duplicate thresholds, the acceptance floor, and the trusted/reputable/social
+domain lists. Edit, restart, done — the leaderboard's own explainer reads its
+table out of the same constants, so the rules on screen cannot drift from the
+rules in force.
 
 ---
 
@@ -320,7 +442,13 @@ rather than filled. Nothing is invented to fill a section.
 
 - Add, rename, remove and restore team members
 - See every submission, including removed and rejected ones
-- Change the status, the points, the newsletter category and the duplicate call
+- Change the status, the base points, the newsletter category and the duplicate
+  call — confirming or correcting a category is what settles which bonus a
+  contribution can even be paid
+- **Decide every proposed bonus**, from a queue at the top of the page: accept it
+  as proposed, reject it with a reason, or change the requirement and the value
+  by hand (up to `BONUS.maxManual`). A decision can be sent back to *proposed*
+  at any time. Until a host acts, the bonus is nowhere near the board
 - See exactly which earlier submissions a duplicate was compared against
 - Retry an evaluation that failed
 - Remove or restore a submission, or reset it back to Rasad's own verdict
@@ -329,13 +457,24 @@ rather than filled. Nothing is invented to fill a section.
 Every correction carries a public note. Automatic evaluation is the default and
 none of it is irreversible — the host has the final word on all of it.
 
+A bonus decision is deliberately *not* an evaluation correction: confirming one
+does not stamp the contribution as "corrected by the host", and re-evaluating a
+contribution never overwrites a decision a host has already taken.
+
 ---
 
 ## Configuration
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `ANTHROPIC_API_KEY` | *(empty)* | Turns on AI evaluation. Empty = offline heuristic mode. |
+| `AI_PROVIDER` | `claude` | `claude` \| `deepseek`. Which model judges a contribution |
+| `ANTHROPIC_API_KEY` | *(empty)* | Turns on AI evaluation under `claude`. Empty = offline heuristic mode. |
+| `DEEPSEEK_API_KEY` | *(empty)* | The same, under `deepseek` |
+| `DEEPSEEK_MODEL` | `deepseek-chat` | Model used when `AI_PROVIDER=deepseek` |
+| `DEEPSEEK_BASE_URL` | `https://api.deepseek.com/v1` | Override for an OpenAI-compatible endpoint |
+| `STORAGE_PROVIDER` | *(auto)* | `netlify` \| `postgres`. Unset means postgres when a connection string is present, netlify otherwise |
+| `DATABASE_URL` / `POSTGRES_URL` | *(empty)* | Connection string for the postgres driver |
+| `POSTGRES_SSL` | *(auto)* | Overrides the SSL mode inferred from the connection string |
 | `RASED_MODEL` | `claude-opus-5` | Model used for verification + evaluation |
 | `RASED_TITLE_MODEL` | `claude-opus-5` | Model that names a pasted link (short, `effort: low` call) |
 | `RASED_EFFORT` | `medium` | `low` … `max` — how hard the model works |
@@ -351,10 +490,15 @@ none of it is irreversible — the host has the final word on all of it.
 | `NEWSLETTER_GITHUB_DIR` | `docs/newsletter` | Directory Pages publishes from |
 | `NEWSLETTER_PUBLISH_DIR` | `docs/newsletter` | Where the `filesystem` target writes |
 
-`anthropic` is the recommended search provider: search runs inside the model
-call via Claude's server-side `web_search` / `web_fetch` tools, so there is no
-second API key to manage. The other providers run as a separate search request
-whose results are handed to the model.
+`anthropic` is the recommended search provider under `AI_PROVIDER=claude`:
+search runs inside the model call via Claude's server-side `web_search` /
+`web_fetch` tools, so there is no second API key to manage. The other providers
+run as a separate search request whose results are handed to the model.
+
+DeepSeek cannot browse. Under `AI_PROVIDER=deepseek` the server fetches the page
+itself and hands over the text, and the prompt tells the model so — it is
+instructed to answer `not_independently_verified` rather than claim a check it
+could not run.
 
 **All keys are server-side only.** Nothing touches the browser.
 
@@ -377,7 +521,7 @@ src/
     api/
       title/                 ← names a pasted link (auto title + summary)
       contributions/         Submit + list
-      contributions/[id]/    Read + admin correction
+      contributions/[id]/    Read + admin correction + the bonus decision
       contributions/[id]/retry   Re-run a failed evaluation
       newsletters/           List issues + generate a draft
       newsletters/overview/  Cycle stats and the selection plan
@@ -385,10 +529,14 @@ src/
       newsletters/[id]/{regenerate,items,preview,publish}/
       members/ summary/ admin/auth/
   lib/
-    config/rules.ts          ← every tunable rule, points and editorial both
+    ai/
+      provider.ts            ← AI_PROVIDER picks claude or deepseek
+      claude-client.ts  deepseek-client.ts  types.ts  fetch-content.ts
+    config/rules.ts          ← every tunable rule: points, bonus, editorial
     db/
       schema.ts              Types + the effective-value accessors
-      store.ts               ← swap this file to move off Blobs to Postgres
+      store.ts               ← seeding, migration, the cap; drivers below it
+      netlify-blobs.ts  postgres.ts  types.ts
     services/
       fetch-source.ts        Opens the URL, extracts title/description/date
       title.ts               ← auto-naming: LLM call + metadata fallback
@@ -397,9 +545,11 @@ src/
       prompt.ts              System prompt + structured-output tool schema
       evaluate.ts            AI evaluation + offline heuristic, and the
                              deterministic status derivation
-      points.ts              ← member points. Flat, capped, category-blind
+      points.ts              ← base points. Flat, capped, category-blind
+      bonus.ts               ← the bonus. Proposed here, granted by a host,
+                             settled per cycle
       editorial.ts           ← editorial value. Never touches points
-      leaderboard.ts         Cycle standings + historical cycles
+      leaderboard.ts         Cycle standings, base + bonus, historical cycles
       submit.ts              The submission pipeline, shared with retry
       admin.ts               Passcode gate
     newsletter/
@@ -423,10 +573,11 @@ scripts/
 docs/newsletter/             What GitHub Pages serves (01/ is hand-written)
 ```
 
-The layers are deliberately separate: swapping the database means rewriting
-`db/store.ts` only; changing the rules means editing `config/rules.ts` only;
-changing the evaluator means touching `services/evaluate.ts` only. And the two
-currencies never meet: `points.ts` does not import anything from `editorial.ts`.
+The layers are deliberately separate: swapping the database means writing one
+driver under `db/`; changing the rules means editing `config/rules.ts` only;
+changing the evaluator means touching `services/evaluate.ts` only. And the
+currencies never meet: neither `points.ts` nor `bonus.ts` imports anything from
+`editorial.ts`.
 
 Records written by the previous version (a single 0–100 score used as the
 member's points) are migrated on read: that number becomes the editorial score,
@@ -450,36 +601,49 @@ when they submit, `/api/contributions` names for them.
    text excerpt.
 2. `duplicates.ts` finds earlier submissions covering the same thing, by
    normalised URL and token similarity, and keeps the full comparison list.
-3. `evaluate.ts` sends all of that to Claude with the rubric. Claude researches
-   with `web_search` / `web_fetch` and returns, through a strict tool schema:
-   the six eligibility flags, the duplicate outcome and confidence, the
-   categories, the audiences, the difficulty, the extracted facts, its reading
-   of the member's reason, and eight 0–10 editorial judgements.
+3. `evaluate.ts` sends all of that to the configured model with the rubric. It
+   researches (with `web_search` / `web_fetch` where the provider has them) and
+   returns, through a strict tool schema: the six eligibility flags, the
+   duplicate outcome and confidence, the categories, the audiences, the
+   difficulty, the extracted facts, its reading of the member's reason, eight
+   0–10 editorial judgements, and — separately from all of it — **which section
+   requirement the member's own text satisfies, with one line saying why**.
 4. The server derives the **status** from the eligibility flags and the
    duplicate outcome, recomputes recency from the resolved original date, and
-   scales the editorial score.
-5. `store.ts` saves the row and awards the point in one locked write, after
+   scales the editorial score. A bonus answer naming a requirement that does not
+   belong to the category the model itself chose is a self-contradiction, and is
+   thrown away.
+5. `bonus.ts` turns what survives into a proposal: nothing without a valid
+   status under it, nothing for a section that does not ask for it, nothing for
+   a requirement this member has already been put forward for this cycle. The
+   result is stored `pending`, worth zero, until a host decides.
+6. `store.ts` saves the row and awards the base point in one locked write, after
    re-checking for a same-source collision and re-reading the member's cycle
    total.
 
 With no key, step 3 runs the offline heuristic instead — domain reputation,
 keyword signals, date extraction, local similarity — and never claims to have
-verified anything. With a key present, a failed call skips steps 4–5 and stores
-the submission as `pending` for retry.
+verified anything. Offline it will still propose a bonus on effort alone, and
+says so in the proposal: a host reads every one regardless, and being told the
+guess is a guess is more useful than a guess dressed up as a judgement. With a
+key present, a failed call skips steps 4–6 and stores the submission as
+`pending` for retry.
 
 ---
 
 ## Reset the data
 
-The store is Netlify Blobs (`src/lib/db/store.ts`), so local development runs
-through the Netlify CLI, which provides a blobs sandbox:
+On the Netlify Blobs backend, local development runs through the Netlify CLI,
+which provides a blobs sandbox:
 
 ```bash
 npx netlify dev        # http://localhost:8888
 ```
 
 Deleting `.netlify/blobs-serve/` resets the local database; the members are
-re-seeded on the next request.
+re-seeded on the next request. On Postgres, dropping the store's table does the
+same. `npm run store:migrate` moves an existing database from one backend to the
+other.
 
 ---
 
