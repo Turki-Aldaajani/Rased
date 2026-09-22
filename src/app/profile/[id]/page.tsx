@@ -32,14 +32,20 @@ export default async function ProfilePage({ params }: Props) {
     (c) => c.memberId === member.id && !c.removed,
   );
 
+  // The cap is on the base alone, so it is the base that is measured against
+  // it. A total carrying a bonus is a different number and says so.
+  const cycleBonus = stats.cycleBonusPoints + stats.cycleDiversityPoints;
+
   const tiles = [
     {
       label: "نقاط الدورة",
       value: formatPoints(stats.cyclePoints),
       sub:
-        stats.pointsLeft > 0
-          ? `بقيت ${pointsCount(stats.pointsLeft)}`
-          : "بلغ الحد الأقصى",
+        cycleBonus > 0
+          ? `أساس ${formatPoints(stats.cycleBasePoints)} · بونص ${formatPoints(cycleBonus)}`
+          : stats.pointsLeft > 0
+            ? `أساس فقط، بقيت ${pointsCount(stats.pointsLeft)}`
+            : "بلغ حد الأساس",
     },
     {
       label: "ترتيب الدورة",
@@ -49,11 +55,14 @@ export default async function ProfilePage({ params }: Props) {
     {
       label: "مساهمات الدورة",
       value: stats.cycleSubmissions,
-      sub: "كلها محفوظة",
+      sub:
+        stats.cyclePendingBonuses > 0
+          ? `${stats.cyclePendingBonuses} بونص بانتظار المضيف`
+          : "كلها محفوظة",
     },
     {
       label: "إجمالي النقاط",
-      value: stats.totalPoints,
+      value: formatPoints(stats.totalPoints),
       sub: "كل الدورات",
     },
     {
@@ -123,11 +132,14 @@ export default async function ProfilePage({ params }: Props) {
                 <span className="text-xs text-muted-foreground">
                   {contributionsCount(h.submissions)}
                 </span>
-                <span className="w-12 text-end font-semibold tabular-nums text-foreground">
-                  {h.points}
-                  <span className="text-xs text-muted-foreground">
-                    /{POINTS.maxBasePerCycle}
-                  </span>
+                {/* The cap belongs to the base, so only the base is written
+                    over it. The bonus is added beside it, not into it. */}
+                <span className="text-xs tabular-nums text-muted-foreground">
+                  {formatPoints(h.base)}/{POINTS.maxBasePerCycle}
+                  {h.bonus > 0 && ` · بونص ${formatPoints(h.bonus)}`}
+                </span>
+                <span className="w-10 text-end font-semibold tabular-nums text-foreground">
+                  {formatPoints(h.points)}
                 </span>
               </li>
             ))}
