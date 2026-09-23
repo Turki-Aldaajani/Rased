@@ -6,10 +6,35 @@ import {
   NEWSLETTER_CATEGORIES,
   type NewsletterCategory,
 } from "@/lib/db/schema";
+import { SECTION_TITLE_BY_CATEGORY } from "@/lib/newsletter/sections";
+import type { BonusRequirement } from "@/lib/db/schema";
 import type { SourceSnapshot } from "./fetch-source";
 import type { SearchHit } from "./web-search";
 import type { DuplicateCandidate } from "./duplicates";
 import { truncate } from "@/lib/util/text";
+
+/** What each requirement asks the member for, said to the evaluator. */
+const REQUIREMENT_BRIEFS: Record<BonusRequirement, string> = {
+  why_it_matters:
+    "they say why this matters to the team, in their own judgement",
+  who_is_it_for:
+    "they say who on the team this suits and for what",
+  how_to_use:
+    "they give actual steps or a real workflow for using the tool",
+  quick_example:
+    "they give a concrete example of the idea, not a description of it",
+  takeaway: "they say what to take from the discussion",
+};
+
+/**
+ * The section-to-requirement table, written out of the config rather than
+ * typed into the prompt. Changing what a section asks for in rules.ts changes
+ * what the evaluator is told, with no second edit here to forget.
+ */
+const BONUS_TABLE = NEWSLETTER_CATEGORIES.map((category) => {
+  const requirement = BONUS.bySection[category].requirement;
+  return `- ${SECTION_TITLE_BY_CATEGORY[category]} (${category}): "${requirement}", ${REQUIREMENT_BRIEFS[requirement]}.`;
+}).join("\n");
 
 export interface EvaluationInput {
   title: string;
@@ -57,11 +82,7 @@ THE MEMBER'S WORDS, their reason is preserved verbatim elsewhere. Your "aiInterp
 THE BONUS, what you propose in "bonusRequirement" and "bonusReason":
 
 Each section asks the member for one thing beyond the link itself:
-- أهم الأخبار: "why_it_matters", they say why this matters to the team, in their own judgement.
-- جديد النماذج: "who_is_it_for", they say who on the team this model suits and for what.
-- أدوات جديدة and أدوات أخرى: "how_to_use", they give actual steps or a real workflow for using the tool.
-- تعلّم هذا الأسبوع: "quick_example", they give a concrete example of the idea, not a description of it.
-- رائج على السوشال: "takeaway", they say what to take from the discussion.
+${BONUS_TABLE}
 
 Rules, and they are strict:
 1. There is no bonus without a valid contribution under it. If the status is not accepted or accepted_with_new_angle, answer "none".

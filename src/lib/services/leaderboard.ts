@@ -152,8 +152,18 @@ export interface MemberStats {
   pointsLeft: number;
   totalPoints: number;
   totalSubmissions: number;
-  /** Cycle-by-cycle record, newest first. */
-  history: { cycle: string; points: number; submissions: number }[];
+  /**
+   * Cycle-by-cycle record, newest first. Base and bonus are kept apart here
+   * too: only the base is measured against the cap, so a row that showed the
+   * total over it would read as 9 out of 6.
+   */
+  history: {
+    cycle: string;
+    points: number;
+    base: number;
+    bonus: number;
+    submissions: number;
+  }[];
   recent: Contribution[];
 }
 
@@ -175,10 +185,12 @@ export function memberStats(
     .map((key) => {
       const inCycle = mine.filter((c) => c.cycleKey === key);
       const bonus = cycleBonusFor(member.id, mine, key);
+      const base = inCycle.reduce((sum, c) => sum + effectivePoints(c), 0);
       return {
         cycle: key,
-        points:
-          inCycle.reduce((sum, c) => sum + effectivePoints(c), 0) + bonus.total,
+        points: base + bonus.total,
+        base,
+        bonus: bonus.total,
         submissions: inCycle.length,
       };
     })

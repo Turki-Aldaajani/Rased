@@ -82,7 +82,7 @@ export async function POST(req: Request) {
   // own reason is part of the contribution, not an optional extra.
   if (meaningfulWordCount(memberReason) < ACCEPTANCE.minReasonWords) {
     return NextResponse.json(
-      { error: "اكتب الخبر بكلماتك، جملة أو جملتان تكفيان." },
+      { error: "النص أقصر من أن يوضّح فكرتك، أضف تفصيلًا حقيقيًا عن الخبر أو لماذا يهمك." },
       { status: 400 },
     );
   }

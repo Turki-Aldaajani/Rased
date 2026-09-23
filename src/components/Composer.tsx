@@ -133,7 +133,7 @@ export default function Composer() {
       return;
     }
     if (reason.trim().length < 10) {
-      setError("اكتب الخبر بكلماتك، جملة أو جملتان تكفيان.");
+      setError("النص أقصر من أن يوضّح فكرتك، أضف تفصيلًا حقيقيًا عن الخبر أو لماذا يهمك.");
       return;
     }
 
@@ -333,8 +333,8 @@ export default function Composer() {
             اكتب الخبر هنا
           </label>
           <p className="mt-1 mb-2 text-xs leading-relaxed text-muted-foreground">
-            لخّص الخبر بكلماتك، وأضف لماذا يهم فريقنا. هذا النص يظهر في النشرة
-            كما كتبته.
+            لخّص الخبر بكلماتك، واذكر لنا "لماذا يهمك". هذا النص سيظهر في
+            النشرة كما كتبته.
           </p>
           <Textarea
             id="member-text"
@@ -353,7 +353,7 @@ export default function Composer() {
           />
           <div className="mt-1.5 flex items-start gap-3 px-1 text-xs text-muted-foreground">
             <p className="min-w-0 flex-1">
-              مطلوب، جملة أو جملتان تكفيان. كلامك يُحفظ كما هو.
+              مطلوب، سطرين إلى خمسة بالكثير. كلامك يُحفظ كما هو.
             </p>
             <span
               className="shrink-0 tabular-nums opacity-70"
