@@ -27,6 +27,12 @@ import type { NewsletterIssue, NewsletterItem } from "./types";
 export interface RenderOptions {
   /** "preview" adds a draft ribbon and nothing else. */
   mode: "publish" | "preview";
+  /**
+   * memberId -> that member's current display name, present only when they
+   * allow it. Looked up live by the caller at render time, never taken from
+   * the denormalised `contributor.memberName` on the item.
+   */
+  researcherNames?: Record<string, string>;
 }
 
 const icon = (id: string, fill = false) =>
@@ -58,6 +64,15 @@ function sourceLine(item: NewsletterItem): string {
   const lead =
     linkText.trim() && name.trim() ? `${esc(name.trim())} &nbsp;·&nbsp; ` : "";
   return `<p class="source">${icon("i-link")}<span>المصدر: ${lead}<a href="${safeUrl(url)}">${esc(label)}</a></span></p>`;
+}
+
+function researcherLine(
+  item: NewsletterItem,
+  researcherNames?: Record<string, string>,
+): string {
+  const name = researcherNames?.[item.contributor.memberId];
+  if (!name) return "";
+  return `<p class="source">${icon("i-users")}<span>الباحث/ه: ${esc(name)}</span></p>`;
 }
 
 function whyBox(text: string): string {
@@ -112,6 +127,7 @@ function storyCard(
   item: NewsletterItem,
   index: number,
   numbered: boolean,
+  researcherNames?: Record<string, string>,
 ): string {
   const lead = numbered && index === 0;
   return `<article class="card story${lead ? " story--lead" : ""} reveal">
@@ -123,6 +139,7 @@ function storyCard(
           </div>
           ${whyBox(item.whyItMatters)}
           ${sourceLine(item)}
+          ${researcherLine(item, researcherNames)}
         </article>`;
 }
 
@@ -183,7 +200,11 @@ function socialItem(item: NewsletterItem): string {
         </article>`;
 }
 
-function sectionHtml(issue: NewsletterIssue, sectionIndex: number): string {
+function sectionHtml(
+  issue: NewsletterIssue,
+  sectionIndex: number,
+  researcherNames?: Record<string, string>,
+): string {
   const section = issue.sections[sectionIndex];
   const def = sectionById(section.id);
   const items = section.items;
@@ -198,7 +219,7 @@ function sectionHtml(issue: NewsletterIssue, sectionIndex: number): string {
     const numbered = def.id === "top_news";
     const cards = items.map((item, i) =>
       def.kind === "story"
-        ? storyCard(item, i, numbered)
+        ? storyCard(item, i, numbered, researcherNames)
         : def.kind === "tool"
           ? toolCard(item, def)
           : learnCard(item, def),
@@ -377,7 +398,7 @@ ${NEWSLETTER_SPRITE}
   <main class="main" id="content">
   <article>
 
-    ${present.map((i) => sectionHtml(issue, i)).join("\n\n    ")}
+    ${present.map((i) => sectionHtml(issue, i, options.researcherNames)).join("\n\n    ")}
 
   </article>
   </main>

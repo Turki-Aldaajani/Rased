@@ -78,6 +78,7 @@ function seedDatabase(): Database {
       createdAt: now,
       active: true,
       focusArea: null,
+      showNameOnDiscoveries: true,
     })),
     contributions: [],
     newsletters: [],
@@ -282,6 +283,7 @@ function migrateMember(raw: Record<string, unknown>): Member {
     focusArea:
       (NEWSLETTER_CATEGORIES.find((c) => c === focus) as NewsletterCategory) ??
       null,
+    showNameOnDiscoveries: raw.showNameOnDiscoveries !== false,
   };
 }
 
@@ -377,6 +379,7 @@ export async function addMember(name: string): Promise<Member> {
       createdAt: new Date().toISOString(),
       active: true,
       focusArea: null,
+      showNameOnDiscoveries: true,
     };
     db.members.push(member);
     return member;
@@ -385,7 +388,9 @@ export async function addMember(name: string): Promise<Member> {
 
 export async function updateMember(
   id: string,
-  patch: Partial<Pick<Member, "name" | "active" | "focusArea">>,
+  patch: Partial<
+    Pick<Member, "name" | "active" | "focusArea" | "showNameOnDiscoveries">
+  >,
 ): Promise<Member | null> {
   return mutate((db) => {
     const member = db.members.find((m) => m.id === id);
@@ -398,6 +403,8 @@ export async function updateMember(
     }
     if (patch.active != null) member.active = patch.active;
     if (patch.focusArea !== undefined) member.focusArea = patch.focusArea;
+    if (patch.showNameOnDiscoveries !== undefined)
+      member.showNameOnDiscoveries = patch.showNameOnDiscoveries;
     return member;
   });
 }

@@ -12,6 +12,7 @@ import {
   deleteIssue,
   getIssue,
   insertIssue,
+  listAllMembers,
   listIssues,
   listMembers,
   readDb,
@@ -643,10 +644,27 @@ export async function getIssueWithContext(id: string) {
   };
 }
 
+/**
+ * memberId -> current display name, resolved live and excluding anyone who
+ * has switched off `showNameOnDiscoveries`. Read fresh on every
+ * preview/publish call, never from the item's stored `contributor.memberName`.
+ */
+async function liveResearcherNames(): Promise<Record<string, string>> {
+  const members = await listAllMembers();
+  return Object.fromEntries(
+    members
+      .filter((m) => m.showNameOnDiscoveries !== false)
+      .map((m) => [m.id, m.name]),
+  );
+}
+
 export async function previewHtml(id: string): Promise<string> {
   const issue = await getIssue(id);
   if (!issue) throw new NewsletterError("العدد غير موجود.", 404);
-  return renderIssueHtml(issue, { mode: "preview" });
+  return renderIssueHtml(issue, {
+    mode: "preview",
+    researcherNames: await liveResearcherNames(),
+  });
 }
 
 async function archiveEntries(extra?: NewsletterIssue): Promise<ArchiveEntry[]> {
@@ -721,7 +739,10 @@ export async function publishIssue(
   }
 
   // Render before writing anything, so a rendering failure publishes nothing.
-  const html = renderIssueHtml(issue, { mode: "publish" });
+  const html = renderIssueHtml(issue, {
+    mode: "publish",
+    researcherNames: await liveResearcherNames(),
+  });
   const version = (issue.publication?.version ?? 0) + 1;
   const label = `newsletter: publish issue ${issueSlug(issue.number)}${version > 1 ? ` (v${version})` : ""}`;
   await publisher.write(path, html, label);

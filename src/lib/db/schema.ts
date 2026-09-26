@@ -202,6 +202,8 @@ export interface Member {
   active: boolean;
   /** Research direction the member picked. A hint only, never a restriction. */
   focusArea: NewsletterCategory | null;
+  /** Self-service choice: show this member's name on public discovery cards. */
+  showNameOnDiscoveries: boolean;
 }
 
 /** The acceptance floor from the product spec, one flag per requirement. */
