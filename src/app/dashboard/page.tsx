@@ -134,7 +134,7 @@ export default async function DashboardPage() {
         board={summary.board}
         totals={totals}
         latest={latest}
-        cycle={summary.cycle}
+        cycleText={cycleLabel(summary.cycle)}
       />
 
       {/* What the newsletter has to work with, editorial, not points. */}

@@ -375,6 +375,11 @@ export interface Database {
   contributions: Contribution[];
   /** Newsletter issues, drafts and published, as structured data. */
   newsletters: NewsletterIssue[];
+  /**
+   * cycleKey -> host-set last day ("YYYY-MM-DD", UTC) for that one cycle.
+   * A cycle without an entry ends where the anchor formula puts it.
+   */
+  cycleEndOverrides: Record<string, string>;
 }
 
 // ---------------------------------------------------------------------------

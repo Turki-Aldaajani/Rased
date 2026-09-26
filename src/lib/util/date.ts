@@ -45,34 +45,117 @@ const AR_LOCALE = "ar-u-nu-latn";
  * Newsletter cycles are fixed two-week windows counted from a Monday anchor,
  * so every member is measured against the same calendar and old cycles keep
  * their key forever.
+ *
+ * A host may move the last day of one cycle (`CycleEndOverrides`, stored in
+ * the database). Only that cycle's end moves, and the next cycle starts the day
+ * after it; that next cycle still ends on the anchor grid, so an extension never
+ * drifts into the cycles after it.
  */
-export function cycleIndex(d: Date | string): number {
-  const anchor = new Date(`${CYCLE.anchor}T00:00:00Z`);
+
+/** cycleKey -> last day of that cycle, "YYYY-MM-DD" (UTC), inclusive. */
+export type CycleEndOverrides = Readonly<Record<string, string>>;
+
+const DAY_MS = 86400000;
+export const CYCLE_KEY_RE = /^C\d{4}$/;
+export const ISO_DAY_RE = /^\d{4}-\d{2}-\d{2}$/;
+
+// Set from the stored document every time the store hydrates it, so on the
+// server any caller that has read the store sees the saved overrides.
+let activeOverrides: CycleEndOverrides = {};
+
+export function setCycleEndOverrides(overrides: CycleEndOverrides): void {
+  activeOverrides = { ...overrides };
+}
+
+export function getCycleEndOverrides(): CycleEndOverrides {
+  return activeOverrides;
+}
+
+function keyOf(idx: number): string {
+  return `C${String(Math.max(0, idx)).padStart(4, "0")}`;
+}
+
+function indexOf(key: string): number {
+  return Number(key.replace(/^C/, "")) || 0;
+}
+
+function dayUtc(d: Date | string): number {
   const date = new Date(d);
-  const utc = Date.UTC(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate(),
+  return Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+}
+
+export function isoDay(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+export function defaultCycleStart(key: string): Date {
+  const anchor = new Date(`${CYCLE.anchor}T00:00:00Z`);
+  return new Date(anchor.getTime() + indexOf(key) * CYCLE.lengthDays * DAY_MS);
+}
+
+export function defaultCycleEnd(key: string): Date {
+  return new Date(
+    defaultCycleStart(key).getTime() + (CYCLE.lengthDays - 1) * DAY_MS,
   );
-  return Math.floor((utc - anchor.getTime()) / 86400000 / CYCLE.lengthDays);
+}
+
+export function nextCycleKey(key: string): string {
+  return keyOf(indexOf(key) + 1);
+}
+
+export function previousCycleKey(key: string): string {
+  return keyOf(indexOf(key) - 1);
+}
+
+export function cycleStartWith(key: string, overrides: CycleEndOverrides): Date {
+  const idx = indexOf(key);
+  const previous = idx > 0 ? overrides[keyOf(idx - 1)] : undefined;
+  return previous
+    ? new Date(new Date(`${previous}T00:00:00Z`).getTime() + DAY_MS)
+    : defaultCycleStart(key);
+}
+
+export function cycleEndWith(key: string, overrides: CycleEndOverrides): Date {
+  const own = overrides[key];
+  return own ? new Date(`${own}T00:00:00Z`) : defaultCycleEnd(key);
+}
+
+export function cycleIndexWith(
+  d: Date | string,
+  overrides: CycleEndOverrides,
+): number {
+  const anchor = new Date(`${CYCLE.anchor}T00:00:00Z`);
+  const utc = dayUtc(d);
+  let idx = Math.floor((utc - anchor.getTime()) / DAY_MS / CYCLE.lengthDays);
+  // An override only ever moves a boundary by less than a cycle, so these
+  // walk at most a step or two.
+  while (utc > cycleEndWith(keyOf(idx), overrides).getTime()) idx++;
+  while (idx > 0 && utc < cycleStartWith(keyOf(idx), overrides).getTime()) idx--;
+  return idx;
+}
+
+export function cycleKeyWith(
+  d: Date | string,
+  overrides: CycleEndOverrides,
+): string {
+  return keyOf(cycleIndexWith(d, overrides));
+}
+
+export function cycleIndex(d: Date | string): number {
+  return cycleIndexWith(d, activeOverrides);
 }
 
 /** Cycle key, e.g. "C0044". Fixed width so it sorts lexicographically. */
 export function cycleKey(d: Date | string): string {
-  const idx = cycleIndex(d);
-  return `C${String(Math.max(0, idx)).padStart(4, "0")}`;
+  return keyOf(cycleIndex(d));
 }
 
 export function cycleStart(key: string): Date {
-  const idx = Number(key.replace(/^C/, "")) || 0;
-  const anchor = new Date(`${CYCLE.anchor}T00:00:00Z`);
-  return new Date(anchor.getTime() + idx * CYCLE.lengthDays * 86400000);
+  return cycleStartWith(key, activeOverrides);
 }
 
 export function cycleEnd(key: string): Date {
-  return new Date(
-    cycleStart(key).getTime() + (CYCLE.lengthDays - 1) * 86400000,
-  );
+  return cycleEndWith(key, activeOverrides);
 }
 
 /** Every cycle key from the earliest given date up to now, newest first. */
@@ -88,8 +171,12 @@ export function cycleKeysSince(earliest: string | null): string[] {
 
 /** Human label for a cycle, e.g. "8 – 21 سبتمبر 2026". */
 export function cycleLabel(key: string): string {
-  const start = cycleStart(key);
-  const end = cycleEnd(key);
+  return cycleLabelWith(key, activeOverrides);
+}
+
+export function cycleLabelWith(key: string, overrides: CycleEndOverrides): string {
+  const start = cycleStartWith(key, overrides);
+  const end = cycleEndWith(key, overrides);
   const fmt = (d: Date, withMonth: boolean, withYear: boolean) =>
     d.toLocaleDateString(AR_LOCALE, {
       day: "numeric",
@@ -101,6 +188,17 @@ export function cycleLabel(key: string): string {
     start.getUTCMonth() === end.getUTCMonth() &&
     start.getUTCFullYear() === end.getUTCFullYear();
   return `${fmt(start, !sameMonth, false)} – ${fmt(end, true, true)}`;
+}
+
+/** A "YYYY-MM-DD" day as e.g. "الأربعاء، 30 سبتمبر 2026", read in UTC like the cycles. */
+export function formatDayUtc(day: string): string {
+  return new Date(`${day}T00:00:00Z`).toLocaleDateString(AR_LOCALE, {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  });
 }
 
 /** Days left in the cycle that contains `d`, counting today. */

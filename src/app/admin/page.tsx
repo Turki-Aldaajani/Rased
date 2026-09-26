@@ -11,6 +11,7 @@ import {
   VerificationBadge,
   categoryLabel,
 } from "@/components/contribution";
+import { CycleEndCard } from "@/components/admin/CycleEndCard";
 import { DiamondRule } from "@/components/brand/DiamondRule";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -65,6 +66,8 @@ export default function AdminPage() {
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
+  // Bumped when the cycle calendar changes, so cycle labels below re-render.
+  const [, setCalendarVersion] = useState(0);
 
   const load = useCallback(async () => {
     const [m, c] = await Promise.all([
@@ -119,6 +122,12 @@ export default function AdminPage() {
     setAuthed(true);
     await load();
   }
+
+  const onCalendarChange = useCallback(() => {
+    setCalendarVersion((v) => v + 1);
+    // A moved boundary re-keys contributions; show them where they now sit.
+    void load();
+  }, [load]);
 
   /** Every admin mutation goes through here so the passcode header is never forgotten. */
   const send = useCallback(
@@ -221,6 +230,8 @@ export default function AdminPage() {
           </Button>
         </div>
       </div>
+
+      <CycleEndCard passcode={passcode} onChange={onCalendarChange} />
 
       {message && (
         <p className="text-sm" style={{ color: "var(--destructive)" }}>

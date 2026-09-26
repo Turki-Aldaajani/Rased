@@ -12,7 +12,14 @@ import {
   type NewsletterCategory,
   type PointsAward,
 } from "./schema";
-import { cycleKey, monthKey, weekKey } from "@/lib/util/date";
+import {
+  CYCLE_KEY_RE,
+  ISO_DAY_RE,
+  cycleKey,
+  monthKey,
+  setCycleEndOverrides,
+  weekKey,
+} from "@/lib/util/date";
 import type { NewsletterIssue } from "@/lib/newsletter/types";
 import { netlifyDriver } from "./netlify-blobs";
 import { postgresDriver } from "./postgres";
@@ -82,6 +89,7 @@ function seedDatabase(): Database {
     })),
     contributions: [],
     newsletters: [],
+    cycleEndOverrides: {},
   };
 }
 
@@ -292,7 +300,21 @@ function migrateMember(raw: Record<string, unknown>): Member {
  * before the contribution engine existed. Every backend goes through here,
  * so none of them has to know what a contribution looks like.
  */
+function readOverrides(raw: unknown): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!raw || typeof raw !== "object") return out;
+  for (const [key, value] of Object.entries(raw as Record<string, unknown>)) {
+    if (CYCLE_KEY_RE.test(key) && typeof value === "string" && ISO_DAY_RE.test(value)) {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 function hydrate(parsed: StoredDocument): Database {
+  // Before anything below derives a cycle key from a date.
+  const cycleEndOverrides = readOverrides(parsed.cycleEndOverrides);
+  setCycleEndOverrides(cycleEndOverrides);
   const members = (parsed.members ?? []).map(migrateMember);
   const contributions = (parsed.contributions ?? []).map(migrateContribution);
   const needsMigration = (parsed.contributions ?? []).some(
@@ -303,6 +325,7 @@ function hydrate(parsed: StoredDocument): Database {
     members,
     contributions,
     newsletters: (parsed.newsletters ?? []) as NewsletterIssue[],
+    cycleEndOverrides,
   };
 }
 
