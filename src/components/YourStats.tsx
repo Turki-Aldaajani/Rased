@@ -9,7 +9,6 @@ import { POINTS } from "@/lib/config/rules";
 import type { Contribution } from "@/lib/db/schema";
 import type { LeaderboardRow } from "@/lib/services/leaderboard";
 import { formatPoints, membersCount, pointsCount } from "@/lib/util/ar";
-import { cycleLabel } from "@/lib/util/date";
 import { ContributionRow } from "./contribution";
 import { useCurrentUser } from "./CurrentUser";
 
@@ -17,14 +16,15 @@ export interface YourStatsProps {
   board: LeaderboardRow[];
   totals: Record<string, { points: number; count: number }>;
   latest: Record<string, Contribution[]>;
-  cycle: string;
+  /** Computed on the server, where host-set cycle ends are known. */
+  cycleText: string;
 }
 
 export default function YourStats({
   board,
   totals,
   latest,
-  cycle,
+  cycleText,
 }: YourStatsProps) {
   const { member, ready, members, setMemberId } = useCurrentUser();
 
@@ -111,7 +111,7 @@ export default function YourStats({
         <div className="min-w-0">
           <p className="text-sm font-semibold text-foreground">{member.name}</p>
           <p className="text-xs text-muted-foreground">
-            دورة {cycleLabel(cycle)}
+            دورة {cycleText}
           </p>
         </div>
         <Button asChild variant="outline" size="sm" className="ms-auto">
