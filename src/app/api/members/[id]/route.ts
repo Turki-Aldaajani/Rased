@@ -20,6 +20,7 @@ export async function PATCH(req: Request, { params }: Ctx) {
     name?: string;
     active?: boolean;
     focusArea?: string | null;
+    showNameOnDiscoveries?: boolean;
   };
 
   const focusOnly =
@@ -39,6 +40,9 @@ export async function PATCH(req: Request, { params }: Ctx) {
   const member = await updateMember(id, {
     ...(isAdmin(req) ? { name: body.name, active: body.active } : {}),
     ...(focusArea === undefined ? {} : { focusArea }),
+    ...(body.showNameOnDiscoveries === undefined
+      ? {}
+      : { showNameOnDiscoveries: body.showNameOnDiscoveries }),
   });
   if (!member) {
     return NextResponse.json({ error: "العضو غير موجود." }, { status: 404 });

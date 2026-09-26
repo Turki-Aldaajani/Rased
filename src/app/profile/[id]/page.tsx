@@ -5,6 +5,7 @@ import {
   ContributionRow,
   categoryLabel,
 } from "@/components/contribution";
+import { NamePrivacyToggle } from "@/components/NamePrivacyToggle";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { POINTS } from "@/lib/config/rules";
@@ -93,6 +94,10 @@ export default async function ProfilePage({ params }: Props) {
               ` · مجال البحث: ${categoryLabel(member.focusArea)}`}
           </p>
         </div>
+        <NamePrivacyToggle
+          memberId={member.id}
+          initialValue={member.showNameOnDiscoveries}
+        />
       </Card>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
