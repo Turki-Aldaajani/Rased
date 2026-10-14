@@ -76,7 +76,7 @@ export const SECTIONS: readonly SectionDef[] = [
     limit: NEWSLETTER.sectionLimits.other_tools,
     defaults: {
       ctaLabel: "افتح الأداة",
-      fitLabel: "مفيد لـ",
+      fitLabel: "مناسب لـ",
       ideaLabel: "الفكرة",
       exampleLabel: "مثال عملي",
     },
