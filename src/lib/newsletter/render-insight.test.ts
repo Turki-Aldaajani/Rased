@@ -4,7 +4,7 @@ import { renderIssueHtml } from "./render";
 import { SECTION_IDS } from "./sections";
 import type { NewsletterIssue, NewsletterItem, SectionId } from "./types";
 
-const INSIGHT = "ما وراء الخبر بزاوية رصد";
+const INSIGHT = "ما وراء الخبر بزاوية راصد";
 
 function item(over: Partial<NewsletterItem> = {}): NewsletterItem {
   return {
