@@ -56,7 +56,7 @@ const BRAND_BLOCK = `<p class="brand-name">إنـجـاز</p>
 
 const WHY_LABEL = "لماذا يهمك؟";
 /** One heading over every card's analysis, whatever the section calls it. */
-const INSIGHT_LABEL = "ما وراء الخبر بزاوية رصد";
+const INSIGHT_LABEL = "ما وراء الخبر بزاوية راصد";
 const LEVEL_CLASS: Record<string, string> = {
   beginner: "level-1",
   intermediate: "level-2",
