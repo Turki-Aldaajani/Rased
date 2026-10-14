@@ -55,6 +55,8 @@ const BRAND_BLOCK = `<p class="brand-name">إنـجـاز</p>
     ${NEWSLETTER_DIAMONDS}`;
 
 const WHY_LABEL = "لماذا يهمك؟";
+/** One heading over every card's analysis, whatever the section calls it. */
+const INSIGHT_LABEL = "ما وراء الخبر بزاوية راصد";
 const LEVEL_CLASS: Record<string, string> = {
   beginner: "level-1",
   intermediate: "level-2",
@@ -86,12 +88,21 @@ function researcherLine(
   return `<p class="source">${icon("i-users")}<span>الباحث/ه: ${esc(name)}</span></p>`;
 }
 
-function whyBox(text: string): string {
-  if (!text.trim()) return "";
-  return `<div class="why" role="note">
-            <p class="why-badge">${icon("i-diamond", true)}${WHY_LABEL}</p>
-            <p class="why-text">${esc(text.trim())}</p>
+/**
+ * The analysis layer of a card: one shared heading, then each section's own
+ * sub-headings inside. Nothing renders when every part is empty.
+ */
+function insightBlock(...parts: string[]): string {
+  const inner = parts.filter(Boolean).join("\n            ");
+  if (!inner) return "";
+  return `<div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge">${icon("i-diamond", true)}${INSIGHT_LABEL}</span></p>
+            ${inner}
           </div>`;
+}
+
+function whyBox(text: string): string {
+  return labelled("why-part", WHY_LABEL, text);
 }
 
 function fitLine(label: string, text: string): string {
@@ -100,7 +111,7 @@ function fitLine(label: string, text: string): string {
 }
 
 function labelled(
-  cls: "idea" | "example",
+  cls: "idea" | "example" | "why-part",
   label: string,
   text: string,
 ): string {
@@ -148,7 +159,7 @@ function storyCard(
           <div class="prose">
             ${paragraphs(item.paragraphs)}
           </div>
-          ${whyBox(item.whyItMatters)}
+          ${insightBlock(whyBox(item.whyItMatters))}
           ${sourceLine(item)}
           ${researcherLine(item, researcherNames)}
         </article>`;
@@ -168,8 +179,10 @@ function toolCard(item: NewsletterItem, def: SectionDef): string {
           </div>
           ${labelled("example", item.exampleLabel || def.defaults.exampleLabel, item.example)}
           ${note(item.note)}
-          ${fitLine(item.fitLabel || def.defaults.fitLabel, item.fitText)}
-          ${labelled("idea", item.ideaLabel || def.defaults.ideaLabel, idea)}
+          ${insightBlock(
+            fitLine(item.fitLabel || def.defaults.fitLabel, item.fitText),
+            labelled("idea", item.ideaLabel || def.defaults.ideaLabel, idea),
+          )}
           ${action(item, style)}
         </article>`;
 }
@@ -190,9 +203,11 @@ function learnCard(item: NewsletterItem, def: SectionDef): string {
             ${paragraphs(item.paragraphs)}
           </div>
           ${labelled("example", item.exampleLabel || def.defaults.exampleLabel, item.example)}
-          ${note(closingNote)}
           ${prerequisitesNote(item.prerequisites)}
-          ${fitLine(item.fitLabel || def.defaults.fitLabel, item.fitText)}
+          ${insightBlock(
+            note(closingNote),
+            fitLine(item.fitLabel || def.defaults.fitLabel, item.fitText),
+          )}
           ${action(item, "ghost")}
         </article>`;
 }
@@ -206,7 +221,7 @@ function socialItem(item: NewsletterItem): string {
   return `<article class="social-item">
           <h3 class="social-title">${esc(item.title)}</h3>
           ${paragraphs(item.paragraphs)}
-          ${takeaway ? `<p class="moral">المغزى: ${esc(takeaway)}</p>` : ""}
+          ${insightBlock(labelled("why-part", "المغزى", takeaway))}
           <p><a class="text-link" href="${safeUrl(item.source.url)}">${esc(platform)}${icon("i-external")}</a></p>
         </article>`;
 }
@@ -327,6 +342,23 @@ const PREVIEW_RIBBON = `<style>
 </style>
 <p class="draft-ribbon" role="status">مسودة، معاينة قبل النشر</p>`;
 
+/**
+ * The frame reuses Issue #1's "why" box; these rules only add the shared
+ * heading's rule line and let the section sub-headings sit inside it.
+ */
+const INSIGHT_CSS = `<style>
+  .insight-head { display: flex; align-items: center; gap: 12px; }
+  .insight-head::after { content: ""; flex: 1; block-size: 1px; background: var(--brand-edge); }
+  .insight > .insight-head + * { margin-block-start: 16px; }
+  .insight .why-part, .insight .idea, .insight .fit, .insight .note { font-size: .96em; line-height: 1.9; }
+  .insight .why-part p:not(.label), .insight .idea p:not(.label) { margin-block-start: 0; }
+  .insight > * + * { margin-block-start: 14px; }
+  .insight .label { margin-block-start: 0; font-size: 14px; }
+  .insight .idea { padding-block-start: 14px; border-color: var(--brand-edge); }
+  .social-item .insight { margin-block-start: 16px; }
+  @media print { .insight-head::after { display: none; } }
+</style>`;
+
 function stripTatweel(s: string): string {
   return s.replace(/ـ/g, "");
 }
@@ -384,6 +416,7 @@ export function renderIssueHtml(
           imageAlt: `${ordinal} من نشرة الذكاء الاصطناعي`,
         }),
   })}
+${INSIGHT_CSS}
 </head>
 
 <body>
