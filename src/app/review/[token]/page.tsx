@@ -8,7 +8,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { SECTIONS, type SectionId, type SectionKind } from "@/lib/newsletter/sections";
 import type { ReviewFlag } from "@/lib/newsletter/types";
 import type { FieldConflict, ReviewCard } from "@/lib/review/core";
-import { FIELD_LABELS, type ReviewField } from "@/lib/review/roles";
+import {
+  HINT_FIELDS,
+  hintCounter,
+  insightLengthHint,
+  savedWarning,
+  type InsightHint,
+} from "@/lib/review/hint";
+import { FIELD_LABELS, INSIGHT_RULE, writesInsight, type ReviewField } from "@/lib/review/roles";
 import type { ReviewPage } from "@/lib/review/service";
 import { cn } from "@/lib/utils";
 
@@ -72,6 +79,11 @@ export default function ReviewerPage({ params }: { params: Promise<{ token: stri
         <p className="text-xs text-muted-foreground">{reviewer.label}</p>
         <h1 className="mt-1 text-lg font-semibold text-foreground">أهلًا {reviewer.name}</h1>
         <p className="mt-2 text-sm leading-7 text-muted-foreground">{reviewer.task}</p>
+        {writesInsight(reviewer.role) && (
+          <p className="mt-3 border-s-2 border-border ps-3 text-sm leading-7 text-foreground">
+            {INSIGHT_RULE}
+          </p>
+        )}
         {issue && (
           <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-border pt-4">
             <span className="text-sm text-foreground">
@@ -143,13 +155,21 @@ function ReviewCardView({
   const [gone, setGone] = useState(false);
   const [flags, setFlags] = useState<ReviewFlag[] | null>(null);
   const [busy, setBusy] = useState<"save" | "fresh" | "stale" | null>(null);
-  const [message, setMessage] = useState<{ text: string; ok: boolean } | null>(null);
+  const [message, setMessage] = useState<{ text: string; tone: "ok" | "hint" | "error" } | null>(
+    null,
+  );
   const [confirmStale, setConfirmStale] = useState(false);
 
   const saved = valuesOf(card);
   const dirty = card.editable.some((f) => (values[f] ?? "") !== (saved[f] ?? ""));
   const kind = kindOf(sectionId);
   const item = card.item;
+  /** «ما وراء الخبر» is measured against the news the reviewer reads above it. */
+  const newsText = item.paragraphs.join("\n");
+  const hintFor = (f: ReviewField, text: string): InsightHint | null =>
+    HINT_FIELDS.includes(f) && card.editable.includes(f)
+      ? insightLengthHint(text, newsText, f)
+      : null;
 
   async function save(fresh = false) {
     setBusy(fresh ? "fresh" : "save");
@@ -172,7 +192,7 @@ function ReviewCardView({
         conflicts?: FieldConflict[];
       };
       if (!res.ok || !body.card) {
-        setMessage({ text: body.error ?? "تعذّر الحفظ.", ok: false });
+        setMessage({ text: body.error ?? "تعذّر الحفظ.", tone: "error" });
         if (res.status === 409) setGone(true);
         if (res.status === 401) onGone();
         return;
@@ -187,10 +207,20 @@ function ReviewCardView({
       setBase((old) => ({ ...stored, ...pick(old, Object.keys(clash)) }));
       setConflicts(clash);
       setFlags(body.flags ?? []);
+      // Saving is never blocked; a saved text that is longer than the news,
+      // or restates it, gets one last mention here.
+      const warnings = body.card.editable
+        .map((f) => {
+          const warning = savedWarning(hintFor(f, stored[f] ?? ""));
+          return warning && `نص «${FIELD_LABELS[f]}» ${warning}`;
+        })
+        .filter(Boolean);
       setMessage(
         body.conflicts?.length
-          ? { text: "لم يُحفظ كل شيء، راجع الحقل المعلَّم.", ok: false }
-          : { text: fresh ? "سُجّل: حديث." : "حُفظ.", ok: true },
+          ? { text: "لم يُحفظ كل شيء، راجع الحقل المعلَّم.", tone: "error" }
+          : warnings.length > 0
+            ? { text: `حُفظ، لكن ${warnings.join("، و")}.`, tone: "hint" }
+            : { text: fresh ? "سُجّل: حديث." : "حُفظ.", tone: "ok" },
       );
     } finally {
       setBusy(null);
@@ -206,7 +236,7 @@ function ReviewCardView({
       });
       const body = (await res.json().catch(() => ({}))) as { error?: string };
       if (!res.ok) {
-        setMessage({ text: body.error ?? "لم ينجح الإجراء.", ok: false });
+        setMessage({ text: body.error ?? "لم ينجح الإجراء.", tone: "error" });
         return;
       }
       onGone();
@@ -228,6 +258,7 @@ function ReviewCardView({
     <ReviewText
       key={f}
       conflict={conflicts[f]}
+      hint={gone ? null : hintFor(f, values[f] ?? "")}
       onResolve={(keepMine) => resolve(f, keepMine)}
       label={label}
       value={
@@ -377,7 +408,12 @@ function ReviewCardView({
           <span
             className="text-xs"
             style={{
-              color: message.ok ? "var(--success)" : "var(--destructive)",
+              color:
+                message.tone === "ok"
+                  ? "var(--success)"
+                  : message.tone === "hint"
+                    ? "var(--hint)"
+                    : "var(--destructive)",
             }}
           >
             {message.text}
@@ -395,6 +431,7 @@ function ReviewText({
   editable,
   ltr,
   conflict,
+  hint,
   onChange,
   onResolve,
 }: {
@@ -403,6 +440,8 @@ function ReviewText({
   editable: boolean;
   ltr?: boolean;
   conflict?: FieldConflict;
+  /** Length and repetition against the news; null for a field it does not apply to. */
+  hint?: InsightHint | null;
   onChange: (value: string) => void;
   onResolve: (keepMine: boolean) => void;
 }) {
@@ -428,6 +467,16 @@ function ReviewText({
           onChange={(e) => onChange(e.target.value)}
         />
       </label>
+      {hint && (
+        <p
+          className="mt-1 text-xs tabular-nums"
+          style={{ color: hint.message ? "var(--hint)" : "var(--muted-foreground)" }}
+        >
+          {hintCounter(hint)}
+          {/* Announced only when it changes from one advice to another, not on every word. */}
+          <span aria-live="polite">{hint.message ? ` · ${hint.message}` : ""}</span>
+        </p>
+      )}
       {conflict && (
         <div className="mt-2 rounded-md border border-border p-3 text-xs leading-6" role="alert">
           <span className="block" style={{ color: "var(--warning)" }}>
