@@ -3,6 +3,7 @@ import Header from "@/components/Header";
 import { CurrentUserProvider } from "@/components/CurrentUser";
 import { DiamondRule } from "@/components/brand/DiamondRule";
 import { INJAZ_TAGLINE, InjazMark } from "@/components/brand/InjazLogo";
+import { SiteChrome } from "@/components/SiteChrome";
 import { NEWSLETTER } from "@/lib/config/rules";
 import "./globals.css";
 
@@ -33,30 +34,34 @@ export default function RootLayout({
       <body className="min-h-screen">
         <div className="ambient" aria-hidden />
         <CurrentUserProvider>
-          <Header archiveUrl={NEWSLETTER.archiveUrl} />
+          <SiteChrome>
+            <Header archiveUrl={NEWSLETTER.archiveUrl} />
+          </SiteChrome>
           <main className="mx-auto max-w-5xl px-4 py-10 sm:px-6">
             {children}
           </main>
-          <footer className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
-            <DiamondRule className="mb-6" />
-            <div className="flex flex-col items-center gap-2 text-center">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <InjazMark className="h-5" />
-                <span className="font-serif-display text-sm text-foreground">
-                  إنـجـاز
-                </span>
+          <SiteChrome>
+            <footer className="mx-auto max-w-5xl px-4 pb-12 sm:px-6">
+              <DiamondRule className="mb-6" />
+              <div className="flex flex-col items-center gap-2 text-center">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <InjazMark className="h-5" />
+                  <span className="font-serif-display text-sm text-foreground">
+                    إنـجـاز
+                  </span>
+                </div>
+                <p
+                  className="font-serif-display text-sm"
+                  style={{ color: "var(--gold-bright)" }}
+                >
+                  {INJAZ_TAGLINE}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  التقييمات بمساعدة الذكاء الاصطناعي، ويمكن للمشرف تعديلها.
+                </p>
               </div>
-              <p
-                className="font-serif-display text-sm"
-                style={{ color: "var(--gold-bright)" }}
-              >
-                {INJAZ_TAGLINE}
-              </p>
-              <p className="text-xs text-muted-foreground">
-                التقييمات بمساعدة الذكاء الاصطناعي، ويمكن للمشرف تعديلها.
-              </p>
-            </div>
-          </footer>
+            </footer>
+          </SiteChrome>
         </CurrentUserProvider>
       </body>
     </html>

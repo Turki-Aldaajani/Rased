@@ -15,6 +15,7 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import AdminGate from "@/components/admin/AdminGate";
 import { OtherCycleAdd, type OtherCycleCandidate } from "@/components/admin/OtherCycleAdd";
+import { ItemReviewLine, ReviewSummary } from "@/components/admin/ReviewTrail";
 import { SharePack } from "@/components/admin/SharePack";
 import { useAdminSession } from "@/components/admin/useAdminSession";
 import { Button } from "@/components/ui/button";
@@ -421,6 +422,8 @@ export default function NewsletterEditorPage({
               </ul>
             )}
 
+            {!published && <ReviewSummary issue={issue} />}
+
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <Field label="عنوان النشرة">
                 <Input
@@ -612,6 +615,7 @@ export default function NewsletterEditorPage({
                             <Trash2 />
                           </Button>
                         </div>
+                        <ItemReviewLine review={item.review} />
 
                         {expanded && (
                           <div className="space-y-3 border-t border-border bg-muted px-5 py-4">

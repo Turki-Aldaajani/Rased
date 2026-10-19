@@ -41,6 +41,7 @@ const REASON_LABELS: Record<string, string> = {
   same_event: "نفس الحدث",
   duplicate_url: "نفس الرابط",
   removed_by_editor: "أزاله المحرر",
+  stale: "غير حديث",
 };
 
 export default function NewsletterAdminPage() {

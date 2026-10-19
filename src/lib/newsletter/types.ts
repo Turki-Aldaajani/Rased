@@ -2,6 +2,7 @@ import type {
   Audience,
   Difficulty,
   NewsletterCategory,
+  ReviewerRole,
 } from "@/lib/db/schema";
 import type { SectionId } from "./sections";
 
@@ -31,6 +32,33 @@ export interface ItemSource {
   linkText: string;
   /** Original publication date, when the evaluation found one. */
   publishedAt: string | null;
+}
+
+/** One field a reviewer changed, with what was there before. */
+export interface ReviewEdit {
+  reviewerId: string;
+  name: string;
+  role: ReviewerRole;
+  /** Item field key, "source.url" for the link. */
+  field: string;
+  previous: string;
+  value: string;
+  at: string;
+}
+
+export interface ReviewMark {
+  reviewerId: string;
+  name: string;
+  at: string;
+}
+
+/** What the draft's reviewers did to one card. Shown to the host only. */
+export interface ItemReview {
+  /** Last save by each role; a card counts as reviewed by that role once it has one. */
+  by: Partial<Record<ReviewerRole, ReviewMark>>;
+  edits: ReviewEdit[];
+  /** The content checker's "حديث". "غير حديث" takes the card out instead. */
+  fresh: ReviewMark | null;
 }
 
 export interface NewsletterItem {
@@ -86,6 +114,8 @@ export interface NewsletterItem {
   aiNotes: string[];
   /** Recomputed on every save, see validate.ts. */
   flags: ReviewFlag[];
+  /** Reviewers' marks and edits; absent until someone reviews the card. */
+  review?: ItemReview;
 }
 
 export interface NewsletterSection {
@@ -101,7 +131,8 @@ export type UnusedReason =
   | "section_full"
   | "same_event"
   | "duplicate_url"
-  | "removed_by_editor";
+  | "removed_by_editor"
+  | "stale";
 
 export interface UnusedContribution {
   contributionId: string;

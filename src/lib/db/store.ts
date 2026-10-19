@@ -11,6 +11,9 @@ import {
   type Member,
   type NewsletterCategory,
   type PointsAward,
+  REVIEWER_ROLES,
+  type Reviewer,
+  type ReviewerRole,
 } from "./schema";
 import {
   CYCLE_KEY_RE,
@@ -91,6 +94,7 @@ function seedDatabase(): Database {
     contributions: [],
     newsletters: [],
     cycleEndOverrides: {},
+    reviewers: [],
   };
 }
 
@@ -306,6 +310,23 @@ function migrateMember(raw: Record<string, unknown>): Member {
   };
 }
 
+/** A reviewer row missing anything it needs is dropped, never half-trusted. */
+function migrateReviewer(raw: unknown): Reviewer | null {
+  if (!raw || typeof raw !== "object") return null;
+  const r = raw as Record<string, unknown>;
+  const role = String(r.role ?? "") as ReviewerRole;
+  if (!r.id || !r.tokenHash || !REVIEWER_ROLES.includes(role)) return null;
+  return {
+    id: String(r.id),
+    name: String(r.name ?? ""),
+    role,
+    tokenHash: String(r.tokenHash),
+    active: r.active !== false,
+    createdAt: String(r.createdAt ?? new Date().toISOString()),
+    lastSeenAt: typeof r.lastSeenAt === "string" ? r.lastSeenAt : null,
+  };
+}
+
 /**
  * Turns a stored document into a live `Database`, migrating rows written
  * before the contribution engine existed. Every backend goes through here,
@@ -341,6 +362,9 @@ function hydrate(parsed: StoredDocument): Database {
       sections: inSectionOrder(n.sections ?? []),
     })),
     cycleEndOverrides,
+    reviewers: (parsed.reviewers ?? [])
+      .map(migrateReviewer)
+      .filter((r): r is Reviewer => r !== null),
   };
 }
 

@@ -1,12 +1,10 @@
 import { randomUUID } from "crypto";
 import {
-  DIFFICULTIES,
   effectiveCategory,
   effectivePoints,
   editorialScore,
   type Contribution,
   type Database,
-  type Difficulty,
 } from "@/lib/db/schema";
 import {
   deleteIssue,
@@ -27,7 +25,6 @@ import {
 } from "@/lib/services/cycle-assign";
 import { cycleLeaderboard, knownCycles } from "@/lib/services/leaderboard";
 import { cycleEnd, cycleKey, cycleLabel, cycleStart } from "@/lib/util/date";
-import { truncate } from "@/lib/util/text";
 import { issueSlug, monthOf } from "./format";
 import { newsletterAiEnabled, writeSection } from "./generate";
 import { LEGACY_ISSUES } from "./legacy";
@@ -54,7 +51,11 @@ import type {
   NewsletterSection,
   UnusedContribution,
 } from "./types";
+import { applyItemEdit, str } from "./edit";
+import { NewsletterError } from "./errors";
 import { openWarnings, validateIssue } from "./validate";
+
+export { NewsletterError };
 
 /**
  * The newsletter workflow, end to end:
@@ -65,16 +66,6 @@ import { openWarnings, validateIssue } from "./validate";
  * produce a draft; only `publishIssue`, called by an editor, writes anything
  * public, and it will not overwrite an issue that already exists.
  */
-
-export class NewsletterError extends Error {
-  constructor(
-    message: string,
-    public status = 400,
-    public details: Record<string, unknown> = {},
-  ) {
-    super(message);
-  }
-}
 
 /** Issue #1's own opening and closing lines, the family's defaults. */
 const DEFAULT_TITLE = "نـشـرة الـذكـاء الاصـطـنـاعـي";
@@ -379,8 +370,10 @@ export async function regenerate(
   const issue = await updateIssue(id, (stored) => {
     assertEditable(stored);
     if (out.error || !fresh) return stored;
+    // The reviewers' trail is the card's history; new text does not erase it.
+    const review = locateItem(stored, request.itemId)?.item.review;
     return validateIssue(
-      replaceItem(stored, request.itemId, { ...fresh, id: request.itemId }),
+      replaceItem(stored, request.itemId, { ...fresh, id: request.itemId, review }),
       byId,
     );
   });
@@ -625,80 +618,6 @@ export async function addItemFromOtherCycle(
 // ---------------------------------------------------------------------------
 
 type Json = Record<string, unknown>;
-
-const str = (v: unknown, max: number) => truncate(String(v ?? "").trim(), max);
-const list = (v: unknown, max: number, each: number) =>
-  (Array.isArray(v) ? v : [])
-    .map((x) => str(x, each))
-    .filter(Boolean)
-    .slice(0, max);
-
-const TEXT_FIELDS: [keyof NewsletterItem, number][] = [
-  ["title", 200],
-  ["headline", 240],
-  ["kicker", 60],
-  ["whyItMatters", 800],
-  ["chip", 80],
-  ["fitLabel", 30],
-  ["fitText", 300],
-  ["ideaLabel", 40],
-  ["idea", 500],
-  ["exampleLabel", 40],
-  ["example", 800],
-  ["note", 500],
-  ["moral", 400],
-  ["platform", 60],
-  ["byline", 120],
-  ["levelLabel", 40],
-  ["ctaLabel", 60],
-];
-
-/**
- * Applies an editor's version of an item on top of the stored one. Only
- * editable fields are read; everything that traces the item back to its
- * contribution is kept from the stored copy.
- */
-function applyItemEdit(stored: NewsletterItem, input: Json, sectionId: SectionId): NewsletterItem {
-  const next: NewsletterItem = { ...stored };
-  let changed = false;
-  const set = <K extends keyof NewsletterItem>(key: K, value: NewsletterItem[K]) => {
-    if (JSON.stringify(stored[key]) !== JSON.stringify(value)) changed = true;
-    next[key] = value;
-  };
-
-  for (const [key, max] of TEXT_FIELDS) {
-    if (key in input) set(key, str(input[key], max) as never);
-  }
-  if ("paragraphs" in input) set("paragraphs", list(input.paragraphs, 6, 1500));
-  if ("prerequisites" in input) set("prerequisites", list(input.prerequisites, 6, 120));
-  if ("aiNotes" in input) {
-    // Editors can clear the model's notes once they have checked them, not add new ones.
-    const keep = list(input.aiNotes, 20, 300).filter((n) => stored.aiNotes.includes(n));
-    next.aiNotes = keep;
-  }
-  if ("difficulty" in input) {
-    const d = String(input.difficulty ?? "");
-    set(
-      "difficulty",
-      DIFFICULTIES.includes(d as Difficulty) && d !== "not_applicable"
-        ? (d as Difficulty)
-        : null,
-    );
-  }
-  if (input.source && typeof input.source === "object") {
-    const s = input.source as Json;
-    set("source", {
-      ...stored.source,
-      name: "name" in s ? str(s.name, 120) : stored.source.name,
-      url: "url" in s ? str(s.url, 1000) : stored.source.url,
-      linkText: "linkText" in s ? str(s.linkText, 200) : stored.source.linkText,
-    });
-  }
-
-  next.category = sectionById(sectionId).category;
-  if (changed) next.writtenBy = "editor";
-  return next;
-}
 
 export interface IssueEdit {
   title?: string;

@@ -14,6 +14,7 @@ import {
 import { CycleEndCard } from "@/components/admin/CycleEndCard";
 import { ManualAddCard } from "@/components/admin/ManualAddCard";
 import { MissingFromNewsletterCard } from "@/components/admin/MissingFromNewsletterCard";
+import { ReviewersCard } from "@/components/admin/ReviewersCard";
 import { DiamondRule } from "@/components/brand/DiamondRule";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -330,6 +331,8 @@ export default function AdminPage() {
       )}
 
       <MissingFromNewsletterCard passcode={passcode} refreshKey={contributions} />
+
+      <ReviewersCard passcode={passcode} />
 
       {/* Team members */}
       <SpotlightCard className="p-5">
