@@ -15,6 +15,7 @@ import {
   hashToken,
   reviewCard,
   reviewSections,
+  type FieldConflict,
   type ReviewCard,
   type ReviewSectionView,
   type ReviewerSaveInput,
@@ -165,9 +166,12 @@ async function currentDraftId(): Promise<string> {
 }
 
 export interface ReviewSaveResult {
+  /** The card as it is in the store now, other people's changes included. */
   card: ReviewCard;
   /** validate.ts on the saved card, so the reviewer sees what the host will. */
   flags: ReviewFlag[];
+  /** Fields not saved because someone changed them first. */
+  conflicts: FieldConflict[];
 }
 
 export async function saveAsReviewer(
@@ -177,17 +181,18 @@ export async function saveAsReviewer(
 ): Promise<ReviewSaveResult> {
   await authenticate(token);
   const issueId = await currentDraftId();
-  const saved: { card?: ReviewCard; item?: NewsletterItem } = {};
+  const saved: { card?: ReviewCard; item?: NewsletterItem; conflicts?: FieldConflict[] } = {};
   const issue = await updateIssue(issueId, (stored, db) => {
     const reviewer = stillValid(db.reviewers, token);
     const out = applyReviewerSave(stored, db, reviewer, itemId, input);
     const section = out.issue.sections.find((s) => s.items.some((i) => i.id === itemId))!;
     saved.item = out.item;
+    saved.conflicts = out.conflicts;
     saved.card = reviewCard(reviewer, section.id, out.item);
     return out.issue;
   });
   if (!issue || !saved.card || !saved.item) throw new NewsletterError("العدد غير موجود.", 404);
-  return { card: saved.card, flags: saved.item.flags };
+  return { card: saved.card, flags: saved.item.flags, conflicts: saved.conflicts ?? [] };
 }
 
 export async function markStale(token: string, itemId: string): Promise<void> {

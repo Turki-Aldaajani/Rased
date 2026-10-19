@@ -51,7 +51,7 @@ import type {
   NewsletterSection,
   UnusedContribution,
 } from "./types";
-import { applyItemEdit, str } from "./edit";
+import { STALE_EDITOR, applyItemEdit, isStaleRevision, str } from "./edit";
 import { NewsletterError } from "./errors";
 import { openWarnings, validateIssue } from "./validate";
 
@@ -577,6 +577,7 @@ export async function assignContributionToCycle(
             },
             byId,
           ),
+          revision: (n.revision ?? 0) + 1,
           updatedAt: now,
         };
       });
@@ -627,6 +628,8 @@ export interface IssueEdit {
   sections?: { id: string; items: Json[] }[];
   /** Required to change an issue that is already published. */
   confirmPublishedEdit?: boolean;
+  /** The issue's revision when the editor opened it. */
+  revision?: number;
 }
 
 export async function saveIssue(id: string, edit: IssueEdit): Promise<NewsletterIssue> {
@@ -640,6 +643,9 @@ export async function saveIssue(id: string, edit: IssueEdit): Promise<Newsletter
         409,
         { needsConfirmation: true },
       );
+    }
+    if (isStaleRevision(stored, edit.revision)) {
+      throw new NewsletterError(STALE_EDITOR, 409, { staleRevision: true });
     }
 
     let sections = stored.sections;

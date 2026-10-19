@@ -69,11 +69,44 @@ export function draftState(newsletters: NewsletterIssue[]): DraftState {
 
 export const ITEM_GONE = "هذا الخبر أُزيل من المسودة.";
 
+/**
+ * One field as the reviewer sends it: the new value, and the value the page
+ * showed when they started editing. The base is how a save tells whether
+ * someone else changed the field in the meantime.
+ */
+export interface FieldEdit {
+  value: string;
+  base: string;
+}
+
 export interface ReviewerSaveInput {
-  /** New values, by field. Anything outside the role's fields is ignored. */
+  /** By field. Anything outside the role's fields, or without a base, is ignored. */
   fields: Partial<Record<string, unknown>>;
   /** Content checker only: the card's news is recent. */
   fresh?: boolean;
+}
+
+/** A field that was not saved because it changed since the reviewer opened it. */
+export interface FieldConflict {
+  field: ReviewField;
+  /** The value in the store now, for the reviewer to decide on. */
+  current: string;
+  message: string;
+}
+
+function asFieldEdit(raw: unknown): FieldEdit | null {
+  if (!raw || typeof raw !== "object") return null;
+  const { value, base } = raw as Record<string, unknown>;
+  if (typeof value !== "string" || typeof base !== "string") return null;
+  return { value, base };
+}
+
+/** Who last changed this field: the reviewer who did, or the host when no reviewer did. */
+function lastEditor(item: NewsletterItem, field: ReviewField, current: string): string {
+  const edit = [...(item.review?.edits ?? [])]
+    .reverse()
+    .find((e) => e.field === field);
+  return edit && edit.value === current ? edit.name : "المحرر";
 }
 
 function byIdMap(contributions: Contribution[]): Map<string, Contribution> {
@@ -101,7 +134,9 @@ function emptyReview(): ItemReview {
 /**
  * One reviewer's save of one card, applied to the stored issue. Only the
  * role's own fields are read from the input; the rest of the card is the
- * stored copy, untouched. Returns the new issue and the saved card.
+ * stored copy, untouched, so two roles saving the same card in any order
+ * both keep their changes. A field someone changed since the reviewer opened
+ * it is refused on its own and handed back as a conflict.
  */
 export function applyReviewerSave(
   stored: NewsletterIssue,
@@ -110,7 +145,7 @@ export function applyReviewerSave(
   itemId: string,
   input: ReviewerSaveInput,
   now = new Date().toISOString(),
-): { issue: NewsletterIssue; item: NewsletterItem } {
+): { issue: NewsletterIssue; item: NewsletterItem; conflicts: FieldConflict[] } {
   assertDraft(stored);
   const found = locate(stored, itemId);
   if (!found || !roleSees(reviewer.role, found.sectionId)) {
@@ -121,11 +156,23 @@ export function applyReviewerSave(
 
   const patch: Record<string, unknown> = {};
   const edits: ReviewEdit[] = [];
+  const conflicts: FieldConflict[] = [];
   for (const field of allowed) {
-    if (!(field in input.fields)) continue;
-    const value = str(input.fields[field], FIELD_MAX[field]);
+    const sent = asFieldEdit(input.fields[field]);
+    if (!sent) continue;
+    const value = str(sent.value, FIELD_MAX[field]);
     const previous = fieldValue(item, field);
     if (value === previous) continue;
+    // Field level, under the lock: what decides is this field's stored value
+    // against the one the reviewer started from, never the rest of the card.
+    if (str(sent.base, FIELD_MAX[field]) !== previous) {
+      conflicts.push({
+        field,
+        current: previous,
+        message: `عدّل ${lastEditor(item, field, previous)} هذا الحقل قبل قليل.`,
+      });
+      continue;
+    }
     if (field === "source.url") patch.source = { url: value };
     else patch[field] = value;
     edits.push({
@@ -142,12 +189,14 @@ export function applyReviewerSave(
   const mark = { reviewerId: reviewer.id, name: reviewer.name, at: now };
   const review = item.review ?? emptyReview();
   const edited = Object.keys(patch).length > 0 ? applyItemEdit(item, patch, sectionId) : item;
+  // A save with a conflict is not a finished review of the card yet.
+  const done = conflicts.length === 0;
   const next: NewsletterItem = {
     ...edited,
     review: {
-      by: { ...review.by, [reviewer.role]: mark },
+      by: done ? { ...review.by, [reviewer.role]: mark } : review.by,
       edits: [...review.edits, ...edits],
-      fresh: reviewer.role === "content" && input.fresh ? mark : review.fresh,
+      fresh: done && reviewer.role === "content" && input.fresh ? mark : review.fresh,
     },
   };
 
@@ -161,7 +210,7 @@ export function applyReviewerSave(
     },
     byIdMap(db.contributions),
   );
-  return { issue, item: locate(issue, itemId)!.item };
+  return { issue, item: locate(issue, itemId)!.item, conflicts };
 }
 
 /**

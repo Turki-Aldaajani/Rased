@@ -182,6 +182,12 @@ export interface NewsletterIssue {
 
   createdAt: string;
   updatedAt: string;
+  /**
+   * Bumped by every write. The host's editor sends the one it opened on, so a
+   * save from a stale page is refused instead of overwriting newer changes.
+   * Absent on issues written before it existed, which reads as 0.
+   */
+  revision?: number;
 
   publication: Publication | null;
   /** True when a published issue was edited and not yet re-published. */

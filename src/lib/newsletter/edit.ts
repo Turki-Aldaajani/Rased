@@ -10,6 +10,18 @@ import type { NewsletterItem } from "./types";
 
 type Json = Record<string, unknown>;
 
+export const STALE_EDITOR = "عُدّل العدد منذ فتحته، حدّث الصفحة.";
+
+/**
+ * True when the host's editor opened an older version of the issue than the
+ * stored one: a reviewer or another tab saved since. Its full-layout save
+ * would put their changes back, so it is refused instead. An editor that
+ * sends no revision is not checked.
+ */
+export function isStaleRevision(stored: { revision?: number }, sent: unknown): boolean {
+  return typeof sent === "number" && sent !== (stored.revision ?? 0);
+}
+
 export const str = (v: unknown, max: number) => truncate(String(v ?? "").trim(), max);
 const list = (v: unknown, max: number, each: number) =>
   (Array.isArray(v) ? v : [])

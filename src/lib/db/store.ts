@@ -625,8 +625,14 @@ export async function updateIssue(
   return mutate(async (db) => {
     const idx = db.newsletters.findIndex((n) => n.id === id);
     if (idx === -1) return null;
-    const next = await fn(db.newsletters[idx], db);
-    db.newsletters[idx] = { ...next, id, updatedAt: new Date().toISOString() };
+    const current = db.newsletters[idx];
+    const next = await fn(current, db);
+    db.newsletters[idx] = {
+      ...next,
+      id,
+      revision: (current.revision ?? 0) + 1,
+      updatedAt: new Date().toISOString(),
+    };
     return db.newsletters[idx];
   });
 }
