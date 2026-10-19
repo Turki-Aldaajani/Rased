@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { HINT_MESSAGES, hintCounter, insightLengthHint, savedWarning, wordCount } from "./hint";
+import { fieldGuide } from "./roles";
 
 /** Twenty-two words of news about a model release. */
 const NEWS =
@@ -110,4 +111,13 @@ test("after saving, only «longer» and «repeats» are mentioned again", () => 
   );
   assert.equal(savedWarning(insightLengthHint(fresh(12), NEWS, "moral")), null);
   assert.equal(savedWarning(null), null);
+});
+
+test("a tool's «الفكرة» carries a note to explain how to use it; nothing else does", () => {
+  for (const section of ["new_tools", "other_tools"] as const) {
+    assert.match(fieldGuide(section, "idea") ?? "", /طريقة استخدام/);
+    assert.equal(fieldGuide(section, "fitText"), null);
+  }
+  assert.equal(fieldGuide("top_news", "whyItMatters"), null);
+  assert.equal(fieldGuide("learn", "note"), null);
 });

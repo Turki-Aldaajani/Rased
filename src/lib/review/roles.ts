@@ -42,7 +42,7 @@ export const ROLES: Record<ReviewerRole, RoleDef> = {
     role: "tools",
     label: "مراجع الأدوات",
     short: "الأدوات",
-    task: "راجع «مناسب لـ» و«الفكرة» في بطاقات الأدوات: لمن تفيد الأداة فعلًا، وما الذي تضيفه.",
+    task: "راجع «مناسب لـ» و«الفكرة» في بطاقات الأدوات: لمن تفيد الأداة فعلًا، وكيف يستخدمها القارئ.",
     sections: ["new_tools", "other_tools"],
     fields: { tool: ["fitText", "idea"] },
   },
@@ -74,6 +74,20 @@ export const INSIGHT_HINT = {
 /** Shown under the task to the roles that write «ما وراء الخبر». */
 export const INSIGHT_RULE =
   "«ما وراء الخبر» يلخّص ولا يكرر: اجعله أقصر وأبسط من نص الخبر، وأضف ما لا يقوله الخبر صراحةً.";
+
+/**
+ * A standing note under a field, for what the field should say beyond being
+ * short. Shown to whoever may edit that field on that card family.
+ */
+const FIELD_GUIDES: Partial<Record<SectionKind, Partial<Record<ReviewField, string>>>> = {
+  tool: {
+    idea: "اجعل «الفكرة» طريقة استخدام قدر المستطاع: كيف يستخدم القارئ هذه الأداة، لا ما تفعله فقط.",
+  },
+};
+
+export function fieldGuide(sectionId: SectionId, field: ReviewField): string | null {
+  return FIELD_GUIDES[sectionById(sectionId).kind]?.[field] ?? null;
+}
 
 export function writesInsight(role: ReviewerRole): boolean {
   return role === "insight" || role === "tools";
