@@ -57,6 +57,28 @@ export const ROLES: Record<ReviewerRole, RoleDef> = {
   },
 };
 
+/**
+ * «ما وراء الخبر» against the news, in words (see hint.ts). Below `long` × the
+ * news is fine; from `long` it is longer than preferred; from `longer` it is as
+ * long as the news or longer. A field whose content words sit in the news more
+ * than `repeat` of the time is restating it, judged only once it has
+ * `minRepeatWords` content words, so a two-word line is not called a repeat.
+ */
+export const INSIGHT_HINT = {
+  long: 0.5,
+  longer: 1.0,
+  repeat: 0.7,
+  minRepeatWords: 4,
+} as const;
+
+/** Shown under the task to the roles that write «ما وراء الخبر». */
+export const INSIGHT_RULE =
+  "«ما وراء الخبر» يلخّص ولا يكرر: اجعله أقصر وأبسط من نص الخبر، وأضف ما لا يقوله الخبر صراحةً.";
+
+export function writesInsight(role: ReviewerRole): boolean {
+  return role === "insight" || role === "tools";
+}
+
 export const FIELD_LABELS: Record<ReviewField, string> = {
   whyItMatters: "لماذا يهمك؟",
   moral: "المغزى",
