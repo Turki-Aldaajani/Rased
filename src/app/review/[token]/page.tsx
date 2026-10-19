@@ -15,7 +15,13 @@ import {
   savedWarning,
   type InsightHint,
 } from "@/lib/review/hint";
-import { FIELD_LABELS, INSIGHT_RULE, writesInsight, type ReviewField } from "@/lib/review/roles";
+import {
+  FIELD_LABELS,
+  INSIGHT_RULE,
+  fieldGuide,
+  writesInsight,
+  type ReviewField,
+} from "@/lib/review/roles";
 import type { ReviewPage } from "@/lib/review/service";
 import { cn } from "@/lib/utils";
 
@@ -261,6 +267,7 @@ function ReviewCardView({
       hint={gone ? null : hintFor(f, values[f] ?? "")}
       onResolve={(keepMine) => resolve(f, keepMine)}
       label={label}
+      guide={card.editable.includes(f) ? fieldGuide(sectionId, f) : null}
       value={
         card.editable.includes(f)
           ? (values[f] ?? "")
@@ -432,10 +439,13 @@ function ReviewText({
   ltr,
   conflict,
   hint,
+  guide,
   onChange,
   onResolve,
 }: {
   label: string;
+  /** What the field should say, e.g. a tool's «الفكرة» as a way to use it. */
+  guide?: string | null;
   value: string;
   editable: boolean;
   ltr?: boolean;
@@ -460,6 +470,9 @@ function ReviewText({
     <div>
       <label className="block">
         <span className="text-xs text-muted-foreground">{label}</span>
+        {guide && (
+          <span className="mt-0.5 block text-xs leading-6 text-muted-foreground">{guide}</span>
+        )}
         <Textarea
           dir={ltr ? "ltr" : undefined}
           className={cn("mt-1 text-sm leading-7", ltr ? "min-h-12 break-all" : "min-h-20")}
