@@ -17,6 +17,23 @@ const nextConfig: NextConfig = {
   },
 
   /**
+   * A reviewer's page carries a personal token in its path: never cached by
+   * anything in between, never indexed.
+   */
+  async headers() {
+    return [
+      {
+        source: "/review/:path*",
+        headers: [
+          { key: "Cache-Control", value: "no-store" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+        ],
+      },
+    ];
+  },
+
+  /**
    * The Spline runtime references Draco decoder assets that it fetches from a
    * CDN at runtime and does not ship in the package. Webpack tries to resolve
    * those paths at build time and fails, so they are marked external — the

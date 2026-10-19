@@ -54,6 +54,7 @@ const UNUSED_LABELS: Record<UnusedReason, string> = {
   below_threshold: "أقل من الحد التحريري",
   duplicate_url: "المصدر نفسه مختار مسبقًا",
   removed_by_editor: "أزالها المحرر",
+  stale: "غير حديث",
 };
 
 /** When the contribution became accepted, as near as the record tells. */

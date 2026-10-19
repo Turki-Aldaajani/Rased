@@ -206,6 +206,24 @@ export interface Member {
   showNameOnDiscoveries: boolean;
 }
 
+/** The three review tasks a draft goes through before it is published. */
+export const REVIEWER_ROLES = ["insight", "tools", "content"] as const;
+export type ReviewerRole = (typeof REVIEWER_ROLES)[number];
+
+/**
+ * A team member who reviews the draft through a personal link, with no
+ * access to anything else. Only the SHA-256 of the link's token is kept.
+ */
+export interface Reviewer {
+  id: string;
+  name: string;
+  role: ReviewerRole;
+  tokenHash: string;
+  active: boolean;
+  createdAt: string;
+  lastSeenAt: string | null;
+}
+
 /** The acceptance floor from the product spec, one flag per requirement. */
 export interface EligibilityChecks {
   aiRelated: boolean;
@@ -412,6 +430,8 @@ export interface Database {
    * A cycle without an entry ends where the anchor formula puts it.
    */
   cycleEndOverrides: Record<string, string>;
+  /** Draft reviewers and their roles, see src/lib/review. */
+  reviewers: Reviewer[];
 }
 
 // ---------------------------------------------------------------------------

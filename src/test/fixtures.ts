@@ -61,6 +61,7 @@ export function database(contributions: Contribution[], over: Partial<Database> 
     contributions,
     newsletters: [],
     cycleEndOverrides: {},
+    reviewers: [],
     ...over,
   };
 }

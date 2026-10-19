@@ -15,6 +15,7 @@ import Link from "next/link";
 import { use, useCallback, useEffect, useState } from "react";
 import AdminGate from "@/components/admin/AdminGate";
 import { OtherCycleAdd, type OtherCycleCandidate } from "@/components/admin/OtherCycleAdd";
+import { ItemReviewLine, ReviewSummary } from "@/components/admin/ReviewTrail";
 import { SharePack } from "@/components/admin/SharePack";
 import { useAdminSession } from "@/components/admin/useAdminSession";
 import { Button } from "@/components/ui/button";
@@ -176,10 +177,15 @@ export default function NewsletterEditorPage({
     const added = server.issue.sections
       .flatMap((s) => s.items)
       .find((i) => i.contributionId === contributionId);
+    // The add is the only write since this page's version only when the
+    // revision moved by exactly one. Otherwise someone else saved too, and
+    // keeping the old revision makes the next save ask for a refresh.
+    const onlyThisAdd = (server.issue.revision ?? 0) === (local.issue.revision ?? 0) + 1;
     return {
       ...server,
       issue: {
         ...local.issue,
+        revision: onlyThisAdd ? server.issue.revision : local.issue.revision,
         unused: server.issue.unused,
         sections: local.issue.sections.map((s) =>
           added && s.id === sectionId ? { ...s, items: [...s.items, added] } : s,
@@ -243,6 +249,9 @@ export default function NewsletterEditorPage({
           lead: issue.lead,
           closing: issue.closing,
           sections: issue.sections.map((s) => ({ id: s.id, items: s.items })),
+          // A reviewer may have saved since this page loaded; the server
+          // refuses a save from an older version rather than undo theirs.
+          revision: issue.revision ?? 0,
           ...extra,
         }),
       });
@@ -420,6 +429,8 @@ export default function NewsletterEditorPage({
                 ))}
               </ul>
             )}
+
+            {!published && <ReviewSummary issue={issue} />}
 
             <div className="mt-4 grid gap-3 sm:grid-cols-3">
               <Field label="عنوان النشرة">
@@ -612,6 +623,7 @@ export default function NewsletterEditorPage({
                             <Trash2 />
                           </Button>
                         </div>
+                        <ItemReviewLine review={item.review} />
 
                         {expanded && (
                           <div className="space-y-3 border-t border-border bg-muted px-5 py-4">

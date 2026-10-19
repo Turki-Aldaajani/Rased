@@ -17,6 +17,7 @@ export interface StoredDocument {
   contributions?: Record<string, unknown>[];
   newsletters?: unknown[];
   cycleEndOverrides?: unknown;
+  reviewers?: unknown[];
 }
 
 /**
