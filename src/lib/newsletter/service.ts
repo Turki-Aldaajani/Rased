@@ -31,6 +31,7 @@ import { truncate } from "@/lib/util/text";
 import { issueSlug, monthOf } from "./format";
 import { newsletterAiEnabled, writeSection } from "./generate";
 import { LEGACY_ISSUES } from "./legacy";
+import { manualAddRefusal, manuallyAddable, notInNewsletter, type MissingCycle } from "./manual";
 import { resolvePublisher } from "./publish";
 import { renderOgImage } from "./og-image";
 import {
@@ -408,7 +409,11 @@ function replaceItem(
   };
 }
 
-/** "Add an item", always from a real contribution, so it stays traceable. */
+/**
+ * "Add an item", always from a real contribution, so it stays traceable. A
+ * host's choice: any accepted contribution of the cycle may go in, evaluated
+ * or not, with no editorial floor. The automatic selection is not this.
+ */
 export async function addItem(
   id: string,
   contributionId: string,
@@ -420,11 +425,9 @@ export async function addItem(
   assertAddable(current, options);
   const db = await readDb();
   const contribution = db.contributions.find((c) => c.id === contributionId);
-  if (!contribution || contribution.removed || !contribution.evaluation) {
-    throw new NewsletterError("المساهمة غير متاحة.", 404);
-  }
-  if (contribution.cycleKey !== current.cycleKey) {
-    throw new NewsletterError("المساهمة من دورة أخرى.", 422);
+  const refusal = manualAddRefusal(contribution, current.cycleKey);
+  if (refusal || !contribution) {
+    throw new NewsletterError(refusal?.message ?? "المساهمة غير متاحة.", refusal?.status ?? 404);
   }
   if (current.sections.some((s) => s.items.some((i) => i.contributionId === contributionId))) {
     throw new NewsletterError("هذه المساهمة موجودة في العدد بالفعل.", 409);
@@ -461,6 +464,59 @@ function assertAddable(issue: NewsletterIssue, options: { confirmPublishedEdit?:
       { needsConfirmation: true },
     );
   }
+}
+
+// ---------------------------------------------------------------------------
+// «لم تدخل النشرة», accepted contributions missing from their cycle's issue
+// ---------------------------------------------------------------------------
+
+export async function missingFromNewsletter(): Promise<MissingCycle[]> {
+  return notInNewsletter(await readDb());
+}
+
+/**
+ * Adds a contribution to the issue of its own cycle, in the section the host
+ * picked. One without a category takes that section's, so it is classified
+ * the same way everywhere from then on. Every refusal is checked first, so a
+ * refused add changes nothing.
+ */
+export async function addToCycleIssue(
+  contributionId: string,
+  sectionId: SectionId,
+  options: { confirmPublishedEdit?: boolean } = {},
+): Promise<{ issue: NewsletterIssue; error: string | null }> {
+  const db = await readDb();
+  const contribution = db.contributions.find((c) => c.id === contributionId);
+  const refusal = manualAddRefusal(contribution);
+  if (refusal || !contribution) {
+    throw new NewsletterError(refusal?.message ?? "المساهمة غير متاحة.", refusal?.status ?? 404);
+  }
+  const issue = db.newsletters.find((n) => n.cycleKey === contribution.cycleKey);
+  if (!issue) {
+    throw new NewsletterError("لا يوجد عدد لدورة هذه المساهمة بعد، أنشئه أولًا.", 422);
+  }
+  assertAddable(issue, options);
+  if (issue.sections.some((s) => s.items.some((i) => i.contributionId === contributionId))) {
+    throw new NewsletterError("هذه المساهمة موجودة في العدد بالفعل.", 409);
+  }
+
+  if (effectiveCategory(contribution) === null) {
+    const category = sectionById(sectionId).category;
+    await mutate((live) => {
+      const c = live.contributions.find((x) => x.id === contributionId);
+      if (!c || effectiveCategory(c) !== null) return;
+      c.adminOverride = {
+        status: c.adminOverride?.status ?? null,
+        points: c.adminOverride?.points ?? null,
+        primaryCategory: category,
+        duplicateOutcome: c.adminOverride?.duplicateOutcome ?? null,
+        note: c.adminOverride?.note ?? "",
+        at: c.adminOverride?.at ?? new Date().toISOString(),
+      };
+    });
+  }
+
+  return addItem(issue.id, contributionId, sectionId, options);
 }
 
 // ---------------------------------------------------------------------------
@@ -550,6 +606,11 @@ export async function addItemFromOtherCycle(
   const current = await getIssue(id);
   if (!current) throw new NewsletterError("العدد غير موجود.", 404);
   assertAddable(current, options);
+  // Refused before the move, so a contribution that cannot go in is not moved.
+  const refusal = manualAddRefusal(
+    (await readDb()).contributions.find((c) => c.id === contributionId),
+  );
+  if (refusal) throw new NewsletterError(refusal.message, refusal.status);
   await assignContributionToCycle({
     contributionId,
     toCycle: current.cycleKey,
@@ -749,7 +810,7 @@ export async function getIssueWithContext(id: string) {
   const used = new Set(issue.sections.flatMap((s) => s.items.map((i) => i.contributionId)));
   // Everything from the cycle that could be added, with traceability details.
   const candidates = db.contributions
-    .filter((c) => !c.removed && c.cycleKey === issue.cycleKey && c.evaluation && !used.has(c.id))
+    .filter((c) => manuallyAddable(c) && c.cycleKey === issue.cycleKey && !used.has(c.id))
     .map((c) => ({
       contributionId: c.id,
       title: c.title,
@@ -771,8 +832,7 @@ export async function getIssueWithContext(id: string) {
   const otherCycleCandidates = db.contributions
     .filter(
       (c) =>
-        !c.removed &&
-        c.evaluation &&
+        manuallyAddable(c) &&
         c.cycleKey !== issue.cycleKey &&
         c.cycleKey <= cycleKey(new Date()) &&
         !published.has(c.id),

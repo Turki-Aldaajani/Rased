@@ -56,7 +56,10 @@ export default function NewsletterAdminPage() {
     if (!res.ok) return;
     const data = (await res.json()) as Listing;
     setListing(data);
-    setCycle((c) => c || data.currentCycle);
+    // ?cycle= opens a given cycle, e.g. from «لم تدخل النشرة» on /admin.
+    const requested = new URLSearchParams(window.location.search).get("cycle");
+    const linked = data.cycles.some((k) => k.key === requested) ? requested : null;
+    setCycle((c) => c || linked || data.currentCycle);
   }, [send]);
 
   const loadOverview = useCallback(
