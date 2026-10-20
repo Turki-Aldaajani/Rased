@@ -1,0 +1,1172 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نـشـرة الـذكـاء الاصـطـنـاعـي، العدد الثالث</title>
+
+<!-- ===== معاينة الرابط عند المشاركة (Open Graph)، نطاق GitHub Pages ===== -->
+<meta property="og:type" content="article">
+<meta property="og:site_name" content="إنجاز">
+<meta property="og:locale" content="ar_SA">
+<meta property="og:title" content="نشرة الذكاء الاصطناعي، العدد الثالث">
+<meta property="og:description" content="لا تلاحق كل جديد في الذكاء الاصطناعي. تعلّم كيف تستخدم الجديد الذي يستحق وقتك.">
+<meta property="og:url" content="https://turki-aldaajani.github.io/Rased/newsletter/03/">
+<meta property="og:image" content="https://turki-aldaajani.github.io/Rased/newsletter/03/og.png">
+<meta property="og:image:secure_url" content="https://turki-aldaajani.github.io/Rased/newsletter/03/og.png">
+<meta property="og:image:type" content="image/png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="العدد الثالث من نشرة الذكاء الاصطناعي">
+
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="نشرة الذكاء الاصطناعي، العدد الثالث">
+<meta name="twitter:description" content="لا تلاحق كل جديد في الذكاء الاصطناعي. تعلّم كيف تستخدم الجديد الذي يستحق وقتك.">
+<meta name="twitter:image" content="https://turki-aldaajani.github.io/Rased/newsletter/03/og.png">
+
+<meta name="description" content="لا تلاحق كل جديد في الذكاء الاصطناعي. تعلّم كيف تستخدم الجديد الذي يستحق وقتك.">
+<meta name="theme-color" content="#155043">
+
+<script>
+  (function (root) {
+    root.classList.add('js');
+    if ('IntersectionObserver' in window && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('reveal-ready');
+    }
+  })(document.documentElement);
+</script>
+
+<style>
+  /* ═══════════ إنجاز | نشرة الذكاء الاصطناعي — نسخة الويب ═══════════ */
+
+  /* خط ثمانية هو خط كل أعداد النشرة. تُستخدم النسخة المثبتة على
+     جهاز القارئ إن وُجدت، ثم ملفات الخط المنشورة بجانب الأعداد (../fonts/).
+     والرابط المطلق بعده للمعاينة داخل التطبيق، حيث لا يصحّ المسار النسبي. */
+  @font-face {
+    font-family: 'Thmanyah';
+    src: local('thmanyah sans Regular'), local('thmanyahsans-Regular'),
+         local('Thmanyah Sans'), local('thmanyah Sans'), local('Thmanyah'),
+         url('../fonts/thmanyah-sans-400.woff2') format('woff2'),
+         url('https://turki-aldaajani.github.io/Rased/newsletter/fonts/thmanyah-sans-400.woff2') format('woff2');
+    font-weight: 400;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Thmanyah';
+    src: local('thmanyah sans Bold'), local('thmanyahsans-Bold'),
+         url('../fonts/thmanyah-sans-700.woff2') format('woff2'),
+         url('https://turki-aldaajani.github.io/Rased/newsletter/fonts/thmanyah-sans-700.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+  @font-face {
+    font-family: 'Thmanyah Serif Display';
+    src: local('thmanyah serif display Bold'),
+         local('thmanyahserifdisplay-Bold'),
+         url('../fonts/thmanyah-serif-display-700.woff2') format('woff2'),
+         url('https://turki-aldaajani.github.io/Rased/newsletter/fonts/thmanyah-serif-display-700.woff2') format('woff2');
+    font-weight: 700;
+    font-display: swap;
+  }
+
+  :root {
+    /* الهوية اللونية — لا تُضَف ألوان خارج هذه المجموعة */
+    --brand:        #155043;
+    --interactive:  #125D64;
+    --accent:       #869200;
+    --ink:          #131C18;
+    --text:         #2B2B2B;
+    --muted:        #9A968A;
+    --line:         #E7E3D6;
+    --sand:         #E3D8B3;
+    --surface:      #FFFFFF;
+    --bg:           #FAFAFA;
+
+    /* مستويات التعلّم (دلالية) */
+    --level-beginner:     #3CA45D;
+    --level-intermediate: #B08D00;
+    --level-research:     #C1372A;
+
+    /* درجات شفافة مشتقة من ألوان الهوية نفسها، لا ألوان جديدة */
+    --brand-tint:      color-mix(in srgb, var(--brand) 6%, var(--surface));
+    --brand-edge:      color-mix(in srgb, var(--brand) 16%, transparent);
+    --sand-hair:       color-mix(in srgb, var(--sand) 24%, transparent);
+    --sand-hair-soft:  color-mix(in srgb, var(--sand) 12%, transparent);
+    --shadow:          color-mix(in srgb, var(--ink) 35%, transparent);
+    --glass:           color-mix(in srgb, var(--bg) 92%, transparent);
+
+    --font-sans: 'Thmanyah', 'Thmanyah Sans', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+    --font-display: 'Thmanyah Serif Display', 'Thmanyah', 'Thmanyah Sans', 'IBM Plex Sans Arabic', 'Segoe UI', Tahoma, Arial, sans-serif;
+    --font-caps: Arial, Helvetica, sans-serif;
+
+    --content: 720px;
+    --toc: 208px;
+    --col-gap: 72px;
+    --gutter: 20px;
+    --radius: 8px;
+    --radius-sm: 6px;
+    --ease: cubic-bezier(.2, .7, .2, 1);
+
+    --pattern: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 40 40'%3E%3Cpath d='M20 0L40 20L20 40L0 20Z' fill='none' stroke='%23FFFFFF' stroke-opacity='.07'/%3E%3Crect x='18.5' y='18.5' width='3' height='3' transform='rotate(45 20 20)' fill='%23E3D8B3' fill-opacity='.22'/%3E%3C/svg%3E");
+    --why-mark: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Cg fill='none' stroke='%23155043' stroke-width='1.5'%3E%3Cpath d='M60 4L116 60L60 116L4 60Z'/%3E%3Cpath d='M60 26L94 60L60 94L26 60Z'/%3E%3C/g%3E%3Cpath d='M60 47L73 60L60 73L47 60Z' fill='%23155043'/%3E%3C/svg%3E");
+  }
+  @media (min-width: 640px)  { :root { --gutter: 32px; } }
+  @media (min-width: 1100px) { :root { --gutter: 40px; } }
+
+  /* ─── أساسيات ─── */
+  *, *::before, *::after { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 16px;
+    line-height: 1.9;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+  }
+  @media (min-width: 640px) { body { font-size: 17px; } }
+
+  h1, h2, h3, p, ol, ul { margin: 0; }
+  ol, ul { padding: 0; list-style: none; }
+  h1, h2, h3 { text-wrap: balance; }
+  p { text-wrap: pretty; }
+
+  a {
+    color: var(--interactive);
+    text-decoration-line: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: .32em;
+    transition: color .2s var(--ease), text-decoration-thickness .2s var(--ease);
+  }
+  a:hover { text-decoration-thickness: 2px; }
+
+  :focus-visible { outline: 3px solid var(--interactive); outline-offset: 3px; border-radius: 3px; }
+  .on-dark :focus-visible { outline-color: var(--sand); }
+  ::selection { background: var(--sand); color: var(--ink); }
+
+  .sprite { position: absolute; inline-size: 0; block-size: 0; overflow: hidden; }
+  .icon {
+    display: inline-block; flex: none;
+    inline-size: 1.15em; block-size: 1.15em;
+    fill: none; stroke: currentColor; stroke-width: 1.75;
+    stroke-linecap: round; stroke-linejoin: round;
+    vertical-align: -.2em;
+  }
+  .icon--fill { fill: currentColor; stroke: none; }
+
+  /* ─── شريط تقدّم القراءة ─── */
+  .progress {
+    position: fixed; z-index: 60;
+    inset-block-start: 0; inset-inline: 0;
+    block-size: 3px;
+    pointer-events: none;
+  }
+  .progress-bar {
+    block-size: 100%;
+    inline-size: calc(var(--progress, 0) * 100%);
+    background: var(--accent);
+  }
+
+  /* ─── الرأس ─── */
+  .hero, .closing {
+    position: relative; isolation: isolate; overflow: hidden;
+    background: var(--brand); color: var(--surface);
+    padding-inline: var(--gutter);
+  }
+  .hero { padding-block: clamp(60px, 10vw, 116px) clamp(52px, 8vw, 96px); }
+
+  .hero::before, .closing::before {
+    content: ""; position: absolute; inset: 0; z-index: -2;
+    background-image: var(--pattern);
+    background-size: 40px 40px;
+    background-position: center top;
+    /* النمط يتركّز في طرف السطر المقابل للنص ويتلاشى نحو العنوان */
+    -webkit-mask-image: linear-gradient(to right, var(--ink) 5%, transparent 80%);
+            mask-image: linear-gradient(to right, var(--ink) 5%, transparent 80%);
+  }
+
+  .arch {
+    position: absolute; z-index: -1;
+    inset-block-end: 0;
+    inset-inline-end: max(var(--gutter), calc(50% - 500px));
+    block-size: min(86%, 470px); inline-size: auto;
+    aspect-ratio: 240 / 340;
+    fill: none; stroke: var(--sand); stroke-width: 1.5;
+    opacity: .3;
+  }
+  .arch path { vector-effect: non-scaling-stroke; }
+  .arch .arch-inner { opacity: .45; }
+  @media (max-width: 639.98px) {
+    .arch { opacity: .14; inset-inline-end: -48px; block-size: 72%; }
+  }
+
+  .hero-inner, .closing-inner, .footer-inner {
+    position: relative;
+    max-inline-size: var(--content);
+    margin-inline: auto;
+  }
+  @media (min-width: 1100px) {
+    .hero-inner, .closing-inner, .footer-inner {
+      max-inline-size: calc(var(--toc) + var(--col-gap) + var(--content));
+    }
+  }
+
+  .brand-name {
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(48px, 8.4vw, 78px); line-height: 1.15;
+  }
+  .brand-tagline {
+    margin-block-start: 12px;
+    font-family: var(--font-caps); font-size: 10px; line-height: 1;
+    letter-spacing: .32em; color: var(--sand);
+  }
+  .diamond-row { display: block; inline-size: 132px; block-size: 12px; margin-block: 30px 34px; }
+  .diamond-row .d-solid { fill: var(--sand); }
+  .diamond-row .d-line { fill: none; stroke: var(--sand); stroke-width: 1.2; }
+
+  .hero-title {
+    max-inline-size: 15em;
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(30px, 5vw, 52px); line-height: 1.35;
+  }
+  .hero-meta {
+    display: inline-flex; align-items: center;
+    margin-block-start: 18px; padding-block: 4px; padding-inline: 14px;
+    border: 1px solid var(--sand-hair); border-radius: 999px;
+    font-size: 15px; line-height: 1.7; color: var(--sand);
+  }
+  .hero-lead {
+    max-inline-size: 32em;
+    margin-block-start: 40px; padding-block-start: 28px;
+    border-block-start: 1px solid var(--sand-hair);
+    font-size: clamp(18px, 2.2vw, 22px); line-height: 1.9;
+  }
+
+  /* ─── التخطيط ─── */
+  .layout {
+    max-inline-size: calc(var(--content) + 2 * var(--gutter));
+    margin-inline: auto;
+    padding-inline: var(--gutter);
+  }
+  .main { min-inline-size: 0; padding-block: 48px 84px; }
+  @media (min-width: 1100px) {
+    .layout {
+      display: grid;
+      grid-template-columns: var(--toc) minmax(0, var(--content));
+      column-gap: var(--col-gap);
+      align-items: start;
+      max-inline-size: calc(var(--toc) + var(--col-gap) + var(--content) + 2 * var(--gutter));
+    }
+    .main { padding-block: 72px 116px; }
+  }
+
+  /* ─── فهرس المحتويات ─── */
+  .toc-link { color: var(--text); text-decoration: none; }
+  .toc-toggle { display: none; }
+
+  /* جوال وجهاز لوحي: شريط لاصق قابل للطي */
+  @media (max-width: 1099.98px) {
+    .toc {
+      position: sticky; z-index: 40; inset-block-start: 0;
+      margin-inline: calc(-1 * var(--gutter));
+      background: var(--glass);
+      -webkit-backdrop-filter: saturate(1.2) blur(10px);
+              backdrop-filter: saturate(1.2) blur(10px);
+      border-block-end: 1px solid var(--line);
+    }
+    .toc-title { display: none; }
+    .js .toc-toggle {
+      display: flex; align-items: center; gap: 10px;
+      inline-size: 100%;
+      padding-block: 12px; padding-inline: var(--gutter);
+      border: 0; background: none; cursor: pointer;
+      font: inherit; font-size: 15px; line-height: 1.6;
+      color: var(--text); text-align: start;
+    }
+    .toc-toggle-label { flex: none; font-weight: 700; color: var(--brand); }
+    .toc-current { min-inline-size: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .toc-current:not(:empty)::before { content: "·"; margin-inline-end: 10px; }
+    .toc-toggle .icon { margin-inline-start: auto; color: var(--brand); transition: transform .25s var(--ease); }
+    .toc-toggle[aria-expanded="true"] .icon { transform: rotate(180deg); }
+
+    .toc-list {
+      position: relative;
+      display: flex; gap: 8px;
+      overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none;
+      padding-block: 12px; padding-inline: var(--gutter);
+    }
+    .js .toc-list { padding-block-start: 0; }
+    .toc-list::-webkit-scrollbar { display: none; }
+    .toc-list > li { flex: none; }
+    .js .toc.is-collapsed .toc-list { display: none; }
+
+    .toc-link {
+      display: block; white-space: nowrap;
+      padding-block: 6px; padding-inline: 14px;
+      border: 1px solid var(--line); border-radius: 999px;
+      background: var(--surface);
+      font-size: 14px; line-height: 1.5;
+      transition: background-color .2s var(--ease), border-color .2s var(--ease), color .2s var(--ease);
+    }
+    .toc-link:hover { border-color: var(--interactive); color: var(--interactive); }
+    .toc-link[aria-current] { background: var(--brand); border-color: var(--brand); color: var(--surface); }
+    .toc-link:focus-visible { border-radius: 999px; }
+
+    .section { scroll-margin-block-start: 76px; }
+  }
+
+  /* شاشة كبيرة: عمود جانبي لاصق */
+  @media (min-width: 1100px) {
+    .toc { position: sticky; inset-block-start: 40px; margin-block-start: 76px; }
+    .toc-title {
+      display: flex; align-items: center; gap: 10px;
+      margin-block-end: 14px;
+      font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--brand);
+    }
+    .toc-title::before {
+      content: ""; inline-size: 7px; block-size: 7px;
+      background: var(--accent); transform: rotate(45deg);
+    }
+    .toc-list { border-inline-start: 1px solid var(--line); }
+    .toc-link {
+      display: block;
+      margin-inline-start: -1px;
+      padding-block: 8px; padding-inline: 18px 0;
+      border-inline-start: 2px solid transparent;
+      font-size: 15px; line-height: 1.55;
+      transition: color .2s var(--ease), border-color .2s var(--ease);
+    }
+    .toc-link:hover { color: var(--interactive); border-inline-start-color: var(--sand); }
+    .toc-link[aria-current] { color: var(--brand); font-weight: 700; border-inline-start-color: var(--accent); }
+
+    .section { scroll-margin-block-start: 40px; }
+  }
+
+  /* ─── الأقسام ─── */
+  .section + .section { margin-block-start: clamp(76px, 10vw, 116px); }
+  .section-head { display: flex; align-items: center; gap: 14px; margin-block-end: 28px; }
+  .section-head::after { content: ""; flex: 1; block-size: 1px; background: var(--line); }
+  .section-mark { flex: none; inline-size: 10px; block-size: 10px; background: var(--accent); transform: rotate(45deg); }
+  .section-title { font-size: clamp(24px, 3.2vw, 32px); font-weight: 700; line-height: 1.4; color: var(--brand); }
+
+  /* ─── البطاقات ─── */
+  .panel, .card {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: clamp(22px, 4.4vw, 36px);
+  }
+  .card {
+    isolation: isolate; overflow: hidden;
+    transition: border-color .25s var(--ease), box-shadow .25s var(--ease), transform .25s var(--ease);
+  }
+  .card:hover { border-color: var(--interactive); }
+  .card--lift:hover { transform: translateY(-2px); box-shadow: 0 16px 30px -24px var(--shadow); }
+  .stack > * + * { margin-block-start: 20px; }
+
+  .card-num {
+    position: absolute; z-index: -1;
+    inset-block-start: 14px; inset-inline-end: clamp(16px, 3vw, 28px);
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(96px, 14vw, 150px); line-height: .9;
+    color: var(--brand); opacity: .07;
+    pointer-events: none; user-select: none;
+  }
+
+  /* ─── ملخّص أبرز الأخبار ─── */
+  .headlines-panel { margin-block-end: 32px; }
+  .headlines > li {
+    display: grid; grid-template-columns: 2.25rem minmax(0, 1fr);
+    align-items: baseline; gap: 8px;
+    padding-block: 14px;
+    border-block-start: 1px solid var(--line);
+    line-height: 1.75;
+  }
+  .headlines > li:first-child { padding-block-start: 0; border-block-start: 0; }
+  .headlines > li:last-child { padding-block-end: 0; }
+  .headline-num { font-family: var(--font-display); font-weight: 700; font-size: 22px; line-height: 1; color: var(--brand); }
+
+  /* ─── الأخبار ─── */
+  .kicker {
+    display: flex; align-items: center; gap: 8px;
+    margin-block-end: 10px;
+    font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--brand);
+  }
+  .kicker::before { content: ""; inline-size: 7px; block-size: 7px; background: var(--accent); transform: rotate(45deg); }
+  .story-title { max-inline-size: 30em; font-size: clamp(21px, 2.6vw, 25px); font-weight: 700; line-height: 1.55; color: var(--brand); }
+  .story--lead .story-title { font-size: clamp(26px, 3.8vw, 34px); line-height: 1.45; }
+  .prose { margin-block-start: 16px; line-height: 1.95; }
+  .prose > p + p { margin-block-start: 1em; }
+
+  /* ─── لماذا يهمك؟ ─── */
+  .why {
+    position: relative; isolation: isolate; overflow: hidden;
+    margin-block-start: 28px;
+    padding: clamp(22px, 3.6vw, 30px);
+    border-radius: var(--radius);
+    background: var(--brand-tint);
+  }
+  .why::after {
+    content: ""; position: absolute; z-index: -1;
+    inset-block-end: -36px; inset-inline-end: -28px;
+    inline-size: 156px; block-size: 156px;
+    background: var(--why-mark) center / contain no-repeat;
+    opacity: .09;
+  }
+  .why-badge {
+    display: inline-flex; align-items: center; gap: 8px;
+    padding-block: 6px; padding-inline: 14px;
+    border-radius: 4px;
+    background: var(--brand); color: var(--surface);
+    font-size: 13px; font-weight: 700; line-height: 1.4;
+  }
+  .why-badge .icon { inline-size: .7em; block-size: .7em; color: var(--sand); }
+  .why-text { margin-block-start: 14px; line-height: 1.95; }
+
+  .source { display: flex; align-items: flex-start; gap: 8px; margin-block-start: 20px; font-size: 14px; line-height: 1.8; }
+  .source .icon { margin-block-start: .3em; color: var(--brand); }
+
+  /* ─── الأدوات ─── */
+  .tool-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+  .tool-name { font-size: clamp(20px, 2.4vw, 23px); font-weight: 700; line-height: 1.4; color: var(--brand); }
+  .chip {
+    display: inline-block;
+    padding-block: 2px; padding-inline: 12px;
+    border: 1px solid var(--brand-edge); border-radius: 999px;
+    background: var(--brand-tint); color: var(--brand);
+    font-size: 13px; font-weight: 700; line-height: 1.7;
+  }
+  .tool-body { margin-block-start: 14px; }
+  .tool-body > p + p { margin-block-start: .8em; }
+  .fit { display: flex; align-items: flex-start; gap: 10px; margin-block-start: 16px; font-size: .94em; line-height: 1.85; }
+  .fit .icon { margin-block-start: .32em; color: var(--brand); }
+  .fit-label { font-weight: 700; color: var(--brand); }
+  .idea { margin-block-start: 20px; padding-block-start: 18px; border-block-start: 1px solid var(--line); font-size: .94em; line-height: 1.85; }
+  .label {
+    display: flex; align-items: center; gap: 8px;
+    margin-block-end: 6px;
+    font-size: 14px; font-weight: 700; line-height: 1.5; color: var(--brand);
+  }
+  .label .icon { color: var(--accent); }
+  .label .icon--fill { inline-size: .72em; block-size: .72em; }
+  .example { margin-block-start: 22px; padding-block: 16px; border-block: 1px dashed var(--sand); font-size: .94em; line-height: 1.9; }
+  .note { margin-block-start: 16px; font-size: .94em; line-height: 1.85; }
+
+  .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-block-start: 24px; }
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    min-block-size: 46px;
+    padding-block: 10px; padding-inline: 22px;
+    border: 1.5px solid var(--interactive); border-radius: var(--radius-sm);
+    font-size: 15px; font-weight: 700; line-height: 1.3;
+    text-decoration: none; cursor: pointer;
+    transition: background-color .2s var(--ease), border-color .2s var(--ease), color .2s var(--ease), transform .2s var(--ease);
+  }
+  .btn .icon { transition: transform .25s var(--ease); }
+  .btn:hover .icon { transform: translateX(-4px); } /* السهم يتقدّم باتجاه القراءة */
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible { border-radius: var(--radius-sm); }
+  .btn-primary { background: var(--interactive); color: var(--surface); }
+  .btn-primary:hover { background: var(--brand); border-color: var(--brand); }
+  .btn-ghost { background: var(--surface); color: var(--interactive); }
+  .btn-ghost:hover { background: var(--brand-tint); border-color: var(--brand); color: var(--brand); }
+
+  /* ─── تعلّم هذا الأسبوع ─── */
+  .level-1 { --level: var(--level-beginner); }
+  .level-2 { --level: var(--level-intermediate); }
+  .level-3 { --level: var(--level-research); }
+  .card--level { box-shadow: inset 0 3px 0 var(--level); }
+  .card--level.card--lift:hover { box-shadow: inset 0 3px 0 var(--level), 0 16px 30px -24px var(--shadow); }
+  .level {
+    display: flex; align-items: center; gap: 10px;
+    margin-block-end: 12px;
+    font-size: 13px; font-weight: 700; line-height: 1.5; color: var(--ink);
+  }
+  .level-meter { display: inline-flex; gap: 3px; }
+  .level-meter i { inline-size: 14px; block-size: 5px; border-radius: 2px; background: var(--line); }
+  .level-1 .level-meter i:nth-child(-n + 1),
+  .level-2 .level-meter i:nth-child(-n + 2),
+  .level-3 .level-meter i { background: var(--level); }
+  .learn-title { font-size: clamp(19px, 2.3vw, 22px); font-weight: 700; line-height: 1.5; color: var(--brand); }
+  .byline { display: flex; align-items: center; gap: 8px; margin-block-start: 4px; font-size: 14px; line-height: 1.6; }
+  .byline::before { content: ""; inline-size: 14px; block-size: 1px; background: var(--brand); }
+  .card strong { color: var(--brand); }
+
+  /* ─── رائج على السوشال ─── */
+  .social-item + .social-item { margin-block-start: 26px; padding-block-start: 26px; border-block-start: 1px solid var(--line); }
+  .social-title { font-size: clamp(18px, 2.2vw, 20px); font-weight: 700; line-height: 1.6; color: var(--ink); }
+  .social-item p { margin-block-start: 8px; font-size: .96em; line-height: 1.9; }
+  .moral { padding-inline-start: 14px; border-inline-start: 3px solid var(--sand); }
+  .text-link { display: inline-flex; align-items: center; gap: 6px; font-size: 15px; font-weight: 700; }
+  .text-link .icon { inline-size: 1em; block-size: 1em; }
+
+  /* ─── إنجاز يقول لك ─── */
+  .closing { padding-block: clamp(68px, 11vw, 124px); }
+  .closing-label { display: flex; align-items: center; gap: 10px; font-size: 14px; font-weight: 700; line-height: 1.5; color: var(--sand); }
+  .closing-label::before { content: ""; inline-size: 8px; block-size: 8px; border: 1.5px solid var(--sand); transform: rotate(45deg); }
+  .closing-text {
+    max-inline-size: 22em;
+    margin-block-start: 20px;
+    font-family: var(--font-display); font-weight: 700;
+    font-size: clamp(24px, 3.8vw, 38px); line-height: 1.7;
+  }
+
+  /* ─── التذييل ─── */
+  .site-footer { background: var(--ink); color: var(--muted); padding-block: 0 44px; padding-inline: var(--gutter); }
+  .footer-strip {
+    display: flex; justify-content: center;
+    margin-inline: calc(-1 * var(--gutter));
+    padding-block: 12px;
+    border-block-end: 1px solid var(--sand-hair-soft);
+  }
+  .footer-strip .diamond-row { margin: 0; }
+  .footer-inner { padding-block-start: 40px; }
+  .footer-brand { font-family: var(--font-display); font-size: 30px; font-weight: 700; line-height: 1.3; color: var(--surface); }
+  .footer-tagline { margin-block-start: 8px; font-family: var(--font-caps); font-size: 10px; line-height: 1; letter-spacing: .32em; }
+  .footer-note { margin-block-start: 20px; font-size: 14px; line-height: 1.8; }
+  .footer-links {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px;
+    margin-block-start: 20px; padding-block-start: 18px;
+    border-block-start: 1px solid var(--sand-hair-soft);
+    font-size: 13px; line-height: 1.8;
+  }
+  .footer-links a { color: var(--sand); }
+
+  /* ─── جوال ─── */
+  @media (max-width: 639.98px) {
+    .headlines > li { grid-template-columns: 1.75rem minmax(0, 1fr); }
+    .actions .btn { inline-size: 100%; }
+  }
+
+  /* ─── الحركة عند الظهور ─── */
+  @media (prefers-reduced-motion: no-preference) {
+    .reveal-ready .reveal {
+      opacity: 0; translate: 0 16px;
+      transition: opacity .7s var(--ease), translate .7s var(--ease),
+                  border-color .25s var(--ease), box-shadow .25s var(--ease), transform .25s var(--ease);
+    }
+    .reveal-ready .reveal.is-visible { opacity: 1; translate: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation: none !important;
+      transition: none !important;
+      scroll-behavior: auto !important;
+    }
+    .card--lift:hover, .btn:active, .btn:hover .icon { transform: none; }
+    .reveal { opacity: 1 !important; translate: none !important; }
+  }
+
+  /* ─── الطباعة ─── */
+  @media print {
+    @page { margin: 16mm 14mm; }
+    body { background: var(--surface); font-size: 11.5pt; line-height: 1.8; }
+    .progress, .toc, .arch, .hero::before, .closing::before, .footer-strip, .card-num, .why::after, .btn .icon, .text-link .icon { display: none !important; }
+    .hero, .closing, .site-footer { background: none; color: var(--ink); padding: 0; }
+    .hero { padding-block-end: 20px; border-block-end: 2px solid var(--brand); }
+    .brand-name, .hero-title { color: var(--brand); }
+    .brand-tagline, .hero-meta, .closing-label { color: var(--text); }
+    .hero-meta { border-color: var(--line); }
+    .hero-lead { border-color: var(--line); margin-block-start: 20px; padding-block-start: 16px; }
+    .diamond-row { display: none; }
+    .layout { display: block; max-inline-size: none; padding: 0; }
+    .main { padding-block: 24px 0; }
+    .section + .section { margin-block-start: 28px; }
+    .section-head { break-after: avoid; }
+    .panel, .card, .why { box-shadow: none !important; transform: none !important; break-inside: avoid; }
+    .why { background: none; border: 1px solid var(--line); }
+    .why-badge { padding: 0; background: none; color: var(--brand); }
+    .reveal { opacity: 1 !important; translate: none !important; }
+    .btn { min-block-size: 0; padding: 0; border: 0; background: none; color: var(--interactive); }
+    .main a[href^="http"]::after { content: " — " attr(href); font-size: 8.5pt; font-weight: 400; color: var(--text); word-break: break-all; }
+    .closing { margin-block-start: 28px; padding-block-start: 20px; border-block-start: 2px solid var(--brand); }
+    .closing-text { color: var(--brand); font-size: 16pt; }
+    .site-footer { margin-block-start: 20px; }
+    .footer-brand { color: var(--brand); }
+    .footer-links { border-color: var(--line); }
+    .footer-links a { color: var(--interactive); }
+  }
+</style>
+<style>
+  .insight-head { display: flex; align-items: center; gap: 12px; }
+  .insight-head::after { content: ""; flex: 1; block-size: 1px; background: var(--brand-edge); }
+  .insight > .insight-head + * { margin-block-start: 16px; }
+  .insight .why-part, .insight .idea, .insight .fit, .insight .note { font-size: .96em; line-height: 1.9; }
+  .insight .why-part p:not(.label), .insight .idea p:not(.label) { margin-block-start: 0; }
+  .insight > * + * { margin-block-start: 14px; }
+  .insight .label { margin-block-start: 0; font-size: 14px; }
+  .insight .idea { padding-block-start: 14px; border-color: var(--brand-edge); }
+  .social-item .insight { margin-block-start: 16px; }
+  @media print { .insight-head::after { display: none; } }
+</style>
+</head>
+
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M19 12H5"/><path d="M11 6l-6 6 6 6"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13.5a4 4 0 0 0 5.7.3l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10.5a4 4 0 0 0-5.7-.3l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.4 3.3-5.5 6.5-5.5s5.7 2.1 6.5 5.5"/><path d="M15.5 4.7a3.5 3.5 0 0 1 0 6.6"/><path d="M18 14.9c1.9.8 3.1 2.5 3.5 5.1"/></symbol>
+  <symbol id="i-bulb" viewBox="0 0 24 24"><path d="M9.5 18h5"/><path d="M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.7 10.7c.7.6 1.2 1.4 1.2 2.3h5c0-.9.5-1.7 1.2-2.3A6 6 0 0 0 12 3z"/></symbol>
+  <symbol id="i-diamond" viewBox="0 0 24 24"><path d="M12 2.5l9.5 9.5-9.5 9.5L2.5 12z"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></symbol>
+  <symbol id="i-external" viewBox="0 0 24 24"><path d="M14 4h6v6"/><path d="M20 4l-9 9"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
+</svg>
+
+<div class="progress" role="progressbar" aria-label="تقدّم القراءة" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+  <div class="progress-bar"></div>
+</div>
+
+<!-- ═══════════ الرأس ═══════════ -->
+<header class="hero on-dark">
+  <svg class="arch" viewBox="0 0 240 340" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
+    <path d="M12 340V140c0-15 6-29 16-39L102 27c10-10 26-10 36 0l74 74c10 10 16 24 16 39v200"/>
+    <path class="arch-inner" d="M34 340V146c0-10 4-19 11-26l64-64c6-6 16-6 22 0l64 64c7 7 11 16 11 26v194"/>
+  </svg>
+
+  <div class="hero-inner">
+    <p class="brand-name">إنـجـاز</p>
+    <p class="brand-tagline" lang="en">COMMENDABLE&nbsp;&nbsp;SUCCESS</p>
+
+    <svg class="diamond-row" viewBox="0 0 132 12" aria-hidden="true" focusable="false">
+      <path class="d-solid" d="M6 0l6 6-6 6-6-6z"/>
+      <path class="d-line" d="M26 1.5l4.5 4.5-4.5 4.5-4.5-4.5z"/>
+      <path class="d-solid" d="M46 0l6 6-6 6-6-6z"/>
+      <path class="d-line" d="M66 1.5l4.5 4.5-4.5 4.5-4.5-4.5z"/>
+      <path class="d-solid" d="M86 0l6 6-6 6-6-6z"/>
+      <path class="d-line" d="M106 1.5l4.5 4.5-4.5 4.5-4.5-4.5z"/>
+      <path class="d-solid" d="M126 0l6 6-6 6-6-6z"/>
+    </svg>
+
+    <h1 class="hero-title">نـشـرة الـذكـاء الاصـطـنـاعـي</h1>
+    <p class="hero-meta">العدد الثالث &nbsp;·&nbsp; <time datetime="2026-10">أكتوبر 2026</time></p>
+
+    <p class="hero-lead">لا نخبرك بكل ما حدث في الذكاء الاصطناعي، بل نختصر لك ما يستحق معرفته وما يمكنك استخدامه.</p>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ═══════════ فهرس المحتويات ═══════════ -->
+  <nav class="toc" aria-label="فهرس المحتويات">
+    <p class="toc-title">في هذا العدد</p>
+    <button class="toc-toggle" type="button" aria-expanded="true" aria-controls="toc-list">
+      <span class="toc-toggle-label">في هذا العدد</span>
+      <span class="toc-current"></span>
+      <svg class="icon" aria-hidden="true" focusable="false"><use href="#i-chevron"/></svg>
+    </button>
+    <ol class="toc-list" id="toc-list">
+      <li><a class="toc-link" href="#models">جديد النماذج</a></li>
+      <li><a class="toc-link" href="#new-tools">أدوات جديدة</a></li>
+      <li><a class="toc-link" href="#more-tools">أدوات أخرى</a></li>
+      <li><a class="toc-link" href="#top-news">أبرز الأخبار</a></li>
+      <li><a class="toc-link" href="#social">رائج على السوشال</a></li>
+    </ol>
+  </nav>
+
+  <main class="main" id="content">
+  <article>
+
+    <!-- ═══════════ جديد النماذج ═══════════ -->
+    <section class="section" id="models" aria-labelledby="models-title">
+      <header class="section-head reveal">
+        <span class="section-mark" aria-hidden="true"></span>
+        <h2 class="section-title" id="models-title">جديد النماذج</h2>
+      </header>
+
+      <div class="stack">
+        <article class="card story reveal">
+          
+          
+          <h3 class="story-title">جوجل تطلق Gemini 4 Argon عالمياً للمطورين والمؤسسات</h3>
+          <div class="prose">
+            <p>أعلن Sundar Pichai عبر منصة X إطلاق نموذج Gemini 4 Argon وتوفّره عالميًا للمطورين والمؤسسات في الطبقة المدفوعة من Gemini API ومنصة Gemini، ولمشتركي Ultra في Google Antigravity، ولمشتركي Ultra وPro في تطبيق Gemini وSearch. وأحال إلى منشور على مدونة Google يتضمن تفاصيل التوفّر والأسعار والعروض التوضيحية.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>صُمم النموذج خصيصًا لحل التحديات البرمجية المعقدة، والتحليلات التخصصية في قطاعات المال والقانون والأمن السيبراني، متصدرًا مؤشرات قياس الأداء العالمية مقارنة بنماذج الذكاء الاصطناعي المنافسة.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://x.com/sundarpichai/status/2110038898009407584?s=46">Google</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Mukhtar</span></p>
+        </article>
+
+        <article class="card story reveal">
+          
+          
+          <h3 class="story-title">أنثروبيك تطلق Claude Haiku 5.5 بسعر أقل بنسبة 75%</h3>
+          <div class="prose">
+            <p>أطلقت Anthropic نموذج Claude Haiku 5.5 بوصفه أصغر نموذج وأسرعه وأقلّه تكلفة، موجّهًا للمهام عالية الحجم مثل التلخيص والتصنيف والاستعلامات والعمل كنموذج فرعي في البرمجة. وتقول الشركة إن تكلفة تشغيله أقل بنحو 75% من Haiku 4.5، مع خفض أسعار قراءات الذاكرة المؤقتة لـ Sonnet 5.5 وإتاحة رصيد API شهري لمشتركي Max وTeam.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>لو شغلك مهام متكررة وكثيرة مثل التلخيص والتصنيف، هذا النموذج يخفّض تكلفتها بشكل ملحوظ بدون ما تدفع ثمن نموذج أكبر. جرّب على شغلك الخفيف، وخلي النماذج الأقوى للمهام الأصعب.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://www.anthropic.com/claude-haiku-5-5">Anthropic</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Tester</span></p>
+        </article>
+
+        <article class="card story reveal">
+          
+          
+          <h3 class="story-title">Reka تطلق Rho-1 نموذج استدلال شامل بـ19B</h3>
+          <div class="prose">
+            <p>أطلقت Reka نسخة معاينة بحثية من Rho-1، وهو نموذج استدلال شامل بحجم 19 مليار معامل، دُرّب من الصفر. تفهم شبكة عصبية واحدة النصوص والصور والفيديو وتولّدها وتستدل عليها، وتُخرج أيضًا أوامر حركة للروبوتات. وتطرحه Reka بديلًا لخطوط العمل التي تمرّر المهام بين نماذج متخصصة، إذ يضيف كل تسليم تأخيرًا ويجعل كل نموذج يرى جزءًا ضيقًا من المهمة.</p>
+            <p>وفي جلسة عرضتها Reka، رسم النموذج منارة وحدّدها بإطار وحرّكها، ثم حوّل الفيديو إلى عاصفة ثلجية وشرح الفرق، في 5 جولات دون أداة أو نموذج ثانٍ.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>Reka تطلق Rho-1, ‏نموذج واحد يعالج ويصنع النصوص، الفديوهات، والصور  بدلا من ربط نموذج للنص وآخر للصور وثالث للروبوت وضياع الفهم بينها.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://www.marktechpost.com/2026/10/05/reka-releases-rho-1-a-19b-omni-reasoning-model-that-understands-generates-video-and-outputs-robot-actions-in-one/?amp=1">marktechpost.com</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Yara</span></p>
+        </article>
+
+        <article class="card story reveal">
+          
+          
+          <h3 class="story-title">Google تطلق EmbeddingGemma 2 متعدد الوسائط</h3>
+          <div class="prose">
+            <p>أعلنت Google عبر حساب Google Gemma الرسمي عن إصدار EmbeddingGemma 2، وهو نموذج تضمين متعدد الوسائط خفيف الوزن يوحّد النصوص والأكواد والصور والفيديو والصوت في فضاء تضمين واحد. يبلغ حجمه 740 مليون معامل، ويدعم أبعادًا مرنة بين 768 و128 عبر MRL ونافذة سياق 8K، ويُوزَّع برخصة Apache 2.0 مع تحسين لحالات الاستخدام على الجهاز.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>لو تشتغل على تطبيق فيه أكثر من نوع محتوى (نص وصور وصوت)، تقدر تستخدم نموذج واحد لكلها بدل نموذج لكل نوع. وحجمه الخفيف مع رخصة Apache 2.0 المفتوحة يخليك تشغّله على جهازك مباشرة، ويناسب البحث المتقدم وتصنيف البيانات.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://x.com/googlegemma/status/2107502533992464482?s=46">Google DeepMind / Google Gemma</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Mukhtar</span></p>
+        </article>
+
+        <article class="card story reveal">
+          
+          
+          <h3 class="story-title">جوجل تطلق Nano Banana 2.1 في AI Studio وGemini API</h3>
+          <div class="prose">
+            <p>أعلنت Alisa Fortin من Google عن إتاحة Nano Banana 2.1 (gemini-nano-banana-2.1) على AI Studio وGemini API، مع تحسينات في التصميم البصري والالتزام بالتعليمات واتساق العنصر عبر الجولات. المنشور يدعو لتجربته مباشرة عبر ai.studio.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>لو تشتغل على صور تحتاج نفس الشخصية أو العنصر يطلع ثابت عبر أكثر من توليد، هذا التحديث يسهّل عليك الموضوع. وتقدر تعطيه لين 14 صورة كمرجع وتجربه من AI Studio.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://x.com/alisa_fortin/status/2107544570397667596?s=46">Google</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Mukhtar</span></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ═══════════ أدوات جديدة ═══════════ -->
+    <section class="section" id="new-tools" aria-labelledby="new-tools-title">
+      <header class="section-head reveal">
+        <span class="section-mark" aria-hidden="true"></span>
+        <h2 class="section-title" id="new-tools-title">أدوات جديدة</h2>
+      </header>
+
+      <div class="stack">
+        <article class="card card--lift reveal">
+          <div class="tool-head">
+            <h3 class="tool-name">Google Labs تطلق Playground لإنشاء الألعاب دون برمجة</h3>
+            <p class="chip">للمبتدئين وصناع المحتوى</p>
+          </div>
+          <div class="tool-body">
+            <p>أعلنت Google Labs عن تجربة جديدة باسم Playground، وهي منصة ألعاب تجريبية تتيح للمستخدمين إنشاء ألعابهم الخاصة دون أي خبرة في البرمجة. التجربة متاحة حاليًا للمستخدمين بعمر 18 عامًا وأكثر داخل الولايات المتحدة، مع رابط رسمي للمزيد من التفاصيل.</p>
+            <p>Google Labs أطلقت تجربة جديدة باسم Playground.</p>
+          </div>
+          
+          
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <p class="fit"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span><span class="fit-label">مناسب لـ</span> المبتدئين · الجميع · صناع المحتوى · المصممين</span></p>
+            <div class="idea">
+            <p class="label"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-bulb"/></svg>الفكرة</p>
+            <p>يمكن للفريق تجربة المنصة لفهم حدود توليد الألعاب بالذكاء الاصطناعي وبناء نماذج أولية سريعة للأفكار التفاعلية.</p>
+          </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://x.com/GoogleLabs/status/2107800195748737042">جرّب الأداة<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
+          </div>
+        </article>
+
+        <article class="card card--lift reveal">
+          <div class="tool-head">
+            <h3 class="tool-name">جوجل تطلق تطبيق تدوين ملاحظات مجاني لـ Mac</h3>
+            <p class="chip">للمطورين ومهندسي الذكاء الاصطناعي</p>
+          </div>
+          <div class="tool-body">
+            <p>منشور على X يشير إلى إطلاق Google تطبيق تدوين ملاحظات بالذكاء الاصطناعي لنظام Mac، مجاناً بالكامل وبدون اشتراك، ويعمل محلياً على الجهاز مدعوماً بنموذج Embedding Gemma 2. المنشور يوجّه إلى صفحة Google AI Edge Foresight لتجربة الأداة، وأحد المعلّقين يؤكد أنه ثبّتها وأن كل شيء يعمل محلياً.</p>
+            <p>Google أطلقت تطبيق تدوين ملاحظات بالذكاء الاصطناعي لنظام Mac.</p>
+          </div>
+          
+          
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <p class="fit"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span><span class="fit-label">مناسب لـ</span> الجميع · المطورين · مهندسي الذكاء الاصطناعي · الطلبة</span></p>
+            <div class="idea">
+            <p class="label"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-bulb"/></svg>الفكرة</p>
+            <p>يمكن للفريق تجربة الأداة كبديل محلي ومجاني لتدوين الملاحظات وتلخيص الاجتماعات دون رفع البيانات إلى خدمات سحابية.</p>
+          </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://x.com/saboo_shubham_/status/2108799961911738549?s=12">جرّب الأداة<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
+          </div>
+        </article>
+
+        <article class="card card--lift reveal">
+          <div class="tool-head">
+            <h3 class="tool-name">Claude تطلق Dashboards وMotion في نسخة تجريبية</h3>
+            <p class="chip">للمطورين وعلماء البيانات</p>
+          </div>
+          <div class="tool-body">
+            <p>أعلنت Anthropic عبر حساب Claude الرسمي على X إتاحة Claude Dashboards وClaude Motion في نسخة تجريبية. تحوّل Dashboards البيانات إلى لوحات تفاعلية تُبنى باستعلامات يكتبها Claude وتتحدث تلقائيًا، بينما يحوّل Motion التقارير والأفكار إلى رسوم متحركة مكتوبة كشيفرة قابلة للتعديل وقابلة للتصدير بصيغة MP4.</p>
+            <p>إطلاق Claude Dashboards وClaude Motion في نسخة تجريبية (Beta) بتاريخ 8 أكتوبر 2026.</p>
+          </div>
+          
+          
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <p class="fit"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span><span class="fit-label">مناسب لـ</span> المطورين · علماء البيانات · صناع المحتوى · الجميع · مهندسي الذكاء الاصطناعي</span></p>
+            <div class="idea">
+            <p class="label"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-bulb"/></svg>الفكرة</p>
+            <p>يمكن للفريق تجربة Dashboards لتحليل بياناته بسرعة وMotion لإنتاج شروحات مرئية قصيرة للنشرات أو العروض.</p>
+          </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-primary" href="https://x.com/claudeai/status/2108271552991252810?s=46">جرّب الأداة<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ═══════════ أدوات أخرى ═══════════ -->
+    <section class="section" id="more-tools" aria-labelledby="more-tools-title">
+      <header class="section-head reveal">
+        <span class="section-mark" aria-hidden="true"></span>
+        <h2 class="section-title" id="more-tools-title">أدوات أخرى</h2>
+      </header>
+
+      <div class="stack">
+        <article class="card card--lift reveal">
+          <div class="tool-head">
+            <h3 class="tool-name">مايكروسوفت تطلق MarkItDown لتحويل الملفات إلى Markdown</h3>
+            <p class="chip">للمطورين ومهندسي الذكاء الاصطناعي</p>
+          </div>
+          <div class="tool-body">
+            <p>MarkItDown هي أداة Python مفتوحة المصدر من Microsoft تحوّل ملفات ومستندات Office إلى صيغة Markdown موجّهة للاستخدام مع نماذج اللغة الكبيرة وخطوط تحليل النصوص، مع تركيز على الحفاظ على بنية المستند. المستودع على GitHub برخصة MIT ويحظى باهتمام كبير (نحو 189 ألف نجمة)، وتوصي الصفحة بتعقيم المدخلات واستخدام أضيق دالة تحويل ممكنة لأسباب أمنية.</p>
+            <p>MarkItDown أداة Python خفيفة لتحويل ملفات ومستندات Office إلى صيغة Markdown.</p>
+          </div>
+          
+          
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <p class="fit"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span><span class="fit-label">مناسب لـ</span> المطورين · مهندسي الذكاء الاصطناعي · علماء البيانات · الباحثين</span></p>
+            <div class="idea">
+            <p class="label"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-bulb"/></svg>الفكرة</p>
+            <p>يمكن للفريق استخدامها كخطوة تحويل موحّدة قبل تغذية المستندات إلى أنظمة RAG والوكلاء، ما يبسّط خط المعالجة ويقلّل حجم النص المُرسل للنموذج.</p>
+          </div>
+          </div>
+          <div class="actions">
+            <a class="btn btn-ghost" href="https://github.com/microsoft/markitdown">افتح الأداة<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow"/></svg></a>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <!-- ═══════════ أبرز الأخبار ═══════════ -->
+    <section class="section" id="top-news" aria-labelledby="top-news-title">
+      <header class="section-head reveal">
+        <span class="section-mark" aria-hidden="true"></span>
+        <h2 class="section-title" id="top-news-title">أبرز الأخبار</h2>
+      </header>
+
+      <div class="panel headlines-panel reveal">
+        <ol class="headlines">
+          <li><span class="headline-num">١</span><span>باحثون في الذكاء الاصطناعي يشهدون في جلسة استماع بنيويورك</span></li>
+          <li><span class="headline-num">٢</span><span>غوغل تطلق موقع SynthID للكشف عن المحتوى المنشأ بالذكاء الاصطناعي</span></li>
+          <li><span class="headline-num">٣</span><span>OpenAI توسع مبادرة Daybreak وتطلق GPT-5.6-Cyber للأمن السيبراني</span></li>
+        </ol>
+      </div>
+
+      <div class="stack">
+        <article class="card story story--lead reveal">
+          <span class="card-num" aria-hidden="true">١</span>
+          <p class="kicker">الخبر الأهم</p>
+          <h3 class="story-title">باحثون في الذكاء الاصطناعي يشهدون في جلسة استماع بنيويورك</h3>
+          <div class="prose">
+            <p>تقرير من CNBC عن جلسة استماع في مجلس مدينة نيويورك ناقشت مخاطر الذكاء الاصطناعي وممارسات السلامة، وشارك فيها باحثون من Anthropic وOpenAI وGoogle وMeta. أبرز ما ورد التحذير من أن السباق الحالي قد ينتج خصماً غير مقصود، مع تدقيق متزايد في ممارسات السلامة والأمن لدى المختبرات الرائدة.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>الشركات نفسها لا تضمن سلوك أنظمتها بالكامل، والتنظيم قادم. والمجلس يناقش بالفعل إلزام النماذج القوية بفحص مستقل قبل إطلاقها. وإن كنت تستخدم الوكلاء، فلا تمنحها صلاحيات كاملة على بياناتك أو أنظمتك دون رقابة.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://www.cnbc.com/2026/10/05/anthropic-openai-google-meta-execs-testify-nyc-council-ai-hearing.html">CNBC</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Yara</span></p>
+        </article>
+
+        <article class="card story reveal">
+          <span class="card-num" aria-hidden="true">٢</span>
+          
+          <h3 class="story-title">غوغل تطلق موقع SynthID للكشف عن المحتوى المنشأ بالذكاء الاصطناعي</h3>
+          <div class="prose">
+            <p>تتناول المساهمة تقنية SynthID من Google DeepMind للعلامات المائية الرقمية غير المرئية في المحتوى المولّد بالذكاء الاصطناعي، مع حديث عن إتاحة أداة الكشف SynthID Detector عالمياً. ويذكر العضو دعماً لعلامات من شركاء مثل OpenAI وNVIDIA وKakao، ومقاومة التقنية لعمليات التعديل، وتكاملها مع منتجات غوغل.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>أعلنت شركة Google عن إتاحة موقع أداة SynthID Detector بشكل عام وعالمي، لتتيح للمستخدمين والمطورين التحقق مما إذا كانت الصور أو مقاطع الفيديو أو الصوتيات قد أُنتجت أو عُدّلت باستخدام تقنيات الذكاء الاصطناعي.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://deepmind.google/blog/identifying-ai-generated-images-with-synthid/">Google DeepMind</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Tester</span></p>
+        </article>
+
+        <article class="card story reveal">
+          <span class="card-num" aria-hidden="true">٣</span>
+          
+          <h3 class="story-title">OpenAI توسع مبادرة Daybreak وتطلق GPT-5.6-Cyber للأمن السيبراني</h3>
+          <div class="prose">
+            <p>توسّع OpenAI مبادرة Daybreak وتطلق نموذج GPT-5.6-Cyber المخصّص للأعمال السيبرانية المتقدمة والمصرّح بها، بهدف تمكين فرق الأمن الموثوقة من اكتشاف الثغرات والتحقق منها وإصلاحها قبل استغلال المهاجمين. ويشمل ذلك دورة عمل كاملة من اكتشاف المشكلة إلى تطوير Patch واختبار الإصلاح وتجهيز الأدلة للمراجعة البشرية، مع إتاحة قدرات أوسع عبر Trusted Access for Cyber.</p>
+            <p>توسّع OpenAI لمبادرة Daybreak لتمنح فرق الأمن الموثوقة قدرات متقدمة لاكتشاف الثغرات والتحقق منها وإصلاحها قبل استغلال المهاجمين لها.</p>
+            <p>إطلاق نموذج GPT-5.6-Cyber المخصّص للأعمال السيبرانية المتقدمة والمصرّح بها.</p>
+          </div>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>لماذا يهمك؟</p>
+            <p>إتاحة أدوات مبادرة Daybreak من OpenAI.
+يتم دمجها في البنى التحتية لرصد الهجمات السيبرانية المعقدة والتصدي لها استباقيًا.</p>
+          </div>
+          </div>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-link"/></svg><span>المصدر: <a href="https://x.com/samibizconsult/status/2086878934273061068?s=46">OpenAI</a></span></p>
+          <p class="source"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-users"/></svg><span>الباحث/ه: Mukhtar</span></p>
+        </article>
+      </div>
+    </section>
+
+    <!-- ═══════════ رائج على السوشال ═══════════ -->
+    <section class="section" id="social" aria-labelledby="social-title">
+      <header class="section-head reveal">
+        <span class="section-mark" aria-hidden="true"></span>
+        <h2 class="section-title" id="social-title">رائج على السوشال</h2>
+      </header>
+
+      <div class="panel reveal">
+        <article class="social-item">
+          <h3 class="social-title">مستخدم على Reddit اعاد بناء 7 تطبيقات ادوبي في مشروع مفتوح المصدر</h3>
+          <p>نشر أحد المطورين على مجتمع r/OpenAI تجريته في استغلال وكلاء الذكاء الاصطناعي (AI Agents) لبناء بدائل مفتوحة المصدر بلغة Rust لسبعة من أبرز تطبيقات Adobe، من بينها Photoshop وPremiere وAfter Effects.</p>
+            <p>وأوضح المطور أن الأكواد المصدرية وروابط التجربة متوفرة في التعليقات. وعلى الرغم من طموح الفكرة، إلا أن تقييم مدى كفاءة وجاهزية هذه البدائل يظل مرهونًا بالتجربة العملية المباشرة؛ إذ إن العرض المرئي والوصف السريع لا يعكسان بدقة مدى قدرتها على معالجة المهام المعقدة والتفصيلية التي تؤديها البرامج الأصلية.</p>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>المغزى</p>
+            <p>الذكاء الاصطناعي خفّض تكلفة البداية، لكنه لم يخفّض تكلفة الإتقان. أي ادعاء بأن أداة جديدة تعوّض برنامجًا راسخًا لا يُحكم عليه من عرض مرئي، بل بتجربته على مهمة حقيقية من عملك. وللمطورين، الدرس أن بناء النموذج الأولي أصبح سريعًا، فالميزة صارت في جودة التنفيذ والتفاصيل.</p>
+          </div>
+          </div>
+          <p><a class="text-link" href="https://www.reddit.com/r/OpenAI/comments/1wxmunv/ive_created_open_source_100_rust_cleanroom/">Reddit<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-external"/></svg></a></p>
+        </article>
+
+        <article class="social-item">
+          <h3 class="social-title">باحثون يخشون أن تسبقهم نماذج الذكاء الاصطناعي إلى الاكتشافات العلمية</h3>
+          <p>يشير العضو إلى مقال في Nature يناقش مخاوف باحثين من أن تسبق نماذج وكلاء الذكاء الاصطناعي الاكتشافات العلمية إلى النشر، مع جدل حول اكتشافات رياضية وبيولوجية أعلنت عنها شركات ذكاء اصطناعي. كما يذكر أن OpenAI وAnthropic نفتا استخدام محادثات المستخدمين أو أعمالهم الخاصة في التدريب في الحالات المطروحة. تعذّر التحقق من المقال لأن الرابط أعاد صفحة تحقق تقنية فقط.</p>
+          <div class="why insight" role="note">
+            <p class="insight-head"><span class="why-badge"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>ما وراء الخبر بزاوية راصد</span></p>
+            <div class="why-part">
+            <p class="label"><svg class="icon icon--fill" aria-hidden="true" focusable="false"><use href="#i-diamond"/></svg>المغزى</p>
+            <p>حين تصبح النماذج قادرة على الوصول إلى النتائج نفسها التي يعمل عليها الباحثون، تصبح سرعة النشر جزءًا من حماية الاكتشاف. وثّق أفكارك ونتائجك مبكرًا، عبر مسودة أولية أو سجل مؤرخ، وكن واعيًا بما تشاركه من أبحاث غير منشورة مع أدوات الذكاء الاصطناعي، وراجع إعدادات الخصوصية فيها قبل الاستخدام.</p>
+          </div>
+          </div>
+          <p><a class="text-link" href="https://www.nature.com/articles/d41586-026-03128-6">nature.com<svg class="icon" aria-hidden="true" focusable="false"><use href="#i-external"/></svg></a></p>
+        </article>
+      </div>
+    </section>
+
+  </article>
+  </main>
+</div>
+
+<!-- ═══════════ إنجاز يقول لك ═══════════ -->
+<section class="closing on-dark" aria-labelledby="closing-label">
+  <svg class="arch" viewBox="0 0 240 340" preserveAspectRatio="xMidYMax meet" aria-hidden="true" focusable="false">
+    <path d="M12 340V140c0-15 6-29 16-39L102 27c10-10 26-10 36 0l74 74c10 10 16 24 16 39v200"/>
+    <path class="arch-inner" d="M34 340V146c0-10 4-19 11-26l64-64c6-6 16-6 22 0l64 64c7 7 11 16 11 26v194"/>
+  </svg>
+  <div class="closing-inner reveal">
+    <p class="closing-label" id="closing-label">إنجاز يقول لك</p>
+    <p class="closing-text">لا تلاحق كل جديد في الذكاء الاصطناعي.<br>
+      تعلّم كيف تستخدم الجديد الذي يستحق وقتك.</p>
+  </div>
+</section>
+
+<!-- ═══════════ التذييل ═══════════ -->
+<footer class="site-footer on-dark">
+  <div class="footer-strip">
+    <svg class="diamond-row" viewBox="0 0 132 12" aria-hidden="true" focusable="false">
+      <path class="d-solid" d="M6 0l6 6-6 6-6-6z"/>
+      <path class="d-line" d="M26 1.5l4.5 4.5-4.5 4.5-4.5-4.5z"/>
+      <path class="d-solid" d="M46 0l6 6-6 6-6-6z"/>
+      <path class="d-line" d="M66 1.5l4.5 4.5-4.5 4.5-4.5-4.5z"/>
+      <path class="d-solid" d="M86 0l6 6-6 6-6-6z"/>
+      <path class="d-line" d="M106 1.5l4.5 4.5-4.5 4.5-4.5-4.5z"/>
+      <path class="d-solid" d="M126 0l6 6-6 6-6-6z"/>
+    </svg>
+  </div>
+  <div class="footer-inner">
+    <p class="footer-brand">إنـجـاز</p>
+    <p class="footer-tagline" lang="en">COMMENDABLE&nbsp;&nbsp;SUCCESS</p>
+    <p class="footer-note">نشرة عن الذكاء الاصطناعي كل أسبوعين، العدد الثالث.</p>
+    <p class="footer-links">
+      <a href="#">إلغاء الاشتراك</a>
+      &nbsp;·&nbsp;
+      <a href="../">الأعداد السابقة</a>
+    </p>
+  </div>
+</footer>
+
+<script>
+  (function () {
+    'use strict';
+
+    var root = document.documentElement;
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var narrow = window.matchMedia('(max-width: 1099.98px)');
+    var hasObserver = 'IntersectionObserver' in window;
+
+    /* ── الحركة عند الظهور ── */
+    var revealEls = [].slice.call(document.querySelectorAll('.reveal'));
+    function revealAll() {
+      revealEls.forEach(function (el) { el.classList.add('is-visible'); });
+    }
+    if (root.classList.contains('reveal-ready')) {
+      var revealer = new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add('is-visible');
+          revealer.unobserve(entry.target);
+        });
+      }, { rootMargin: '0px 0px -8% 0px' });
+      revealEls.forEach(function (el) { revealer.observe(el); });
+    }
+    window.addEventListener('beforeprint', revealAll);
+
+    /* ── شريط تقدّم القراءة ── */
+    var progress = document.querySelector('.progress');
+    var lastPercent = -1;
+    var ticking = false;
+    function updateProgress() {
+      ticking = false;
+      var max = root.scrollHeight - window.innerHeight;
+      var ratio = max > 0 ? Math.min(Math.max(window.scrollY / max, 0), 1) : 0;
+      progress.style.setProperty('--progress', ratio.toFixed(4));
+      var percent = Math.round(ratio * 100);
+      if (percent !== lastPercent) {
+        progress.setAttribute('aria-valuenow', String(percent));
+        lastPercent = percent;
+      }
+    }
+    function requestProgress() {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(updateProgress);
+    }
+    window.addEventListener('scroll', requestProgress, { passive: true });
+    window.addEventListener('resize', requestProgress);
+    updateProgress();
+
+    /* ── فهرس المحتويات ── */
+    var toc = document.querySelector('.toc');
+    var toggle = toc.querySelector('.toc-toggle');
+    var list = toc.querySelector('.toc-list');
+    var current = toc.querySelector('.toc-current');
+    var links = [].slice.call(toc.querySelectorAll('.toc-link'));
+    var activeLink = null;
+
+    function isCollapsed() { return toc.classList.contains('is-collapsed'); }
+
+    // يُبقي الرابط النشط ظاهرًا داخل الشريط الأفقي على الشاشات الصغيرة
+    function centerActiveChip() {
+      if (!activeLink || !narrow.matches || isCollapsed()) return;
+      var item = activeLink.parentElement;
+      list.scrollTo({
+        left: item.offsetLeft + item.offsetWidth / 2 - list.clientWidth / 2,
+        behavior: reduceMotion.matches ? 'auto' : 'smooth'
+      });
+    }
+
+    function setExpanded(open) {
+      toc.classList.toggle('is-collapsed', !open);
+      toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) centerActiveChip();
+    }
+
+    setExpanded(false);
+    toggle.addEventListener('click', function () { setExpanded(isCollapsed()); });
+    toc.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape' && narrow.matches && !isCollapsed()) {
+        setExpanded(false);
+        toggle.focus();
+      }
+    });
+    links.forEach(function (link) {
+      link.addEventListener('click', function () { if (narrow.matches) setExpanded(false); });
+    });
+
+    var sections = links.map(function (link) {
+      return document.getElementById(link.getAttribute('href').slice(1));
+    });
+
+    function setActive(id) {
+      var next = null;
+      links.forEach(function (link, i) {
+        if (sections[i] && sections[i].id === id) {
+          link.setAttribute('aria-current', 'location');
+          next = link;
+        } else {
+          link.removeAttribute('aria-current');
+        }
+      });
+      if (next === activeLink) return;
+      activeLink = next;
+      current.textContent = next ? next.textContent : '';
+      centerActiveChip();
+    }
+
+    // القسم النشط = آخر قسم تجاوز بدايته ثلث الشاشة العلوي.
+    // يُحسب من الموضع الفعلي حتى لا تُفوَّت الأقسام عند القفز (End، روابط الفهرس).
+    function syncActive() {
+      var line = window.innerHeight * 0.35;
+      var id = null;
+      sections.forEach(function (section) {
+        if (section && section.getBoundingClientRect().top <= line) id = section.id;
+      });
+      setActive(id);
+    }
+
+    if (hasObserver) {
+      var spy = new IntersectionObserver(syncActive, { rootMargin: '0px 0px -65% 0px' });
+      sections.forEach(function (section) { if (section) spy.observe(section); });
+    }
+  })();
+</script>
+</body>
+</html>
