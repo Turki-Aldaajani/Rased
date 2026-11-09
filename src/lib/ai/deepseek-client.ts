@@ -34,15 +34,15 @@ import type { AIClient, LabelResult } from "./types";
 
 const ENDPOINT =
   process.env.DEEPSEEK_BASE_URL || "https://api.deepseek.com/v1";
-const MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
+export const DEEPSEEK_MODEL = process.env.DEEPSEEK_MODEL || "deepseek-chat";
 const TIMEOUT_MS = 120_000;
 
-interface ChatMessage {
+export interface ChatMessage {
   role: "system" | "user" | "assistant";
   content: string;
 }
 
-async function chat(
+export async function deepseekChat(
   messages: ChatMessage[],
   maxTokens: number,
 ): Promise<string> {
@@ -60,7 +60,7 @@ async function chat(
         Authorization: `Bearer ${key}`,
       },
       body: JSON.stringify({
-        model: MODEL,
+        model: DEEPSEEK_MODEL,
         messages,
         // JSON mode. DeepSeek requires the word "json" somewhere in the
         // prompt for this to be accepted; both prompts below say it.
@@ -99,7 +99,7 @@ async function chat(
 }
 
 /** JSON mode still occasionally wraps the object in a ```json fence. */
-function parseJsonObject(raw: string): Record<string, unknown> {
+export function parseJsonObject(raw: string): Record<string, unknown> {
   const fenced = raw.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const body = (fenced?.[1] ?? raw).trim();
   const start = body.indexOf("{");
@@ -148,7 +148,7 @@ async function evaluate(
     "Now answer with the json object described in the schema.",
   ].join("\n");
 
-  const raw = await chat(
+  const raw = await deepseekChat(
     [
       { role: "system", content: system },
       { role: "user", content: user },
@@ -181,7 +181,7 @@ async function label(
     'Answer with a json object: {"title": "...", "summary": "..."}',
   ].join("\n");
 
-  const raw = await chat(
+  const raw = await deepseekChat(
     [
       { role: "system", content: TITLE_SYSTEM_PROMPT },
       { role: "user", content: user },
@@ -198,7 +198,7 @@ async function label(
 
 export const deepseekClient: AIClient = {
   name: "deepseek",
-  model: MODEL,
+  model: DEEPSEEK_MODEL,
   canBrowse: false,
   enabled: () => Boolean(process.env.DEEPSEEK_API_KEY),
   label,

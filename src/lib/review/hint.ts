@@ -1,4 +1,7 @@
+import { contentWords, sameStem, wordCount } from "@/lib/util/text";
 import { INSIGHT_HINT, type ReviewField } from "./roles";
+
+export { wordCount };
 
 /**
  * «ما وراء الخبر» summarises and simplifies, so it should always be shorter
@@ -31,63 +34,6 @@ export const HINT_MESSAGES: Record<Exclude<HintState, "ok">, string> = {
   repeats: "يكرر كلمات الخبر، أضف ما وراءه بدل إعادته",
 };
 
-/** The same letter written different ways reads as one: hamza forms, ta marbuta, diacritics. */
-function normalise(text: string): string {
-  return text
-    .toLowerCase()
-    .replace(/[ً-ٰٟـ]/g, "")
-    .replace(/[أإآٱ]/g, "ا")
-    .replace(/ى/g, "ي")
-    .replace(/ة/g, "ه")
-    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 0x0660));
-}
-
-function words(text: string): string[] {
-  return normalise(text).match(/[\p{L}\p{N}]+/gu) ?? [];
-}
-
-/** Joining words that carry no content of their own, normalised like the text. */
-const STOP_WORDS = new Set(
-  [
-    "في", "من", "على", "و", "أن", "إن", "إلى", "الى", "عن", "مع", "ما", "لا", "لم", "لن",
-    "هذا", "هذه", "ذلك", "تلك", "التي", "الذي", "الذين", "كل", "أو", "ثم", "قد", "كان",
-    "كانت", "هو", "هي", "هم", "بين", "حتى", "عند", "بعد", "قبل", "دون", "عبر", "أي", "كما",
-    "لكن", "بل", "به", "بها", "له", "لها", "فيه", "فيها", "منه", "منها", "عليه", "عليها",
-    "إذا", "اذا", "أكثر", "أيضا", "أيضًا", "يمكن", "مثل", "غير", "حيث", "ليس", "كيف", "لماذا",
-    "the", "a", "an", "and", "or", "of", "to", "in", "on", "for", "with", "is", "are",
-  ].map(normalise),
-);
-
-/** Article and one-letter prefixes off, so «والتعديل» and «التعديل» and «تعديل» meet. */
-const PREFIXES = ["وال", "بال", "كال", "فال", "لل", "ال", "و", "ب", "ل", "ف"];
-
-function stem(word: string): string {
-  for (const p of PREFIXES) {
-    if (word.startsWith(p) && word.length - p.length >= 3) return word.slice(p.length);
-  }
-  return word;
-}
-
-function contentWords(text: string): string[] {
-  return words(text)
-    .filter((w) => !STOP_WORDS.has(w))
-    .map(stem);
-}
-
-/**
- * Two stems name the same thing when equal, or when one is the other plus an
- * ending («تعدلها» / «تعدل»). Loose on purpose: this is a hint, not a verdict.
- */
-function sameWord(a: string, b: string): boolean {
-  if (a === b) return true;
-  const [short, long] = a.length <= b.length ? [a, b] : [b, a];
-  return short.length >= 3 && long.startsWith(short);
-}
-
-export function wordCount(text: string): number {
-  return words(text).length;
-}
-
 /**
  * Where a «ما وراء الخبر» field stands against the news text. Null for an
  * empty field: nothing is shown under it.
@@ -106,7 +52,7 @@ export function insightLengthHint(
     const mine = contentWords(fieldText);
     if (mine.length >= INSIGHT_HINT.minRepeatWords) {
       const news = contentWords(newsText);
-      overlap = mine.filter((w) => news.some((n) => sameWord(w, n))).length / mine.length;
+      overlap = mine.filter((w) => news.some((n) => sameStem(w, n))).length / mine.length;
     }
   }
 

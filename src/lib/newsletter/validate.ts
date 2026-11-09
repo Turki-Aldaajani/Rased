@@ -1,8 +1,8 @@
 import { NEWSLETTER } from "@/lib/config/rules";
 import type { Contribution } from "@/lib/db/schema";
 import { daysBetween } from "@/lib/util/date";
-import { sameResource } from "@/lib/util/text";
-import { sectionById, type SectionId } from "./sections";
+import { restatement, sameResource, textOverlap, wordCount } from "@/lib/util/text";
+import { sectionById, type SectionId, type SectionKind } from "./sections";
 import type { NewsletterIssue, NewsletterItem, ReviewFlag } from "./types";
 
 /**
@@ -16,6 +16,22 @@ import type { NewsletterIssue, NewsletterItem, ReviewFlag } from "./types";
 
 /** Below this, the member wrote too little to publish without a look. */
 const MIN_MEMBER_TEXT = 10;
+
+/**
+ * How «ما وراء الخبر» is held to the house style. Issue 3's lines ran 18 to
+ * 38 words for «لماذا يهمك؟» and 45 to 48 for «المغزى», each adding an angle
+ * the body did not have.
+ */
+export const INSIGHT_LIMITS = {
+  /** Two paragraphs that restate each other at or above this. */
+  paragraphRepeat: 0.5,
+  /** «لماذا يهمك؟» whose words are this much already in the body. */
+  whyRepeat: 0.4,
+  /** This many numbers shared with the body, or listed in the line itself. */
+  numberList: 3,
+  whyWords: 45,
+  moralWords: 55,
+} as const;
 
 const DIGIT_MAP: Record<string, string> = {
   "٠": "0", "١": "1", "٢": "2", "٣": "3", "٤": "4",
@@ -162,6 +178,8 @@ export function validateItem(
     );
   }
 
+  flags.push(...insightFlags(item, def.kind));
+
   if (e?.verification.status === "not_independently_verified") {
     warn(
       "unverified_source",
@@ -207,6 +225,87 @@ export function validateItem(
 
   for (const noteText of item.aiNotes) {
     warn("ai_note", noteText);
+  }
+
+  return flags;
+}
+
+/**
+ * Repetition and length: what the body says twice, and what «لماذا يهمك؟»
+ * says again or lists instead of explaining. Advice for the editor, never a
+ * rewrite.
+ */
+export function insightFlags(item: NewsletterItem, kind: SectionKind): ReviewFlag[] {
+  const flags: ReviewFlag[] = [];
+  const warn = (code: string, message: string) =>
+    flags.push({ code, severity: "warning", message });
+  const info = (code: string, message: string) =>
+    flags.push({ code, severity: "info", message });
+
+  const paragraphs = item.paragraphs.map((p) => p.trim()).filter(Boolean);
+  repeat: for (let i = 0; i < paragraphs.length; i++) {
+    for (let j = i + 1; j < paragraphs.length; j++) {
+      if (restatement(paragraphs[i], paragraphs[j]) >= INSIGHT_LIMITS.paragraphRepeat) {
+        warn(
+          "paragraphs_repeat",
+          `الفقرة ${j + 1} تعيد ما في الفقرة ${i + 1} بصياغة أخرى. ادمجهما أو احذف المكرر.`,
+        );
+        break repeat;
+      }
+    }
+  }
+
+  const why = item.whyItMatters.trim();
+  const body = paragraphs.join("\n");
+
+  // «لماذا يهمك؟» is printed under news and models; elsewhere it is only a fallback.
+  if (kind === "story" && why) {
+    const words = wordCount(why);
+    const whyNumbers = numbersIn(why);
+    const bodyNumbers = numbersIn(body);
+    const shared = [...whyNumbers].filter((n) => bodyNumbers.has(n));
+
+    if (body && (textOverlap(why, body) >= INSIGHT_LIMITS.whyRepeat || shared.length >= INSIGHT_LIMITS.numberList)) {
+      warn(
+        "why_repeats_body",
+        "«لماذا يهمك؟» يعيد ما في المتن. اكتب أثره على القارئ بدل تكرار الخبر.",
+      );
+    }
+    if (words > INSIGHT_LIMITS.whyWords) {
+      warn(
+        "why_too_long",
+        `«لماذا يهمك؟» ${words} كلمة، والحد ${INSIGHT_LIMITS.whyWords}. اختصره إلى جملة أو جملتين.`,
+      );
+    }
+    if (whyNumbers.size >= INSIGHT_LIMITS.numberList) {
+      info(
+        "why_number_list",
+        `«لماذا يهمك؟» فيه ${whyNumbers.size} أرقام. أبقِ الرقم الذي هو الفكرة نفسها، والباقي مكانه المتن.`,
+      );
+    }
+  }
+
+  if (kind === "social") {
+    const words = wordCount(item.moral);
+    if (words > INSIGHT_LIMITS.moralWords) {
+      warn(
+        "why_too_long",
+        `«المغزى» ${words} كلمة، والحد ${INSIGHT_LIMITS.moralWords}. اختصره.`,
+      );
+    }
+  }
+
+  // The condensed line may only use the member's numbers.
+  const original = item.memberReason?.trim();
+  if (why && original && why !== original) {
+    const theirs = numbersIn(original);
+    const added = [...numbersIn(why)].filter((n) => !theirs.has(n));
+    if (added.length > 0) {
+      warn(
+        "why_new_number",
+        `«لماذا يهمك؟» فيه أرقام لم يكتبها العضو: ${added.slice(0, 6).join("، ")}. احذفها أو ارجع لنص العضو.`,
+      );
+    }
   }
 
   return flags;

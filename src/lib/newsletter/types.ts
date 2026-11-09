@@ -73,10 +73,17 @@ export interface NewsletterItem {
   kicker: string;
   paragraphs: string[];
   /**
-   * "لماذا يهمك؟" is the member's own text, printed word for word. The model
-   * is not asked for it and cannot overwrite it; only an editor can.
+   * "لماذا يهمك؟", built from the member's own text only. The model may
+   * condense it to a sentence or two but adds nothing; it falls back to the
+   * member's text word for word, and an editor has the last say.
    */
   whyItMatters: string;
+  /**
+   * The member's text as they wrote it, kept so the editor can compare it
+   * with the condensed line or put it back. Absent on items made before it
+   * existed. Never printed on its own.
+   */
+  memberReason?: string;
 
   /** Tools: the audience pill beside the name, e.g. "للمطورين". */
   chip: string;

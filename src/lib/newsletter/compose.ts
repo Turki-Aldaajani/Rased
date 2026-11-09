@@ -6,7 +6,7 @@ import {
   type Contribution,
   type Difficulty,
 } from "@/lib/db/schema";
-import { hostname } from "@/lib/util/text";
+import { hostname, restatement } from "@/lib/util/text";
 import { sectionById, type SectionId } from "./sections";
 import type { NewsletterItem } from "./types";
 
@@ -83,12 +83,21 @@ export function platformName(url: string): string {
   return host;
 }
 
-function distinctTexts(list: (string | null | undefined)[], max: number): string[] {
+/** At or above this, a sentence says what an earlier one already said. */
+export const REPEAT_THRESHOLD = 0.5;
+
+/**
+ * The texts in order, minus any that restate an earlier one. A reworded
+ * sentence counts, not only a copy: key points often paraphrase the summary.
+ */
+export function distinctTexts(list: (string | null | undefined)[], max: number): string[] {
   const out: string[] = [];
   for (const raw of list) {
     const t = (raw ?? "").trim();
     if (!t) continue;
-    if (out.some((o) => o.includes(t) || t.includes(o))) continue;
+    if (out.some((o) => o.includes(t) || t.includes(o) || restatement(o, t) >= REPEAT_THRESHOLD)) {
+      continue;
+    }
     out.push(t);
     if (out.length >= max) break;
   }
@@ -105,9 +114,19 @@ export function composeFromSource(
   const difficulty =
     e && e.difficulty.level !== "not_applicable" ? e.difficulty.level : null;
 
+  // News and models: the summary and one capability it does not already
+  // cover. Key points are raw material and mostly restate the summary, so
+  // they only stand in when there is no summary.
   const body =
     def.kind === "story"
-      ? distinctTexts([e?.aiSummary, ...(e?.extracted.keyPoints ?? []), ...(e?.extracted.capabilities ?? [])], 3)
+      ? distinctTexts(
+          [
+            e?.aiSummary,
+            ...(e?.extracted.capabilities ?? []),
+            ...(e?.aiSummary ? [] : (e?.extracted.keyPoints ?? [])),
+          ],
+          2,
+        )
       : distinctTexts([e?.aiSummary, ...(e?.extracted.keyPoints ?? [])], 2);
 
   return {
@@ -117,9 +136,10 @@ export function composeFromSource(
     headline: c.title,
     kicker: sectionId === "top_news" ? "الخبر الأهم" : "",
     paragraphs: body.length > 0 ? body : [c.description].filter(Boolean),
-    // The member's own text, verbatim. This is what the newsletter prints:
-    // no model rewrites it, in this path or the AI one.
+    // The member's own text, verbatim. The AI path may condense it; this
+    // path never does, and the original is kept beside it either way.
     whyItMatters: c.memberReason,
+    memberReason: c.memberReason,
     chip: def.kind === "tool" ? audienceChip(audience) : "",
     fitLabel: def.defaults.fitLabel,
     fitText: def.kind === "tool" || def.kind === "learn" ? audienceFit(audience) : "",

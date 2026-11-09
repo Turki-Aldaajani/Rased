@@ -26,7 +26,7 @@ import {
 import { cycleLeaderboard, knownCycles } from "@/lib/services/leaderboard";
 import { cycleEnd, cycleKey, cycleLabel, cycleStart } from "@/lib/util/date";
 import { issueSlug, monthOf } from "./format";
-import { newsletterAiEnabled, writeSection } from "./generate";
+import { newsletterAiEnabled, newsletterModel, writeSection } from "./generate";
 import { LEGACY_ISSUES } from "./legacy";
 import { manualAddRefusal, manuallyAddable, notInNewsletter, type MissingCycle } from "./manual";
 import { resolvePublisher } from "./publish";
@@ -265,7 +265,7 @@ export async function createDraft(cycle: string): Promise<NewsletterIssue> {
       unused: plan.unused,
       generation: {
         engine: written.engine,
-        model: written.engine === "ai" ? process.env.RASED_MODEL || "claude-opus-5" : null,
+        model: written.engine === "ai" ? newsletterModel() : null,
         at: now,
         errors: written.errors,
       },
@@ -321,7 +321,7 @@ export async function regenerate(
           unused: plan.unused.filter((u) => !inIssue.has(u.contributionId)),
           generation: {
             engine: written.engine,
-            model: written.engine === "ai" ? process.env.RASED_MODEL || "claude-opus-5" : null,
+            model: written.engine === "ai" ? newsletterModel() : null,
             at: new Date().toISOString(),
             errors: written.errors,
           },

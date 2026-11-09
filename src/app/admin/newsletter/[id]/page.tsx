@@ -694,9 +694,12 @@ export default function NewsletterEditorPage({
                             <Field
                               label="لماذا يهمك؟"
                               hint={
-                                item.whyItMatters.trim()
-                                  ? "نص العضو كما كتبه، ويُنشر حرفيًا. لا تعدّله إلا لضرورة."
-                                  : "العضو لم يكتب نصًا. اكتب سطرًا أو أزل العنصر."
+                                !item.whyItMatters.trim()
+                                  ? "العضو لم يكتب نصًا. اكتب سطرًا أو أزل العنصر."
+                                  : item.memberReason !== undefined &&
+                                      item.whyItMatters.trim() !== item.memberReason.trim()
+                                    ? "مكثّف من نص العضو. قارنه بالأصل تحته قبل النشر."
+                                    : "نص العضو كما كتبه، ويُنشر حرفيًا. لا تعدّله إلا لضرورة."
                               }
                             >
                               <Textarea
@@ -709,6 +712,31 @@ export default function NewsletterEditorPage({
                                 }
                               />
                             </Field>
+                            {item.memberReason?.trim() &&
+                              item.whyItMatters.trim() !== item.memberReason.trim() && (
+                                <div className="rounded-md border border-dashed p-3">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                      نص العضو الأصلي
+                                    </p>
+                                    <Button
+                                      type="button"
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        patchItem(section.id, item.id, {
+                                          whyItMatters: item.memberReason ?? "",
+                                        })
+                                      }
+                                    >
+                                      استخدم نص العضو كما هو
+                                    </Button>
+                                  </div>
+                                  <p className="mt-2 whitespace-pre-line text-sm leading-7 text-foreground">
+                                    {item.memberReason}
+                                  </p>
+                                </div>
+                              )}
 
                             {kind === "tool" && (
                               <div className="grid gap-3 sm:grid-cols-2">
