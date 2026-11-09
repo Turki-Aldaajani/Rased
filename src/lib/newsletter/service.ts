@@ -52,6 +52,7 @@ import type {
   UnusedContribution,
 } from "./types";
 import { STALE_EDITOR, applyItemEdit, isStaleRevision, str } from "./edit";
+import { asDraft, backToDraftRefusal, deleteRefusal } from "./back-to-draft";
 import { NewsletterError } from "./errors";
 import { openWarnings, validateIssue } from "./validate";
 
@@ -717,11 +718,27 @@ export async function saveIssue(id: string, edit: IssueEdit): Promise<Newsletter
 
 export async function removeDraft(id: string): Promise<void> {
   const ok = await deleteIssue(id, (issue) => {
-    if (issue.status === "published") {
-      throw new NewsletterError("لا يُحذف عدد منشور.", 409);
-    }
+    const refusal = deleteRefusal(issue);
+    if (refusal) throw refusal;
   });
   if (!ok) throw new NewsletterError("العدد غير موجود.", 404);
+}
+
+/** A published issue back to a draft for review. The public page is untouched. */
+export async function returnToDraft(id: string): Promise<NewsletterIssue> {
+  return mutate((db) => {
+    const issue = db.newsletters.find((n) => n.id === id);
+    // Checked under the lock, so two drafts cannot appear at once.
+    const refusal = backToDraftRefusal(issue, db.newsletters);
+    if (refusal) throw refusal;
+    const next: NewsletterIssue = {
+      ...asDraft(issue!),
+      revision: (issue!.revision ?? 0) + 1,
+      updatedAt: new Date().toISOString(),
+    };
+    db.newsletters = db.newsletters.map((n) => (n.id === id ? next : n));
+    return next;
+  });
 }
 
 // ---------------------------------------------------------------------------

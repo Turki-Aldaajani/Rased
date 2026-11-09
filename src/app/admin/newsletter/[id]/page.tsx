@@ -9,6 +9,7 @@ import {
   RefreshCw,
   Save,
   Trash2,
+  Undo2,
   Upload,
 } from "lucide-react";
 import Link from "next/link";
@@ -23,6 +24,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { replacesPublishedPage } from "@/lib/newsletter/back-to-draft";
 import { SECTIONS, type SectionId, type SectionKind } from "@/lib/newsletter/sections";
 import type { NewsletterIssue, NewsletterItem } from "@/lib/newsletter/types";
 import { cn } from "@/lib/utils";
@@ -105,6 +107,8 @@ export default function NewsletterEditorPage({
 
   const issue = data?.issue;
   const published = issue?.status === "published";
+  /** Published before and back to a draft: its page is still public. */
+  const returned = Boolean(issue && !published && issue.publication);
 
   /** Local edit of the draft; nothing leaves the browser until "حفظ". */
   function patchIssue(fn: (draft: NewsletterIssue) => NewsletterIssue) {
@@ -302,18 +306,32 @@ export default function NewsletterEditorPage({
       );
       if (!ok) return;
     }
-    if (published) {
+    const republish = issue ? replacesPublishedPage(issue) : false;
+    if (republish) {
       const ok = window.confirm(
-        "هذا العدد منشور. إعادة النشر ستستبدل الصفحة المنشورة. متابعة؟",
+        "سبق نشر هذا العدد. إعادة النشر ستستبدل الصفحة المنشورة. متابعة؟",
       );
       if (!ok) return;
     }
     const result = await post(
       `/api/newsletters/${id}/publish`,
-      { acknowledgeWarnings: warnings > 0, republish: published },
+      { acknowledgeWarnings: warnings > 0, republish },
       "publish",
     );
     if (result?.issue.publication) setNotice(`نُشر على ${result.issue.publication.url}`);
+  }
+
+  async function backToDraft() {
+    if (dirty) {
+      setMessage("احفظ تعديلاتك أولًا.");
+      return;
+    }
+    const ok = window.confirm(
+      "إرجاع العدد إلى مسودة؟ تفتحه روابط المراجعين من جديد، والصفحة المنشورة تبقى كما هي حتى تعيد نشره.",
+    );
+    if (!ok) return;
+    const result = await post(`/api/newsletters/${id}/draft`, {}, "draft");
+    if (result) setNotice("رجع العدد إلى مسودة. الصفحة المنشورة لم تتغير.");
   }
 
   async function removeDraft() {
@@ -370,9 +388,15 @@ export default function NewsletterEditorPage({
                 {busy === "save" ? <Loader2 className="animate-spin" /> : <Save />}
                 حفظ
               </Button>
+              {published && (
+                <Button variant="outline" size="sm" onClick={backToDraft} disabled={busy !== null}>
+                  {busy === "draft" ? <Loader2 className="animate-spin" /> : <Undo2 />}
+                  إرجاع إلى مسودة
+                </Button>
+              )}
               <Button size="sm" onClick={publish} disabled={busy !== null}>
                 {busy === "publish" ? <Loader2 className="animate-spin" /> : <Upload />}
-                {published ? "إعادة النشر" : "نشر"}
+                {published || returned ? "إعادة النشر" : "نشر"}
               </Button>
             </div>
           </div>
@@ -383,7 +407,7 @@ export default function NewsletterEditorPage({
                 العدد {issue.number}
               </h1>
               <span className="text-sm text-muted-foreground">
-                {published ? "منشور" : "مسودة"} ·{" "}
+                {published ? "منشور" : returned ? "مسودة، سبق نشرها" : "مسودة"} ·{" "}
                 {issue.cycleStart} إلى {issue.cycleEnd}
               </span>
               {data && data.openWarnings > 0 && (
@@ -408,7 +432,7 @@ export default function NewsletterEditorPage({
 
             {issue.publication && (
               <p className="mt-2 text-xs text-muted-foreground">
-                منشور على{" "}
+                {returned ? "الصفحة المنشورة، باقية كما هي حتى إعادة النشر:" : "منشور على"}{" "}
                 <a
                   href={issue.publication.url}
                   target="_blank"
@@ -1002,7 +1026,7 @@ export default function NewsletterEditorPage({
             }}
           />
 
-          {!published && (
+          {!published && !returned && (
             <div className="flex justify-end">
               <Button
                 variant="ghost"
